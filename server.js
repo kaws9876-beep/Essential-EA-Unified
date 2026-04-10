@@ -189,6 +189,11 @@ const frontendHTML = `
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 16px;
+    }
+    
+    #mobileHamburger {
+      display: none !important;
     }
     
     .content-area {
@@ -399,8 +404,17 @@ const frontendHTML = `
     }
     
     @media (max-width: 768px) {
+      #mobileHamburger {
+        display: block !important;
+        background: none;
+        border: none;
+        color: var(--text-light);
+        font-size: 24px;
+        cursor: pointer;
+      }
+      
       .hamburger {
-        display: block;
+        display: none;
       }
       
       .container {
@@ -536,8 +550,11 @@ const frontendHTML = `
     
     <div class="main-content">
       <div class="top-bar">
-        <h1 style="font-size: 20px; font-weight: 700;">The Essential EA</h1>
-        <div style="font-size: 14px; color: var(--text-muted);">AI-Powered Executive Assistant</div>
+        <button class="hamburger" id="mobileHamburger" onclick="toggleSidebar()" style="position: static; display: none; margin-right: 16px;">☰</button>
+        <div>
+          <h1 style="font-size: 20px; font-weight: 700;">The Essential EA</h1>
+          <div style="font-size: 14px; color: var(--text-muted);">AI-Powered Executive Assistant</div>
+        </div>
       </div>
       
       <div class="content-area">
