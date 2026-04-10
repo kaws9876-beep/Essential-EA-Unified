@@ -744,41 +744,6 @@ const frontendHTML = `
               <div><strong>Member Since:</strong> <span style="color: var(--text-muted);">January 2024</span></div>
             </div>
           </div>
-          
-          <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
-            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">💬 Send Feedback</h3>
-            <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 14px;">Help us improve The Essential EA. Share your thoughts, suggestions, or report issues.</p>
-            
-            <div class="form-group">
-              <label class="form-label">Your Name (Optional)</label>
-              <input type="text" id="feedbackName" class="form-input" placeholder="e.g., Jane Doe">
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">Email Address *</label>
-              <input type="email" id="feedbackEmail" class="form-input" placeholder="your.email@example.com">
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">How would you rate your experience?</label>
-              <div style="display: flex; gap: 8px; margin-top: 8px;">
-                <button style="flex: 1; padding: 10px; background: var(--bg-darkest); border: 1px solid var(--border); border-radius: 8px; color: var(--text-light); cursor: pointer; transition: all 0.2s;" onclick="setRating(1, this)">😞 1</button>
-                <button style="flex: 1; padding: 10px; background: var(--bg-darkest); border: 1px solid var(--border); border-radius: 8px; color: var(--text-light); cursor: pointer; transition: all 0.2s;" onclick="setRating(2, this)">😐 2</button>
-                <button style="flex: 1; padding: 10px; background: var(--bg-darkest); border: 1px solid var(--border); border-radius: 8px; color: var(--text-light); cursor: pointer; transition: all 0.2s;" onclick="setRating(3, this)">🙂 3</button>
-                <button style="flex: 1; padding: 10px; background: var(--bg-darkest); border: 1px solid var(--border); border-radius: 8px; color: var(--text-light); cursor: pointer; transition: all 0.2s;" onclick="setRating(4, this)">😊 4</button>
-                <button style="flex: 1; padding: 10px; background: var(--bg-darkest); border: 1px solid var(--border); border-radius: 8px; color: var(--text-light); cursor: pointer; transition: all 0.2s;" onclick="setRating(5, this)">🤩 5</button>
-              </div>
-              <input type="hidden" id="feedbackRating" value="5">
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">Your Feedback *</label>
-              <textarea id="feedbackMessage" class="form-textarea" placeholder="Tell us what you think... What's working well? What could be improved?" style="min-height: 120px;"></textarea>
-            </div>
-            
-            <button class="btn" onclick="submitFeedback()" style="width: 100%;">Send Feedback ✉️</button>
-            <div id="feedbackStatus" style="margin-top: 12px; display: none; padding: 12px; border-radius: 8px; text-align: center;"></div>
-          </div>
         </div>
       </div>
     </div>
@@ -939,80 +904,6 @@ const frontendHTML = `
     }
     
     // Load stats on page load
-    
-    let currentRating = 5;
-    
-    function setRating(rating, button) {
-      currentRating = rating;
-      document.getElementById('feedbackRating').value = rating;
-      
-      // Update button styles
-      const buttons = button.parentElement.querySelectorAll('button');
-      buttons.forEach((btn, idx) => {
-        if (idx < rating) {
-          btn.style.background = 'var(--accent)';
-          btn.style.borderColor = 'var(--accent)';
-        } else {
-          btn.style.background = 'var(--bg-darkest)';
-          btn.style.borderColor = 'var(--border)';
-        }
-      });
-    }
-    
-    async function submitFeedback() {
-      const name = document.getElementById('feedbackName').value.trim();
-      const email = document.getElementById('feedbackEmail').value.trim();
-      const rating = document.getElementById('feedbackRating').value;
-      const message = document.getElementById('feedbackMessage').value.trim();
-      
-      if (!email || !message) {
-        alert('Please fill in email and feedback message');
-        return;
-      }
-      
-      const statusDiv = document.getElementById('feedbackStatus');
-      statusDiv.style.display = 'block';
-      statusDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Sending feedback...</p></div>';
-      
-      try {
-        const response = await fetch('/api/feedback', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, rating: parseInt(rating), message })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          statusDiv.innerHTML = '<div style="background: #2d5016; border: 1px solid #4a7c2c; color: #90ee90; padding: 12px; border-radius: 8px;">✅ Thank you for your feedback! We appreciate your input.</div>';
-          document.getElementById('feedbackName').value = '';
-          document.getElementById('feedbackEmail').value = '';
-          document.getElementById('feedbackMessage').value = '';
-          document.getElementById('feedbackRating').value = '5';
-          currentRating = 5;
-          
-          // Reset rating buttons
-          const buttons = document.querySelectorAll('[onclick*="setRating"]');
-          buttons.forEach((btn, idx) => {
-            if (idx < 5) {
-              btn.style.background = 'var(--accent)';
-              btn.style.borderColor = 'var(--accent)';
-            } else {
-              btn.style.background = 'var(--bg-darkest)';
-              btn.style.borderColor = 'var(--border)';
-            }
-          });
-          
-          setTimeout(() => {
-            statusDiv.style.display = 'none';
-          }, 5000);
-        } else {
-          statusDiv.innerHTML = '<div style="background: #5c1a1a; border: 1px solid #8b3a3a; color: #ff6b6b; padding: 12px; border-radius: 8px;">❌ Error: ' + (data.error || 'Failed to submit feedback') + '</div>';
-        }
-      } catch (error) {
-        statusDiv.innerHTML = '<div style="background: #5c1a1a; border: 1px solid #8b3a3a; color: #ff6b6b; padding: 12px; border-radius: 8px;">❌ Error: ' + error.message + '</div>';
-      }
-    }
     loadStats();
   </script>
 </body>
