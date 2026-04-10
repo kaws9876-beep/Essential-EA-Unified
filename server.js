@@ -80,6 +80,7 @@ const frontendHTML = `
       display: flex;
       flex-direction: column;
       position: relative;
+      flex-shrink: 0;
     }
     
     .hamburger {
@@ -402,13 +403,19 @@ const frontendHTML = `
         display: block;
       }
       
+      .container {
+        position: relative;
+      }
+      
       .sidebar {
         position: fixed;
         left: -280px;
         top: 0;
         height: 100vh;
         z-index: 1000;
-        transition: left 0.3s;
+        transition: left 0.3s ease;
+        width: 280px;
+        border-right: 1px solid var(--border);
       }
       
       .sidebar.open {
@@ -428,6 +435,10 @@ const frontendHTML = `
       
       .sidebar-overlay.open {
         display: block;
+      }
+      
+      .main-content {
+        width: 100%;
       }
       
       .container {
