@@ -439,10 +439,15 @@ const frontendHTML = `
       
       .main-content {
         width: 100%;
+        margin-left: 0;
+        padding-top: 60px;
+        overflow-y: auto;
+        height: calc(100vh - 60px);
       }
       
       .container {
-        flex-direction: column;
+        flex-direction: row;
+        height: 100vh;
       }
       
       .sidebar {
