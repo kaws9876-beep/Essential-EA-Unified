@@ -79,6 +79,58 @@ const frontendHTML = `
       overflow-y: auto;
       display: flex;
       flex-direction: column;
+      position: relative;
+    }
+    
+    .hamburger {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-light);
+      font-size: 24px;
+      cursor: pointer;
+      position: absolute;
+      top: 16px;
+      right: 16px;
+    }
+    
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      background: var(--bg-darkest);
+      border-radius: 8px;
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+    }
+    
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--bg-dark);
+      font-size: 18px;
+    }
+    
+    .user-info {
+      flex: 1;
+    }
+    
+    .user-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-light);
+    }
+    
+    .user-role {
+      font-size: 12px;
+      color: var(--text-muted);
     }
     
     .sidebar-header {
@@ -346,6 +398,38 @@ const frontendHTML = `
     }
     
     @media (max-width: 768px) {
+      .hamburger {
+        display: block;
+      }
+      
+      .sidebar {
+        position: fixed;
+        left: -280px;
+        top: 0;
+        height: 100vh;
+        z-index: 1000;
+        transition: left 0.3s;
+      }
+      
+      .sidebar.open {
+        left: 0;
+      }
+      
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+      }
+      
+      .sidebar-overlay.open {
+        display: block;
+      }
+      
       .container {
         flex-direction: column;
       }
@@ -380,9 +464,19 @@ const frontendHTML = `
   </style>
 </head>
 <body>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="container">
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
+      <button class="hamburger" onclick="toggleSidebar()">✕</button>
       <div class="sidebar-header">Essential EA</div>
+      
+      <div class="user-profile">
+        <div class="user-avatar">JD</div>
+        <div class="user-info">
+          <div class="user-name">Jane Doe</div>
+          <div class="user-role">Executive</div>
+        </div>
+      </div>
       
       <div class="nav-section">
         <div class="nav-section-title">Overview</div>
@@ -538,12 +632,24 @@ const frontendHTML = `
   </div>
   
   <script>
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('open');
+    }
+    
     function switchScreen(screenName) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       document.getElementById(screenName).classList.add('active');
       
       document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
       event.target.closest('.nav-item').classList.add('active');
+      
+      // Close sidebar on mobile after switching screen
+      if (window.innerWidth <= 768) {
+        toggleSidebar();
+      }
       
       if (screenName === 'dashboard') {
         loadStats();
