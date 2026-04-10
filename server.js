@@ -505,18 +505,18 @@ const frontendHTML = `
       
       <div class="nav-section">
         <div class="nav-section-title">Operations</div>
-        <div class="nav-item">👥 Team</div>
-        <div class="nav-item">📈 Pipeline</div>
-        <div class="nav-item">📊 Analytics</div>
-        <div class="nav-item">🎯 Goals</div>
+        <div class="nav-item" onclick="switchScreen('operations')">👥 Team</div>
+        <div class="nav-item" onclick="switchScreen('operations')">📈 Pipeline</div>
+        <div class="nav-item" onclick="switchScreen('operations')">📊 Analytics</div>
+        <div class="nav-item" onclick="switchScreen('operations')">🎯 Goals</div>
       </div>
       
       <div class="nav-section">
         <div class="nav-section-title">Settings</div>
-        <div class="nav-item">⚙️ Preferences</div>
-        <div class="nav-item">🔒 Security</div>
-        <div class="nav-item">🔌 Integrations</div>
-        <div class="nav-item">👤 Account</div>
+        <div class="nav-item" onclick="switchScreen('settings')">⚙️ Preferences</div>
+        <div class="nav-item" onclick="switchScreen('settings')">🔒 Security</div>
+        <div class="nav-item" onclick="switchScreen('settings')">🔌 Integrations</div>
+        <div class="nav-item" onclick="switchScreen('settings')">👤 Account</div>
       </div>
     </div>
     
@@ -635,6 +635,83 @@ const frontendHTML = `
                 <li>Filters: All, Needs You, EA Owned, Deferred</li>
                 <li>Pre-drafted responses powered by AI</li>
               </ul>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Operations Screen -->
+        <div id="operations" class="screen">
+          <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 24px;">🏢 Operations</h2>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="font-size: 28px; margin-bottom: 12px;">👥</div>
+              <div style="font-size: 14px; font-weight: 600;">Team Management</div>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Manage team members and roles</div>
+            </div>
+            
+            <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="font-size: 28px; margin-bottom: 12px;">📈</div>
+              <div style="font-size: 14px; font-weight: 600;">Pipeline</div>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Track deals and opportunities</div>
+            </div>
+            
+            <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="font-size: 28px; margin-bottom: 12px;">📊</div>
+              <div style="font-size: 14px; font-weight: 600;">Analytics</div>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">View performance metrics</div>
+            </div>
+            
+            <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="font-size: 28px; margin-bottom: 12px;">🎯</div>
+              <div style="font-size: 14px; font-weight: 600;">Goals</div>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Set and track quarterly goals</div>
+            </div>
+          </div>
+          
+          <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">Coming Soon</h3>
+            <p style="color: var(--text-muted); font-size: 14px;">These operational tools are being integrated with your CRM and business systems. Full functionality coming in the next release.</p>
+          </div>
+        </div>
+        
+        <!-- Settings Screen -->
+        <div id="settings" class="screen">
+          <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 24px;">⚙️ Settings</h2>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="font-size: 28px; margin-bottom: 12px;">⚙️</div>
+              <div style="font-size: 14px; font-weight: 600;">Preferences</div>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Customize your experience</div>
+            </div>
+            
+            <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="font-size: 28px; margin-bottom: 12px;">🔒</div>
+              <div style="font-size: 14px; font-weight: 600;">Security</div>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Manage passwords and 2FA</div>
+            </div>
+            
+            <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="font-size: 28px; margin-bottom: 12px;">🔌</div>
+              <div style="font-size: 14px; font-weight: 600;">Integrations</div>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Connect external tools</div>
+            </div>
+            
+            <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+              <div style="font-size: 28px; margin-bottom: 12px;">👤</div>
+              <div style="font-size: 14px; font-weight: 600;">Account</div>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Manage your profile</div>
+            </div>
+          </div>
+          
+          <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">Account Information</h3>
+            <div style="display: grid; gap: 12px; font-size: 14px;">
+              <div><strong>Email:</strong> <span style="color: var(--text-muted);">jane.doe@example.com</span></div>
+              <div><strong>Role:</strong> <span style="color: var(--text-muted);">Executive</span></div>
+              <div><strong>Plan:</strong> <span style="color: var(--accent);">Professional</span></div>
+              <div><strong>Member Since:</strong> <span style="color: var(--text-muted);">January 2024</span></div>
             </div>
           </div>
         </div>
