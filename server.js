@@ -387,13 +387,31 @@ const frontendHTML = `
       <div class="nav-section">
         <div class="nav-section-title">Overview</div>
         <div class="nav-item active" onclick="switchScreen('dashboard')">📊 Dashboard</div>
-        <div class="nav-item" onclick="switchScreen('priority')">📅 Priority Week</div>
+        <div class="nav-item" onclick="switchScreen('inbox')">📧 Inbox</div>
       </div>
       
       <div class="nav-section">
         <div class="nav-section-title">Your EA</div>
-        <div class="nav-item" onclick="switchScreen('triage')">🔮 Crystal Ball</div>
-        <div class="nav-item" onclick="switchScreen('inbox')">📧 Inbox</div>
+        <div class="nav-item" onclick="switchScreen('priority')">📅 Priority Week</div>
+        <div class="nav-item" onclick="switchScreen('triage')">🔮 Crystal Ball Triage</div>
+        <div class="nav-item">✉️ Communication Hub</div>
+        <div class="nav-item">📞 Call Log</div>
+      </div>
+      
+      <div class="nav-section">
+        <div class="nav-section-title">Operations</div>
+        <div class="nav-item">👥 Team</div>
+        <div class="nav-item">📈 Pipeline</div>
+        <div class="nav-item">📊 Analytics</div>
+        <div class="nav-item">🎯 Goals</div>
+      </div>
+      
+      <div class="nav-section">
+        <div class="nav-section-title">Settings</div>
+        <div class="nav-item">⚙️ Preferences</div>
+        <div class="nav-item">🔒 Security</div>
+        <div class="nav-item">🔌 Integrations</div>
+        <div class="nav-item">👤 Account</div>
       </div>
     </div>
     
