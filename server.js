@@ -438,11 +438,11 @@ const frontendHTML = `
       }
       
       .main-content {
+        flex: 1;
         width: 100%;
-        margin-left: 0;
-        padding-top: 60px;
         overflow-y: auto;
-        height: calc(100vh - 60px);
+        z-index: 1;
+        position: relative;
       }
       
       .container {
@@ -451,14 +451,23 @@ const frontendHTML = `
       }
       
       .sidebar {
-        width: 100%;
-        height: auto;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-        padding: 16px;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 8px;
+        position: fixed;
+        left: -280px;
+        top: 0;
+        width: 280px;
+        height: 100vh;
+        background: var(--bg-darker);
+        border-right: 1px solid var(--border);
+        z-index: 1000;
+        transition: left 0.3s ease;
+        overflow-y: auto;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .sidebar.open {
+        left: 0;
       }
       
       .nav-section {
