@@ -44,24 +44,35 @@ const frontendHTML = `
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Essential EA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
     :root {
-      --bg-dark: #1A1916;
-      --bg-darker: #242119;
-      --bg-darkest: #2E2B27;
-      --accent: #C89A8A;
-      --text-light: #F5F5F5;
-      --text-muted: #A0A0A0;
-      --border: #3A3733;
+      --bg-dark: #F5F0E8;
+      --bg-darker: #EDE8DF;
+      --bg-darkest: #E4DDD3;
+      --accent: #C8A882;
+      --text-light: #1A1714;
+      --text-muted: #7A6F65;
+      --border: #D8D0C5;
+      --surface-black: #1A1714;
+      --cream: #F5F0E8;
+      --pink-gold: #C8A882;
     }
     
     body {
       font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--bg-dark);
+      background: var(--cream);
       color: var(--text-light);
       line-height: 1.6;
+    }
+    
+    h1, h2, h3 {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-weight: 600;
     }
     
     .container {
@@ -72,8 +83,8 @@ const frontendHTML = `
     
     .sidebar {
       width: 280px;
-      background: var(--bg-darker);
-      border-right: 1px solid var(--border);
+      background: var(--surface-black);
+      border-right: 1px solid rgba(200, 168, 130, 0.2);
       padding: 24px;
       overflow-y: auto;
       display: flex;
@@ -86,7 +97,7 @@ const frontendHTML = `
       display: none;
       background: none;
       border: none;
-      color: var(--text-light);
+      color: var(--cream);
       font-size: 24px;
       cursor: pointer;
       position: absolute;
@@ -99,22 +110,22 @@ const frontendHTML = `
       align-items: center;
       gap: 12px;
       padding: 16px;
-      background: var(--bg-darkest);
+      background: rgba(245, 240, 232, 0.06);
       border-radius: 8px;
       margin-bottom: 24px;
-      border: 1px solid var(--border);
+      border: 1px solid rgba(200, 168, 130, 0.25);
     }
     
     .user-avatar {
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      background: var(--accent);
+      background: var(--pink-gold);
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      color: var(--bg-dark);
+      color: var(--surface-black);
       font-size: 18px;
     }
     
@@ -125,19 +136,21 @@ const frontendHTML = `
     .user-name {
       font-size: 14px;
       font-weight: 600;
-      color: var(--text-light);
+      color: var(--cream);
     }
     
     .user-role {
       font-size: 12px;
-      color: var(--text-muted);
+      color: rgba(245, 240, 232, 0.55);
     }
     
     .sidebar-header {
-      font-size: 20px;
-      font-weight: 700;
+      font-size: 22px;
+      font-weight: 600;
       margin-bottom: 32px;
-      color: var(--accent);
+      color: var(--pink-gold);
+      letter-spacing: 0.05em;
+      font-family: 'Cormorant Garamond', Georgia, serif;
     }
     
     .nav-section {
@@ -145,33 +158,36 @@ const frontendHTML = `
     }
     
     .nav-section-title {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       text-transform: uppercase;
-      color: var(--text-muted);
+      color: rgba(245, 240, 232, 0.35);
       margin-bottom: 12px;
-      letter-spacing: 0.5px;
+      letter-spacing: 1px;
     }
     
     .nav-item {
       padding: 12px 16px;
-      margin-bottom: 8px;
-      border-radius: 8px;
+      margin-bottom: 4px;
+      border-radius: 6px;
       cursor: pointer;
       transition: all 0.2s;
       font-size: 14px;
       border: 1px solid transparent;
+      color: rgba(245, 240, 232, 0.75);
     }
     
     .nav-item:hover {
-      background: var(--bg-darkest);
-      border-color: var(--accent);
+      background: rgba(245, 240, 232, 0.07);
+      border-color: rgba(200, 168, 130, 0.3);
+      color: var(--cream);
     }
     
     .nav-item.active {
-      background: var(--accent);
-      color: var(--bg-dark);
+      background: var(--pink-gold);
+      color: var(--surface-black);
       font-weight: 600;
+      border-color: transparent;
     }
     
     .main-content {
@@ -182,8 +198,8 @@ const frontendHTML = `
     }
     
     .top-bar {
-      background: var(--bg-darker);
-      border-bottom: 1px solid var(--border);
+      background: var(--surface-black);
+      border-bottom: 1px solid rgba(200, 168, 130, 0.2);
       padding: 16px 24px;
       display: flex;
       justify-content: space-between;
@@ -199,6 +215,7 @@ const frontendHTML = `
       flex: 1;
       overflow-y: auto;
       padding: 24px;
+      background: var(--cream);
     }
     
     .screen { display: none; }
@@ -212,30 +229,33 @@ const frontendHTML = `
     }
     
     .kpi-card {
-      background: var(--bg-darker);
+      background: #FFFFFF;
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 20px;
       transition: all 0.2s;
+      box-shadow: 0 1px 4px rgba(26, 23, 20, 0.05);
     }
     
     .kpi-card:hover {
-      border-color: var(--accent);
+      border-color: var(--pink-gold);
       transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(200, 168, 130, 0.15);
     }
     
     .kpi-label {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text-muted);
       text-transform: uppercase;
       margin-bottom: 8px;
-      letter-spacing: 0.5px;
+      letter-spacing: 1px;
+      font-weight: 500;
     }
     
     .kpi-value {
       font-size: 32px;
       font-weight: 700;
-      color: var(--accent);
+      color: var(--surface-black);
     }
     
     .form-group {
@@ -254,7 +274,7 @@ const frontendHTML = `
     .form-textarea {
       width: 100%;
       padding: 12px 16px;
-      background: var(--bg-darker);
+      background: #FFFFFF;
       border: 1px solid var(--border);
       border-radius: 8px;
       color: var(--text-light);
@@ -266,8 +286,8 @@ const frontendHTML = `
     .form-input:focus,
     .form-textarea:focus {
       outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(200, 154, 138, 0.1);
+      border-color: var(--pink-gold);
+      box-shadow: 0 0 0 3px rgba(200, 168, 130, 0.15);
     }
     
     .form-textarea {
@@ -277,19 +297,21 @@ const frontendHTML = `
     
     .btn {
       padding: 12px 24px;
-      background: var(--accent);
-      color: var(--bg-dark);
+      background: var(--surface-black);
+      color: var(--cream);
       border: none;
       border-radius: 8px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
       font-size: 14px;
+      letter-spacing: 0.02em;
     }
     
     .btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 16px rgba(200, 154, 138, 0.2);
+      background: #2C2926;
+      box-shadow: 0 8px 20px rgba(26, 23, 20, 0.18);
     }
     
     .btn:active {
@@ -297,11 +319,12 @@ const frontendHTML = `
     }
     
     .result-box {
-      background: var(--bg-darker);
+      background: #FFFFFF;
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 20px;
       margin-top: 16px;
+      box-shadow: 0 1px 4px rgba(26, 23, 20, 0.06);
     }
     
     .result-header {
@@ -331,12 +354,12 @@ const frontendHTML = `
     .badge {
       display: inline-block;
       padding: 4px 12px;
-      background: rgba(200, 154, 138, 0.1);
-      border: 1px solid var(--accent);
+      background: rgba(200, 168, 130, 0.12);
+      border: 1px solid var(--pink-gold);
       border-radius: 6px;
       font-size: 12px;
       font-weight: 600;
-      color: var(--accent);
+      color: #8B6B3D;
     }
     
     .loading {
@@ -350,7 +373,7 @@ const frontendHTML = `
       width: 20px;
       height: 20px;
       border: 2px solid var(--border);
-      border-top-color: var(--accent);
+      border-top-color: var(--surface-black);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
@@ -366,25 +389,28 @@ const frontendHTML = `
     }
     
     .column-header {
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 700;
       margin-bottom: 16px;
-      color: var(--accent);
+      color: var(--surface-black);
+      letter-spacing: 0.02em;
     }
     
     .task-item {
-      background: var(--bg-darker);
+      background: #FFFFFF;
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 16px;
       margin-bottom: 12px;
       cursor: pointer;
       transition: all 0.2s;
+      box-shadow: 0 1px 3px rgba(26, 23, 20, 0.04);
     }
     
     .task-item:hover {
-      border-color: var(--accent);
+      border-color: var(--pink-gold);
       transform: translateX(4px);
+      box-shadow: 0 2px 8px rgba(200, 168, 130, 0.12);
     }
     
     .task-emoji {
@@ -407,7 +433,7 @@ const frontendHTML = `
         display: block !important;
         background: none;
         border: none;
-        color: var(--text-light);
+        color: var(--cream);
         font-size: 24px;
         cursor: pointer;
       }
@@ -428,7 +454,7 @@ const frontendHTML = `
         z-index: 1000;
         transition: left 0.3s ease;
         width: 280px;
-        border-right: 1px solid var(--border);
+        border-right: 1px solid rgba(200, 168, 130, 0.2);
       }
       
       .sidebar.open {
@@ -469,8 +495,8 @@ const frontendHTML = `
         top: 0;
         width: 280px;
         height: 100vh;
-        background: var(--bg-darker);
-        border-right: 1px solid var(--border);
+        background: var(--surface-black);
+        border-right: 1px solid rgba(200, 168, 130, 0.2);
         z-index: 1000;
         transition: left 0.3s ease;
         overflow-y: auto;
@@ -551,8 +577,8 @@ const frontendHTML = `
       <div class="top-bar">
         <button class="hamburger" id="mobileHamburger" onclick="toggleSidebar()" style="position: static; display: none; margin-right: 16px;">☰</button>
         <div>
-          <h1 style="font-size: 20px; font-weight: 700;">The Essential EA</h1>
-          <div style="font-size: 14px; color: var(--text-muted);">AI-Powered Executive Assistant</div>
+          <h1 style="font-size: 20px; font-weight: 700; color: var(--cream);">The Essential EA</h1>
+          <div style="font-size: 14px; color: rgba(245, 240, 232, 0.5);">AI-Powered Executive Assistant</div>
         </div>
       </div>
       
@@ -580,7 +606,7 @@ const frontendHTML = `
             </div>
           </div>
           
-          <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
+          <div style="background: #FFFFFF; border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(26,23,20,0.05);">
             <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">AI Insight</h3>
             <p style="color: var(--text-muted); margin-bottom: 16px;">Analyze your tasks to get AI-powered insights and recommendations.</p>
             <button class="btn" onclick="switchScreen('triage')">Go to Crystal Ball Triage →</button>
@@ -591,7 +617,7 @@ const frontendHTML = `
         <div id="priority" class="screen">
           <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 24px;">Priority Week Planner</h2>
           
-          <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+          <div style="background: #FFFFFF; border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(26,23,20,0.05);">
             <div class="form-group">
               <label class="form-label">Weekly Goals</label>
               <textarea id="goals" class="form-textarea" placeholder="What are your top 3 goals for this week?"></textarea>
@@ -621,7 +647,7 @@ const frontendHTML = `
         <div id="triage" class="screen">
           <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 24px;">🔮 Crystal Ball Triage</h2>
           
-          <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+          <div style="background: #FFFFFF; border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(26,23,20,0.05);">
             <div class="form-group">
               <label class="form-label">Paste a Task or Decision</label>
               <textarea id="taskInput" class="form-textarea" placeholder="e.g., Review counter offer from seller on Oak Street property"></textarea>
@@ -655,9 +681,9 @@ const frontendHTML = `
         <div id="inbox" class="screen">
           <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 24px;">📧 Communication Hub</h2>
           
-          <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
+          <div style="background: #FFFFFF; border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(26,23,20,0.05);">
             <p style="color: var(--text-muted);">Inbox integration coming soon. This will display AI-routed messages with smart categorization.</p>
-            <div style="margin-top: 16px; padding: 16px; background: var(--bg-darkest); border-radius: 8px; border-left: 3px solid var(--accent);">
+            <div style="margin-top: 16px; padding: 16px; background: var(--bg-darker); border-radius: 8px; border-left: 3px solid var(--pink-gold);">
               <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">💡 Feature Preview</div>
               <ul style="font-size: 13px; color: var(--text-muted); margin-left: 20px;">
                 <li>Split-pane inbox with message list and detail view</li>
@@ -674,32 +700,32 @@ const frontendHTML = `
           <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 24px;">🏢 Operations</h2>
           
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-            <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="background: #FFFFFF; border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(26,23,20,0.04);" onmouseover="this.style.borderColor='var(--pink-gold)'" onmouseout="this.style.borderColor='var(--border)'">
               <div style="font-size: 28px; margin-bottom: 12px;">👥</div>
               <div style="font-size: 14px; font-weight: 600;">Team Management</div>
               <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Manage team members and roles</div>
             </div>
             
-            <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="background: #FFFFFF; border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(26,23,20,0.04);" onmouseover="this.style.borderColor='var(--pink-gold)'" onmouseout="this.style.borderColor='var(--border)'">
               <div style="font-size: 28px; margin-bottom: 12px;">📈</div>
               <div style="font-size: 14px; font-weight: 600;">Pipeline</div>
               <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Track deals and opportunities</div>
             </div>
             
-            <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="background: #FFFFFF; border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(26,23,20,0.04);" onmouseover="this.style.borderColor='var(--pink-gold)'" onmouseout="this.style.borderColor='var(--border)'">
               <div style="font-size: 28px; margin-bottom: 12px;">📊</div>
               <div style="font-size: 14px; font-weight: 600;">Analytics</div>
               <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">View performance metrics</div>
             </div>
             
-            <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="background: #FFFFFF; border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(26,23,20,0.04);" onmouseover="this.style.borderColor='var(--pink-gold)'" onmouseout="this.style.borderColor='var(--border)'">
               <div style="font-size: 28px; margin-bottom: 12px;">🎯</div>
               <div style="font-size: 14px; font-weight: 600;">Goals</div>
               <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Set and track quarterly goals</div>
             </div>
           </div>
           
-          <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
+          <div style="background: #FFFFFF; border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(26,23,20,0.05);">
             <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">Coming Soon</h3>
             <p style="color: var(--text-muted); font-size: 14px;">These operational tools are being integrated with your CRM and business systems. Full functionality coming in the next release.</p>
           </div>
@@ -710,42 +736,42 @@ const frontendHTML = `
           <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 24px;">⚙️ Settings</h2>
           
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-            <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="background: #FFFFFF; border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(26,23,20,0.04);" onmouseover="this.style.borderColor='var(--pink-gold)'" onmouseout="this.style.borderColor='var(--border)'">
               <div style="font-size: 28px; margin-bottom: 12px;">⚙️</div>
               <div style="font-size: 14px; font-weight: 600;">Preferences</div>
               <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Customize your experience</div>
             </div>
             
-            <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="background: #FFFFFF; border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(26,23,20,0.04);" onmouseover="this.style.borderColor='var(--pink-gold)'" onmouseout="this.style.borderColor='var(--border)'">
               <div style="font-size: 28px; margin-bottom: 12px;">🔒</div>
               <div style="font-size: 14px; font-weight: 600;">Security</div>
               <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Manage passwords and 2FA</div>
             </div>
             
-            <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="background: #FFFFFF; border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(26,23,20,0.04);" onmouseover="this.style.borderColor='var(--pink-gold)'" onmouseout="this.style.borderColor='var(--border)'">
               <div style="font-size: 28px; margin-bottom: 12px;">🔌</div>
               <div style="font-size: 14px; font-weight: 600;">Integrations</div>
               <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Connect external tools</div>
             </div>
             
-            <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="background: #FFFFFF; border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(26,23,20,0.04);" onmouseover="this.style.borderColor='var(--pink-gold)'" onmouseout="this.style.borderColor='var(--border)'">
               <div style="font-size: 28px; margin-bottom: 12px;">👤</div>
               <div style="font-size: 14px; font-weight: 600;">Account</div>
               <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Manage your profile</div>
             </div>
           </div>
           
-          <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
+          <div style="background: #FFFFFF; border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(26,23,20,0.05);">
             <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">Account Information</h3>
             <div style="display: grid; gap: 12px; font-size: 14px;">
               <div><strong>Email:</strong> <span style="color: var(--text-muted);">jane.doe@example.com</span></div>
               <div><strong>Role:</strong> <span style="color: var(--text-muted);">Executive</span></div>
-              <div><strong>Plan:</strong> <span style="color: var(--accent);">Professional</span></div>
+              <div><strong>Plan:</strong> <span style="color: var(--pink-gold); font-weight: 600;">Professional</span></div>
               <div><strong>Member Since:</strong> <span style="color: var(--text-muted);">January 2024</span></div>
             </div>
           </div>
           
-          <div style="background: var(--bg-darker); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
+          <div style="background: #FFFFFF; border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(26,23,20,0.05);">
             <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">💬 Send Feedback</h3>
             <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 14px;">Help us improve The Essential EA. Share your thoughts, suggestions, or report issues.</p>
             
@@ -762,11 +788,11 @@ const frontendHTML = `
             <div class="form-group">
               <label class="form-label">How would you rate your experience?</label>
               <div style="display: flex; gap: 8px; margin-top: 8px;">
-                <button style="flex: 1; padding: 10px; background: var(--bg-darkest); border: 1px solid var(--border); border-radius: 8px; color: var(--text-light); cursor: pointer; transition: all 0.2s;" onclick="setRating(1, this)">😞 1</button>
-                <button style="flex: 1; padding: 10px; background: var(--bg-darkest); border: 1px solid var(--border); border-radius: 8px; color: var(--text-light); cursor: pointer; transition: all 0.2s;" onclick="setRating(2, this)">😐 2</button>
-                <button style="flex: 1; padding: 10px; background: var(--bg-darkest); border: 1px solid var(--border); border-radius: 8px; color: var(--text-light); cursor: pointer; transition: all 0.2s;" onclick="setRating(3, this)">🙂 3</button>
-                <button style="flex: 1; padding: 10px; background: var(--bg-darkest); border: 1px solid var(--border); border-radius: 8px; color: var(--text-light); cursor: pointer; transition: all 0.2s;" onclick="setRating(4, this)">😊 4</button>
-                <button style="flex: 1; padding: 10px; background: var(--bg-darkest); border: 1px solid var(--border); border-radius: 8px; color: var(--text-light); cursor: pointer; transition: all 0.2s;" onclick="setRating(5, this)">🤩 5</button>
+                <button style="flex: 1; padding: 10px; background: var(--bg-darker); border: 1px solid var(--border); border-radius: 8px; color: var(--text-light); cursor: pointer; transition: all 0.2s;" onclick="setRating(1, this)">😞 1</button>
+                <button style="flex: 1; padding: 10px; background: var(--bg-darker); border: 1px solid var(--border); border-radius: 8px; color: var(--text-light); cursor: pointer; transition: all 0.2s;" onclick="setRating(2, this)">😐 2</button>
+                <button style="flex: 1; padding: 10px; background: var(--bg-darker); border: 1px solid var(--border); border-radius: 8px; color: var(--text-light); cursor: pointer; transition: all 0.2s;" onclick="setRating(3, this)">🙂 3</button>
+                <button style="flex: 1; padding: 10px; background: var(--bg-darker); border: 1px solid var(--border); border-radius: 8px; color: var(--text-light); cursor: pointer; transition: all 0.2s;" onclick="setRating(4, this)">😊 4</button>
+                <button style="flex: 1; padding: 10px; background: var(--bg-darker); border: 1px solid var(--border); border-radius: 8px; color: var(--text-light); cursor: pointer; transition: all 0.2s;" onclick="setRating(5, this)">🤩 5</button>
               </div>
               <input type="hidden" id="feedbackRating" value="5">
             </div>
@@ -851,10 +877,10 @@ const frontendHTML = `
           document.getElementById('taskInput').value = '';
           loadTaskHistory();
         } else {
-          resultDiv.innerHTML = '<div class="result-box" style="color: #ff6b6b;">Error: ' + data.error + '</div>';
+          resultDiv.innerHTML = '<div class="result-box" style="color: #c62828;">Error: ' + data.error + '</div>';
         }
       } catch (error) {
-        resultDiv.innerHTML = '<div class="result-box" style="color: #ff6b6b;">Error: ' + error.message + '</div>';
+        resultDiv.innerHTML = '<div class="result-box" style="color: #c62828;">Error: ' + error.message + '</div>';
       }
     }
     
@@ -884,10 +910,10 @@ const frontendHTML = `
         if (data.success) {
           resultDiv.innerHTML = '<div class="result-box"><pre style="white-space: pre-wrap; color: var(--text-light);">' + data.plan + '</pre></div>';
         } else {
-          resultDiv.innerHTML = '<div class="result-box" style="color: #ff6b6b;">Error: ' + data.error + '</div>';
+          resultDiv.innerHTML = '<div class="result-box" style="color: #c62828;">Error: ' + data.error + '</div>';
         }
       } catch (error) {
-        resultDiv.innerHTML = '<div class="result-box" style="color: #ff6b6b;">Error: ' + error.message + '</div>';
+        resultDiv.innerHTML = '<div class="result-box" style="color: #c62828;">Error: ' + error.message + '</div>';
       }
     }
     
@@ -950,10 +976,12 @@ const frontendHTML = `
       const buttons = button.parentElement.querySelectorAll('button');
       buttons.forEach((btn, idx) => {
         if (idx < rating) {
-          btn.style.background = 'var(--accent)';
-          btn.style.borderColor = 'var(--accent)';
+          btn.style.background = 'var(--surface-black)';
+          btn.style.color = 'var(--cream)';
+          btn.style.borderColor = 'var(--surface-black)';
         } else {
-          btn.style.background = 'var(--bg-darkest)';
+          btn.style.background = 'var(--bg-darker)';
+          btn.style.color = 'var(--text-light)';
           btn.style.borderColor = 'var(--border)';
         }
       });
@@ -984,7 +1012,7 @@ const frontendHTML = `
         const data = await response.json();
         
         if (data.success) {
-          statusDiv.innerHTML = '<div style="background: #2d5016; border: 1px solid #4a7c2c; color: #90ee90; padding: 12px; border-radius: 8px;">✅ Thank you for your feedback! We appreciate your input.</div>';
+          statusDiv.innerHTML = '<div style="background: #e8f5e9; border: 1px solid #a5d6a7; color: #2e7d32; padding: 12px; border-radius: 8px;">✅ Thank you for your feedback! We appreciate your input.</div>';
           document.getElementById('feedbackName').value = '';
           document.getElementById('feedbackEmail').value = '';
           document.getElementById('feedbackMessage').value = '';
@@ -995,10 +1023,12 @@ const frontendHTML = `
           const buttons = document.querySelectorAll('[onclick*="setRating"]');
           buttons.forEach((btn, idx) => {
             if (idx < 5) {
-              btn.style.background = 'var(--accent)';
-              btn.style.borderColor = 'var(--accent)';
+              btn.style.background = 'var(--surface-black)';
+              btn.style.color = 'var(--cream)';
+              btn.style.borderColor = 'var(--surface-black)';
             } else {
-              btn.style.background = 'var(--bg-darkest)';
+              btn.style.background = 'var(--bg-darker)';
+              btn.style.color = 'var(--text-light)';
               btn.style.borderColor = 'var(--border)';
             }
           });
@@ -1007,10 +1037,10 @@ const frontendHTML = `
             statusDiv.style.display = 'none';
           }, 5000);
         } else {
-          statusDiv.innerHTML = '<div style="background: #5c1a1a; border: 1px solid #8b3a3a; color: #ff6b6b; padding: 12px; border-radius: 8px;">❌ Error: ' + (data.error || 'Failed to submit feedback') + '</div>';
+          statusDiv.innerHTML = '<div style="background: #fdecea; border: 1px solid #f5c6cb; color: #c62828; padding: 12px; border-radius: 8px;">❌ Error: ' + (data.error || 'Failed to submit feedback') + '</div>';
         }
       } catch (error) {
-        statusDiv.innerHTML = '<div style="background: #5c1a1a; border: 1px solid #8b3a3a; color: #ff6b6b; padding: 12px; border-radius: 8px;">❌ Error: ' + error.message + '</div>';
+        statusDiv.innerHTML = '<div style="background: #fdecea; border: 1px solid #f5c6cb; color: #c62828; padding: 12px; border-radius: 8px;">❌ Error: ' + error.message + '</div>';
       }
     }
     loadStats();
