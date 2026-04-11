@@ -5,6 +5,8 @@ import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { OpenAI } from 'openai';
+import { frontendHTML } from './phase1-frontend-replacement.js';
+
 import dotenv from 'dotenv';
 import { db } from './db.js';
 
