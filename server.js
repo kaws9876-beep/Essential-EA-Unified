@@ -1791,7 +1791,7 @@ app.post('/api/classify', async (req, res) => {
   try {
     const { taskDescription } = req.body;
     if (!taskDescription) return res.status(400).json({ error: 'Task description required', success: false });
-    const prompt = `Classify this task as crystal (only the executive can do this) or bouncy (can be delegated).\nTask: "${taskDescription}"\nRespond ONLY with valid JSON: {"classification":"crystal","emoji":"🔮","urgency":"urgent","reason":"why","recommendedAction":"what to do","confidence":0.95}`;
+    const prompt = `Classify this task as crystal (only the executive can do this) or bouncy (can be delegated).\nTask: "${taskDescription}"\nRespond ONLY with valid JSON: {"classification":"crystal","emoji":"&#x1F52E;","urgency":"urgent","reason":"why","recommendedAction":"what to do","confidence":0.95}`;
     const response = await openai.chat.completions.create({ model: 'gpt-3.5-turbo', messages: [{ role: 'system', content: 'You are a task classification AI. Always respond with valid JSON only.' }, { role: 'user', content: prompt }], temperature: 0.7, max_tokens: 300 });
     let content = response.choices[0].message.content.trim();
     if (content.includes('```')) content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
