@@ -1778,4 +1778,99 @@ loadStats();
 </body>
 </html>
 `;
+app.get('/', (req, res) => {
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.post('/api/classify', async (req, res) => {
+  try {
+    const { taskDescription } = req.body;
+    if (!taskDescription) return res.status(400).json({ error: 'Task description required', success: false });
+    const prompt = `Classify this task as crystal (only the executive can do this) or bouncy (can be delegated).\nTask: "${taskDescription}"\nRespond ONLY with valid JSON: {"classification":"crystal","emoji":"🔮","urgency":"urgent","reason":"why","recommendedAction":"what to do","confidence":0.95}`;
+    const response = await openai.chat.completions.create({ model: 'gpt-3.5-turbo', messages: [{ role: 'system', content: 'You are a task classification AI. Always respond with valid JSON only.' }, { role: 'user', content: prompt }], temperature: 0.7, max_tokens: 300 });
+    let content = response.choices[0].message.content.trim();
+    if (content.includes('```')) content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const result = JSON.parse(content);
+    const task = { id: taskIdCounter++, description: taskDescription, ...result, createdAt: new Date().toISOString() };
+    tasks.push(task);
+    db.addTask(task);
+    res.json({ success: true, task, classification: result });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Failed to classify', success: false });
+  }
+});
+
+app.post('/api/generate-week', async (req, res) => {
+  try {
+    const { goals, revenue, timeblocks } = req.body;
+    if (!goals || !revenue || !timeblocks) return res.status(400).json({ error: 'Missing required fields', success: false });
+    const prompt = `Create a 5-day priority week plan.\nGoals: ${goals}\nRevenue Target: ${revenue}\nTime Blocks: ${timeblocks}\nUse Crystal Ball and Bouncy Ball framework throughout.`;
+    const response = await openai.chat.completions.create({ model: 'gpt-3.5-turbo', messages: [{ role: 'system', content: 'You are an expert executive assistant using the Essential EA methodology.' }, { role: 'user', content: prompt }], temperature: 0.8, max_tokens: 1000 });
+    const plan = response.choices[0].message.content.trim();
+    const weeklyPlan = { id: Date.now(), goals, revenue, timeblocks, plan, createdAt: new Date().toISOString() };
+    weeklyPlans.push(weeklyPlan);
+    db.addWeeklyPlan(weeklyPlan);
+    res.json({ success: true, plan });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Failed to generate plan', success: false });
+  }
+});
+
+app.get('/api/history', (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    res.json({ success: true, tasks: tasks.slice(-limit).reverse(), count: tasks.length });
+  } catch (error) {
+    res.status(500).json({ error: error.message, success: false });
+  }
+});
+
+app.get('/api/stats', (req, res) => {
+  try {
+    const crystalCount = tasks.filter(t => t.classification === 'crystal').length;
+    const bouncyCount = tasks.filter(t => t.classification === 'bouncy').length;
+    const avgConfidence = tasks.length > 0 ? (tasks.reduce((sum, t) => sum + (t.confidence || 0), 0) / tasks.length).toFixed(2) : 0;
+    res.json({ success: true, stats: { totalTasks: tasks.length, crystal: crystalCount, bouncy: bouncyCount, avgAccuracy: (parseFloat(avgConfidence) * 100).toFixed(1) } });
+  } catch (error) {
+    res.status(500).json({ error: error.message, success: false });
+  }
+});
+
+app.post('/api/feedback', (req, res) => {
+  try {
+    const { name, email, rating, message } = req.body;
+    if (!email || !message) return res.status(400).json({ error: 'Email and message required', success: false });
+    const feedback = { id: Date.now(), name: name || 'Anonymous', email, rating: rating || 5, message, createdAt: new Date().toISOString() };
+    db.addFeedback(feedback);
+    res.json({ success: true, feedback, message: 'Thank you for your feedback!' });
+  } catch (error) {
+    res.status(500).json({ error: error.message, success: false });
+  }
+});
+
+app.get('/api/feedback', (req, res) => {
+  try {
+    res.json({ success: true, feedback: db.getFeedback(), count: db.getFeedback().length });
+  } catch (error) {
+    res.status(500).json({ error: error.message, success: false });
+  }
+});
+
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not Found' });
+});
+
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`\n Essential EA is running on port ${PORT}`);
+});
+
+process.on('SIGTERM', () => {
+  server.close(() => process.exit(0));
+});
+
 export default app;
