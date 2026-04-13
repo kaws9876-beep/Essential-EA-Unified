@@ -48,8 +48,8 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 @keyframes barGrow{from{width:0}}
 @keyframes popIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
 .shell{display:flex;height:100vh;width:100vw;overflow:hidden}
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200}
-.overlay.open{display:block}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;pointer-events:none}.overlay.open{display:block;pointer-events:all}
+
 .sidebar{width:var(--sw);min-width:var(--sw);background:var(--blk);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;z-index:300;transition:transform .3s ease}
 .sb-top{padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0}
 .sb-logo{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:300;color:#FAF8F4}
