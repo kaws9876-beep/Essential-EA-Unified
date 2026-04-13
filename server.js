@@ -48,8 +48,8 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 @keyframes barGrow{from{width:0}}
 @keyframes popIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
 .shell{display:flex;height:100vh;width:100vw;overflow:hidden}
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;pointer-events:none}.overlay.open{display:block;pointer-events:all}
-
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;pointer-events:none}
+.overlay.open{display:block;pointer-events:all}
 .sidebar{width:var(--sw);min-width:var(--sw);background:var(--blk);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;z-index:300;transition:transform .3s ease}
 .sb-top{padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0}
 .sb-logo{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:300;color:#FAF8F4}
@@ -260,10 +260,6 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 .arp-h{background:rgba(200,169,106,.12);color:var(--gold);border:1px solid rgba(200,169,106,.2)}
 .arp-f{background:rgba(168,120,48,.1);color:#C8963A;border:1px solid rgba(168,120,48,.2)}
 .detail-body{flex:1;overflow-y:auto;padding:16px 20px;font-size:13px;color:#6A6860;line-height:1.85}
-.opt-box{background:var(--warm);border-radius:4px;padding:12px;margin-bottom:8px;border:1px solid var(--tan);cursor:pointer;font-size:12.5px;color:var(--mid);line-height:1.55}
-.opt-box:hover{border-color:var(--gold)}
-.opt-label{font-size:8.5px;color:var(--gold2);font-weight:700;margin-bottom:4px;letter-spacing:.05em}
-.opt-sep{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold2);margin:14px 0 8px}
 .detail-reply{border-top:1px solid var(--tan);padding:12px 20px;display:flex;gap:8px;align-items:flex-end;background:var(--warm);flex-shrink:0}
 .reply-input{flex:1;background:var(--cream);border:1px solid var(--tan);border-radius:4px;padding:9px 12px;resize:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--blk);outline:none;min-height:40px}
 .reply-input:focus{border-color:var(--gold)}
@@ -298,6 +294,8 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 .alert{padding:12px 14px;border-radius:4px;font-size:13px;margin-top:10px}
 .alert-ok{background:#e8f5e9;border:1px solid #a5d6a7;color:#2e7d32}
 .alert-err{background:#fdecea;border:1px solid #f5c6cb;color:#c62828}
+.brief-box{background:var(--blk);border-radius:10px;padding:20px;margin-top:16px;animation:popIn .25s ease}
+.brief-box pre{white-space:pre-wrap;font-family:'DM Sans',sans-serif;font-size:13px;color:rgba(245,240,232,.7);line-height:1.85}
 @media(max-width:1024px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.dg{grid-template-columns:1fr 1fr}.cw{grid-column:span 2}.pw-layout{grid-template-columns:1fr}.s-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:768px){
   .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:300}
@@ -341,6 +339,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
     <div class="sb-sec">Overview</div>
     <div class="sb-item active" onclick="nav('dashboard',this)"><span class="sb-icon">&#9645;</span>Dashboard</div>
     <div class="sb-sec">Your EA</div>
+    <div class="sb-item" onclick="nav('brief',this)"><span class="sb-icon">&#9728;</span>EA Daily Brief</div>
     <div class="sb-item" onclick="nav('priorityweek',this)"><span class="sb-icon">&#128197;</span>Priority Week</div>
     <div class="sb-item" onclick="nav('triage',this)"><span class="sb-icon">&#128302;</span>Crystal Ball Triage<span class="sb-badge" id="tc">0</span></div>
     <div class="sb-item" onclick="nav('inbox',this)"><span class="sb-icon">&#9993;</span>Communication<span class="sb-badge">4</span></div>
@@ -369,7 +368,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 
     <div class="screen active" id="screen-dashboard">
       <div class="pg-h">Good morning, <em>Kristina.</em></div>
-      <div class="pg-s">Your EA has 3 actions waiting for review.</div>
+      <div class="pg-s">Your EA is ready. What needs your attention today?</div>
       <div class="kpi-grid">
         <div class="kpi"><div class="kv" id="k1">0</div><div class="kl">Total Tasks Analyzed</div><div class="kd up">This session</div></div>
         <div class="kpi"><div class="kv" id="k2">0</div><div class="kl">Crystal Ball</div><div class="kd" style="color:var(--mid)">Only you can do these</div></div>
@@ -379,7 +378,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
       <div class="dg">
         <div class="cw">
           <div class="panel">
-            <div class="ph"><span class="pt">Today's Priority Actions</span><button class="pl" onclick="nav('triage',document.querySelectorAll('.sb-item')[2])">Classify tasks</button></div>
+            <div class="ph"><span class="pt">Today's Priority Actions</span><button class="pl" onclick="nav('triage',document.querySelectorAll('.sb-item')[3])">Classify tasks</button></div>
             <div class="pb">
               <div class="pi"><div class="pg2">&#128302;</div><div class="pib"><div class="pit">Call Marcus Chen - listing follow-up</div><div class="pin">Crystal ball - Relationship at risk if not actioned today</div></div><div class="ptm">9:30 AM</div></div>
               <div class="pi"><div class="pg2">&#128302;</div><div class="pib"><div class="pit">Review Q1 commission report with CFO</div><div class="pin">Crystal ball - Financial stewardship cadence</div></div><div class="ptm">2:00 PM</div></div>
@@ -390,23 +389,23 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
           </div>
           <div class="ai-box">
             <div class="ai-lbl">EA AI Insight - This week</div>
-            <div class="ai-txt">Your calendar shows <strong>6.5 hours of meeting time before 10am on Tuesday and Wednesday.</strong> Your EA recommends shifting team admin meetings to Thursday afternoon to protect your prime selling hours.</div>
+            <div class="ai-txt">Your calendar shows <strong>6.5 hours of meeting time before 10am on Tuesday and Wednesday.</strong> Your EA recommends shifting team admin meetings to Thursday afternoon to protect your prime Crystal Ball hours.</div>
             <div class="ai-acts">
               <button class="abtn abtn-p" onclick="this.textContent='Approved';this.disabled=true">Approve change</button>
-              <button class="abtn abtn-g" onclick="nav('inbox',document.querySelectorAll('.sb-item')[3])">Discuss with EA</button>
+              <button class="abtn abtn-g" onclick="nav('brief',document.querySelectorAll('.sb-item')[1])">Get Daily Brief</button>
             </div>
           </div>
         </div>
         <div class="col">
           <div class="panel">
-            <div class="ph"><span class="pt">Today's Schedule</span></div>
+            <div class="ph"><span class="pt">Today Schedule</span></div>
             <div class="pb" style="padding-top:10px">
               <div class="tl-item"><div class="tl-time">8:00</div><div class="tl-dot dot-grn"></div><div><div class="tl-n">EA Daily Brief</div><div class="tl-s">AI-generated and reviewed</div></div></div>
               <div class="tl-item"><div class="tl-time">9:30</div><div class="tl-dot dot-gold"></div><div><div class="tl-n">Marcus Chen call</div><div class="tl-s">Crystal ball - 30 min</div></div></div>
               <div class="tl-item"><div class="tl-time">11:00</div><div class="tl-dot dot-amb"></div><div><div class="tl-n">Listing photos review</div><div class="tl-s">2847 Elmwood - 45 min</div></div></div>
               <div class="tl-item"><div class="tl-time">12:30</div><div class="tl-dot dot-dim"></div><div><div class="tl-n">Lunch - protected</div><div class="tl-s">Boundary block - EA enforced</div></div></div>
               <div class="tl-item"><div class="tl-time">2:00</div><div class="tl-dot dot-gold"></div><div><div class="tl-n">CFO - Q1 review</div><div class="tl-s">Crystal ball - 60 min</div></div></div>
-              <div class="tl-item"><div class="tl-time">5:30</div><div class="tl-dot dot-dim"></div><div><div class="tl-n">Hard stop</div><div class="tl-s">CEO protection - no meetings after</div></div></div>
+              <div class="tl-item"><div class="tl-time">5:30</div><div class="tl-dot dot-dim"></div><div><div class="tl-n">Hard stop</div><div class="tl-s">CEO Protection Protocol enforced</div></div></div>
             </div>
           </div>
           <div class="panel">
@@ -429,9 +428,29 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
       </div>
     </div>
 
+    <div class="screen" id="screen-brief">
+      <div class="pg-h2">EA Daily Brief</div>
+      <div class="pg-s2">Your AI-generated morning brief. What your EA has handled and what needs your attention today.</div>
+      <div class="setup-card" style="max-width:500px;margin-bottom:18px">
+        <div class="setup-head">Generate Your Daily Brief</div>
+        <div class="setup-body">
+          <div class="fl">Your name</div>
+          <input class="fi" id="brief-name" type="text" placeholder="e.g. Kristina">
+          <div class="fl">Your role</div>
+          <input class="fi" id="brief-role" type="text" placeholder="e.g. Real estate broker, financial advisor, coach...">
+          <div class="fl">Top priorities this week</div>
+          <textarea class="fa" id="brief-priorities" placeholder="e.g. Close the Elmwood listing, connect with 3 new buyer leads..."></textarea>
+          <div class="fl">Your non-negotiable time blocks</div>
+          <input class="fi" id="brief-blocks" type="text" placeholder="e.g. No meetings before 9am, hard stop at 5:30pm">
+          <button class="gen-btn" id="brief-btn" onclick="generateBrief()">Generate My EA Daily Brief</button>
+        </div>
+      </div>
+      <div id="brief-result" style="display:none"></div>
+    </div>
+
     <div class="screen" id="screen-priorityweek">
       <div class="pg-h2">Priority Week Generator</div>
-      <div class="pg-s2">Your AI-powered week built from your goals, time blocks, and methodology.</div>
+      <div class="pg-s2">Your AI-powered week built from your goals, time blocks, and the Essential EA methodology.</div>
       <div class="pw-layout">
         <div class="setup-card">
           <div class="setup-head">Generate Your Priority Week</div>
@@ -439,7 +458,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
             <div class="fl">Top goals this week</div>
             <textarea class="fa" id="goals" placeholder="e.g. Close the Elmwood listing, meet 3 buyer leads, Q1 review..."></textarea>
             <div class="fl">Revenue target</div>
-            <input class="fi" id="revenue" type="text" placeholder="e.g. $45,000 GCI">
+            <input class="fi" id="revenue" type="text" placeholder="e.g. 45,000 GCI">
             <div class="fl">Non-negotiable time blocks</div>
             <textarea class="fa" id="timeblocks" style="min-height:70px" placeholder="e.g. No meetings before 9am, lunch 12:30-1:30, hard stop 5:30pm..."></textarea>
             <button class="gen-btn" id="gen-btn" onclick="generateWeek()">Generate My Priority Week</button>
@@ -452,12 +471,12 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
             </div>
             <div class="day-grid">
               <div class="day-col"><div class="day-hd today">Mon</div><div class="day-tasks"><div class="d-task crystal"><div class="dt-name">Listing call - Marcus</div><div class="dt-time">9:30 AM</div><div class="dt-tag tag-c">Crystal</div></div><div class="d-task bouncy"><div class="dt-name">Team standup</div><div class="dt-time">11:00 AM</div><div class="dt-tag tag-b">EA Owned</div></div></div></div>
-              <div class="day-col"><div class="day-hd">Tue</div><div class="day-tasks"><div class="d-task crystal"><div class="dt-name">Buyer consult - Lee</div><div class="dt-time">10:00 AM</div><div class="dt-tag tag-c">Crystal</div></div><div class="d-task bouncy"><div class="dt-name">Marketing review</div><div class="dt-time">EA Owned</div><div class="dt-tag tag-b">EA Owned</div></div></div></div>
+              <div class="day-col"><div class="day-hd">Tue</div><div class="day-tasks"><div class="d-task crystal"><div class="dt-name">Buyer consult</div><div class="dt-time">10:00 AM</div><div class="dt-tag tag-c">Crystal</div></div><div class="d-task bouncy"><div class="dt-name">Marketing review</div><div class="dt-time">EA Owned</div><div class="dt-tag tag-b">EA Owned</div></div></div></div>
               <div class="day-col"><div class="day-hd">Wed</div><div class="day-tasks"><div class="d-task block"><div class="dt-name">Deep work block</div><div class="dt-time">9-11 AM</div><div class="dt-tag tag-p">Protected</div></div><div class="d-task crystal"><div class="dt-name">Buyer consult</div><div class="dt-time">2:00 PM</div><div class="dt-tag tag-c">Crystal</div></div></div></div>
-              <div class="day-col"><div class="day-hd">Thu</div><div class="day-tasks"><div class="d-task crystal"><div class="dt-name">CFO - Q1 review</div><div class="dt-time">2:00 PM</div><div class="dt-tag tag-c">Crystal</div></div><div class="d-task bouncy"><div class="dt-name">Closing gifts</div><div class="dt-time">EA Owned</div><div class="dt-tag tag-b">EA Owned</div></div></div></div>
+              <div class="day-col"><div class="day-hd">Thu</div><div class="day-tasks"><div class="d-task crystal"><div class="dt-name">CFO review</div><div class="dt-time">2:00 PM</div><div class="dt-tag tag-c">Crystal</div></div><div class="d-task bouncy"><div class="dt-name">Closing gifts</div><div class="dt-time">EA Owned</div><div class="dt-tag tag-b">EA Owned</div></div></div></div>
               <div class="day-col"><div class="day-hd">Fri</div><div class="day-tasks"><div class="d-task crystal"><div class="dt-name">Photo approval</div><div class="dt-time">10:00 AM</div><div class="dt-tag tag-c">Crystal</div></div><div class="d-task block"><div class="dt-name">Friday PM protected</div><div class="dt-time">1:00 PM+</div><div class="dt-tag tag-p">Protected</div></div></div></div>
             </div>
-            <div class="pw-note"><strong>EA Note:</strong> Generate your plan above to see your personalized week.</div>
+            <div class="pw-note"><strong>EA Note:</strong> Generate your plan above to see your personalized week built on the Priority Week Framework.</div>
           </div>
           <div id="week-result" style="display:none"></div>
         </div>
@@ -466,19 +485,19 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 
     <div class="screen" id="screen-triage">
       <div class="pg-h2">Crystal Ball Triage</div>
-      <div class="pg-s2">Type any task - your EA AI classifies it instantly using the Essential EA methodology.</div>
+      <div class="pg-s2">Type any task. Your EA AI classifies it instantly using the Crystal Ball and Bouncy Ball Framework from The Essential EA.</div>
       <div class="triage-row">
-        <input class="triage-in" id="task-in" placeholder="e.g. Reply to vendor quote or Call from buyer asking about timeline..." onkeydown="if(event.key==='Enter')doClassify()">
+        <input class="triage-in" id="task-in" placeholder="e.g. Reply to vendor quote or Review counter offer from buyer..." onkeydown="if(event.key==='Enter')doClassify()">
         <button class="triage-btn" id="t-btn" onclick="doClassify()">Classify Task</button>
       </div>
       <div id="t-result" style="display:none"></div>
       <div class="t-cols">
         <div>
-          <div class="tc-head ch"><div class="tc-icon">&#128302;</div><div><div class="tc-title">Crystal Ball Tasks</div><div class="tc-sub">Only you can do these</div></div><div class="tc-count cc" id="c-badge">0</div></div>
+          <div class="tc-head ch"><div class="tc-icon">&#128302;</div><div><div class="tc-title">Crystal Ball Tasks</div><div class="tc-sub">Only you can do these - protect fiercely</div></div><div class="tc-count cc" id="c-badge">0</div></div>
           <div class="tc-list" id="c-list"><div class="empty">Classify tasks above to see them here.</div></div>
         </div>
         <div>
-          <div class="tc-head bh"><div class="tc-icon">&#127934;</div><div><div class="tc-title">Bouncy Ball Tasks</div><div class="tc-sub">Delegate these</div></div><div class="tc-count bc" id="b-badge">0</div></div>
+          <div class="tc-head bh"><div class="tc-icon">&#127934;</div><div><div class="tc-title">Bouncy Ball Tasks</div><div class="tc-sub">Delegate these - they bounce back</div></div><div class="tc-count bc" id="b-badge">0</div></div>
           <div class="tc-list" id="b-list"><div class="empty">Tasks your EA can own will appear here.</div></div>
         </div>
       </div>
@@ -495,11 +514,11 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
             <button class="fpill" onclick="filterMsgs('defer',this)">Deferred</button>
           </div>
           <div id="msg-list">
-            <div class="msg unread active" data-tag="you" onclick="openMsg(0,this)"><div class="msg-header"><span class="msg-from"><span class="udot"></span>Marcus Chen</span><span class="msg-when">9:14 AM</span></div><div class="msg-sub">Counter offer - 2847 Elmwood Dr</div><div class="msg-prev">I've reviewed the seller's position and I think we can move...</div><div class="msg-tags"><span class="mtag mt-you">Needs You</span><span class="mtag mt-urgent">Urgent</span></div></div>
-            <div class="msg unread" data-tag="ea" onclick="openMsg(1,this)"><div class="msg-header"><span class="msg-from"><span class="udot"></span>Sarah Kim - Lender</span><span class="msg-when">8:52 AM</span></div><div class="msg-sub">Referral partner meeting request</div><div class="msg-prev">Hi Kristina, I'd love 20 minutes to explore a referral...</div><div class="msg-tags"><span class="mtag mt-ea">EA Triaging</span></div></div>
+            <div class="msg unread active" data-tag="you" onclick="openMsg(0,this)"><div class="msg-header"><span class="msg-from"><span class="udot"></span>Marcus Chen</span><span class="msg-when">9:14 AM</span></div><div class="msg-sub">Counter offer - 2847 Elmwood Dr</div><div class="msg-prev">Reviewed the sellers position - think we can move...</div><div class="msg-tags"><span class="mtag mt-you">Needs You</span><span class="mtag mt-urgent">Urgent</span></div></div>
+            <div class="msg unread" data-tag="ea" onclick="openMsg(1,this)"><div class="msg-header"><span class="msg-from"><span class="udot"></span>Sarah Kim - Lender</span><span class="msg-when">8:52 AM</span></div><div class="msg-sub">Referral partner meeting request</div><div class="msg-prev">Would love 20 minutes to explore a referral partnership...</div><div class="msg-tags"><span class="mtag mt-ea">EA Triaging</span></div></div>
             <div class="msg" data-tag="ea" onclick="openMsg(2,this)"><div class="msg-header"><span class="msg-from">Rodriguez Closing</span><span class="msg-when">Tue</span></div><div class="msg-sub">Closing confirmed - gift needed by Friday</div><div class="msg-prev">Title confirmed Thursday 2pm. Per your gift protocol...</div><div class="msg-tags"><span class="mtag mt-ea">EA Owned</span></div></div>
             <div class="msg unread" data-tag="you" onclick="openMsg(3,this)"><div class="msg-header"><span class="msg-from"><span class="udot"></span>Team Standup Bot</span><span class="msg-when">Mon</span></div><div class="msg-sub">Weekly scorecard - Action required</div><div class="msg-prev">2 team members missed their weekly task completion...</div><div class="msg-tags"><span class="mtag mt-you">Needs You</span></div></div>
-            <div class="msg flagged" data-tag="defer" onclick="openMsg(4,this)"><div class="msg-header"><span class="msg-from">Office Supplies Vendor</span><span class="msg-when">Mon</span></div><div class="msg-sub">Quote renewal - Q2 supplies</div><div class="msg-prev">As discussed, here is our updated pricing for Q2...</div><div class="msg-tags"><span class="mtag mt-ea">EA Replied</span><span class="mtag mt-none">No Action</span></div></div>
+            <div class="msg flagged" data-tag="defer" onclick="openMsg(4,this)"><div class="msg-header"><span class="msg-from">Office Supplies Vendor</span><span class="msg-when">Mon</span></div><div class="msg-sub">Quote renewal - Q2 supplies</div><div class="msg-prev">Updated pricing for Q2 as discussed...</div><div class="msg-tags"><span class="mtag mt-ea">EA Replied</span><span class="mtag mt-none">No Action</span></div></div>
           </div>
         </div>
         <div class="msg-detail" id="msg-detail">
@@ -511,18 +530,9 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
               <button class="d-btn d-primary">Reply</button>
             </div>
           </div>
-          <div class="ai-routing"><div class="ar-icon">&#128302;</div><div><div class="ar-text" id="d-route"><strong>Crystal Ball - Needs You.</strong> Counter offer on active listing requires your direct judgment. EA has prepared two response approaches.</div><div class="ar-pills"><div class="ar-pill arp-h">Handle personally</div><div class="ar-pill arp-f">Schedule callback</div></div></div></div>
-          <div class="detail-body" id="d-body">
-            <p style="margin-bottom:14px">Hi Kristina,</p>
-            <p style="margin-bottom:14px">They came down to $624,000. Still $11K above but there's room. Inspection contingency ends Friday.</p>
-            <p>Can you reach out to the listing agent today? Thanks, Marcus</p>
-            <div style="margin-top:20px;padding-top:16px;border-top:1px solid #E8E2D8">
-              <div class="opt-sep">EA-prepared response options</div>
-             <div class="opt-box" onclick="setReply('Reaching out to listing agent about 618K plus closing costs. Update by noon. - Kristina')"><div class="opt-label">OPTION A - Move forward</div>Confirm position, contact listing agent.</div>
-             <div class="opt-box" onclick="setReply('Need to review inspection report first. Can we connect at 9:30am tomorrow? - Kristina')"><div class="opt-label">OPTION B - Review first</div>Request inspection report. Schedule call.</div>
-            </div>
-          </div>
-          <div class="detail-reply"><textarea class="reply-input" id="reply-in" rows="2" placeholder="Type your reply or click a suggested response above..."></textarea><button class="reply-send" onclick="sendReply()">Send</button></div>
+          <div class="ai-routing"><div class="ar-icon">&#128302;</div><div><div class="ar-text" id="d-route"><strong>Crystal Ball - Needs You.</strong> Counter offer on active listing requires your direct judgment and client relationship. Your EA cannot handle this one.</div><div class="ar-pills"><div class="ar-pill arp-h">Handle personally</div><div class="ar-pill arp-f">Schedule callback</div></div></div></div>
+          <div class="detail-body" id="d-body"><p>Select a message from the list to read it here.</p></div>
+          <div class="detail-reply"><textarea class="reply-input" id="reply-in" rows="2" placeholder="Type your reply..."></textarea><button class="reply-send" onclick="sendReply()">Send</button></div>
         </div>
       </div>
     </div>
@@ -536,7 +546,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
         <div class="ops-card"><div class="ops-icon">&#128227;</div><div class="ops-title">Marketing Content</div><div class="ops-desc">AI-generated content from your brand guide.</div></div>
         <div class="ops-card"><div class="ops-icon">&#127873;</div><div class="ops-title">Gifting and Database</div><div class="ops-desc">Sphere touchpoints, closing gifts, relationship cadence.</div></div>
       </div>
-      <div class="cs"><div class="cs-title">Full Operations Suite - Coming in Phase 3</div><div class="cs-body">These modules are being integrated with your CRM and business systems. Crystal Ball and Priority Week are live now.</div></div>
+      <div class="cs"><div class="cs-title">Full Operations Suite - Coming in Phase 3</div><div class="cs-body">These modules are being integrated with your CRM and business systems. Crystal Ball Triage, Priority Week, and EA Daily Brief are live now.</div></div>
     </div>
 
     <div class="screen" id="screen-settings">
@@ -552,7 +562,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
         <div class="ph"><span class="pt">Account Information</span></div>
         <div class="pb" style="display:grid;gap:12px;font-size:13.5px">
           <div><strong>Email:</strong> <span style="color:#8A8880">kristina@operationalconsultinggroup.com</span></div>
-          <div><strong>Plan:</strong> <span style="color:#A88A50;font-weight:600">Blueprint - $147/month</span></div>
+          <div><strong>Plan:</strong> <span style="color:#A88A50;font-weight:600">Blueprint - 147 per month</span></div>
           <div><strong>Member Since:</strong> <span style="color:#8A8880">April 2026 - Founding Member</span></div>
         </div>
       </div>
@@ -561,7 +571,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
         <div class="pb">
           <div class="fg"><label class="fl2">Your Name (Optional)</label><input type="text" id="fb-name" class="fi2" placeholder="e.g. Kristina Spencer"></div>
           <div class="fg"><label class="fl2">Email Address</label><input type="email" id="fb-email" class="fi2" placeholder="your@email.com"></div>
-          <div class="fg"><label class="fl2">How would you rate your experience?</label><div class="r-row"><button class="r-btn" onclick="setR(1,this)">1</button><button class="r-btn" onclick="setR(2,this)">2</button><button class="r-btn" onclick="setR(3,this)">3</button><button class="r-btn" onclick="setR(4,this)">4</button><button class="r-btn sel" onclick="setR(5,this)">5</button></div><input type="hidden" id="fb-rating" value="5"></div>
+          <div class="fg"><label class="fl2">Rate your experience</label><div class="r-row"><button class="r-btn" onclick="setR(1,this)">1</button><button class="r-btn" onclick="setR(2,this)">2</button><button class="r-btn" onclick="setR(3,this)">3</button><button class="r-btn" onclick="setR(4,this)">4</button><button class="r-btn sel" onclick="setR(5,this)">5</button></div><input type="hidden" id="fb-rating" value="5"></div>
           <div class="fg"><label class="fl2">Your Feedback</label><textarea id="fb-msg" class="fa2" placeholder="What is working well? What could be improved?"></textarea></div>
           <button class="sub-btn" onclick="submitFB()">Send Feedback</button>
           <div id="fb-status" style="display:none"></div>
@@ -580,7 +590,7 @@ const months = ['January','February','March','April','May','June','July','August
 $('tbd').textContent = days[today.getDay()] + ', ' + months[today.getMonth()] + ' ' + today.getDate() + ', ' + today.getFullYear();
 function openSB(){ $('sidebar').classList.add('open'); $('overlay').classList.add('open'); }
 function closeSB(){ $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); }
-const titles = { dashboard:'Good morning, <em>Kristina.</em>', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', operations:'Operations', settings:'Settings' };
+const titles = { dashboard:'Good morning, <em>Kristina.</em>', brief:'EA Daily Brief', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', operations:'Operations', settings:'Settings' };
 function nav(name, el) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
@@ -635,7 +645,7 @@ async function doClassify() {
   const res = $('t-result');
   btn.disabled = true; btn.textContent = 'Analyzing...';
   res.style.display = 'block';
-  res.innerHTML = '<div class="spin-wrap"><div class="spinner"></div> Analyzing your task with AI...</div>';
+  res.innerHTML = '<div class="spin-wrap"><div class="spinner"></div> Analyzing with the Crystal Ball Framework...</div>';
   try {
     const r = await fetch('/api/classify', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({taskDescription:val}) });
     const d = await r.json();
@@ -663,14 +673,14 @@ async function generateWeek() {
   if(!goals||!revenue||!timeblocks) { alert('Please fill in all three fields.'); return; }
   const btn = $('gen-btn');
   const res = $('week-result');
-  btn.disabled = true; btn.textContent = 'Generating your week...';
+  btn.disabled = true; btn.textContent = 'Building your Priority Week...';
   res.style.display = 'block';
-  res.innerHTML = '<div class="panel" style="padding:20px"><div class="spin-wrap"><div class="spinner"></div> Building your 5-day Priority Week with AI...</div></div>';
+  res.innerHTML = '<div class="panel" style="padding:20px"><div class="spin-wrap"><div class="spinner"></div> Building your 5-day Priority Week with the Essential EA Framework...</div></div>';
   try {
     const r = await fetch('/api/generate-week', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({goals,revenue,timeblocks}) });
     const d = await r.json();
     if(d.success) {
-      res.innerHTML = '<div class="week-card"><div class="week-head"><div><div class="week-title">Your AI-Generated Priority Week</div><div class="week-meta">Essential EA Priority Week Framework</div></div></div><div style="padding:18px"><div class="pw-note" style="border-top:none;margin-bottom:12px"><strong>Your plan is ready.</strong> Crystal ball tasks are in your peak hours. Bouncy balls are routed to your EA.</div><pre style="white-space:pre-wrap;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);line-height:1.75">' + d.plan + '</pre></div></div>';
+      res.innerHTML = '<div class="week-card"><div class="week-head"><div><div class="week-title">Your Priority Week</div><div class="week-meta">Built on the Essential EA Priority Week Framework</div></div></div><div style="padding:18px"><div class="pw-note" style="border-top:none;margin-bottom:12px"><strong>Your plan is ready.</strong> Crystal Ball tasks are in your peak hours. Bouncy Balls are delegated to your EA. CEO Protection Protocol is enforced.</div><pre style="white-space:pre-wrap;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);line-height:1.85">' + d.plan + '</pre></div></div>';
       $('week-preview').style.display = 'none';
     } else {
       res.innerHTML = '<div class="alert alert-err">Error: ' + d.error + '</div>';
@@ -681,12 +691,37 @@ async function generateWeek() {
     btn.disabled = false; btn.textContent = 'Generate My Priority Week';
   }
 }
+async function generateBrief() {
+  const name = $('brief-name').value.trim();
+  const role = $('brief-role').value.trim();
+  const priorities = $('brief-priorities').value.trim();
+  const blocks = $('brief-blocks').value.trim();
+  if(!name||!role) { alert('Please enter your name and role.'); return; }
+  const btn = $('brief-btn');
+  const res = $('brief-result');
+  btn.disabled = true; btn.textContent = 'Your EA is preparing your brief...';
+  res.style.display = 'block';
+  res.innerHTML = '<div class="spin-wrap"><div class="spinner"></div> Your EA is reviewing your calendar and priorities...</div>';
+  try {
+    const r = await fetch('/api/daily-brief', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name,role,priorities,timeblocks:blocks,date:new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}) });
+    const d = await r.json();
+    if(d.success) {
+      res.innerHTML = '<div class="brief-box"><pre>' + d.brief + '</pre></div>';
+    } else {
+      res.innerHTML = '<div class="alert alert-err">Error: ' + (d.error||'Failed to generate brief') + '</div>';
+    }
+  } catch(e) {
+    res.innerHTML = '<div class="alert alert-err">Error: ' + e.message + '</div>';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Generate My EA Daily Brief';
+  }
+}
 const msgs = [
-{ sub:'Counter offer - 2847 Elmwood Dr', from:'Marcus Chen', time:'Today 9:14 AM', route:'<strong>Crystal Ball - Needs You.</strong> Counter offer requires your direct judgment. EA has prepared two response approaches.', body:'<p>Hi Kristina, they came down to 624,000. Still 11K above but there is room. Inspection contingency ends Friday. Can you reach out to the listing agent today? Thanks, Marcus</p>' },
-  { sub:'Referral partner meeting request', from:'Sarah Kim - Lender', time:'Today 8:52 AM', route:'<strong>Bouncy Ball - EA Triaging.</strong> Inbound meeting request. EA is evaluating against your referral criteria.', body:'<p style="margin-bottom:14px">Hi Kristina,</p><p>I would love 20 minutes to explore a referral partnership. Available this week or next?</p><p style="margin-top:14px">Best, Sarah</p>' },
-  { sub:'Closing confirmed - gift needed by Friday', from:'Rodriguez Closing', time:'Tuesday', route:'<strong>Bouncy Ball - EA Owned.</strong> EA has confirmed the closing and is processing the gift order. No action required.', body:'<p style="margin-bottom:14px">Title confirmed Thursday 2pm for the Rodriguez family.</p><p>EA has selected the Luxury Home Welcome Box. Budget used: $185 of your $200 allowance.</p><p style="margin-top:14px">No action needed. - Your EA</p>' },
-  { sub:'Weekly scorecard - Action required', from:'Team Standup Bot', time:'Monday', route:'<strong>Crystal Ball - Needs Your Input.</strong> Two team members missed targets. Only you can address performance accountability.', body:'<p style="margin-bottom:14px">Two agents completed fewer than 60% of committed tasks for 2 consecutive weeks.</p><p>EA recommends a 15-min 1:1 with each. Would you like your EA to schedule these?</p>' },
-  { sub:'Quote renewal - Q2 supplies', from:'Office Supplies Vendor', time:'Monday', route:'<strong>Bouncy Ball - EA Replied.</strong> Routine vendor communication. EA replied per your vendor protocol. No action needed.', body:'<p style="margin-bottom:14px">Your EA replied on your behalf.</p><p style="color:#8A8880">No action needed from you.</p>' }
+  { sub:'Counter offer - 2847 Elmwood Dr', from:'Marcus Chen', time:'Today 9:14 AM', route:'<strong>Crystal Ball - Needs You.</strong> Counter offer on an active listing requires your direct judgment and client relationship. Your EA cannot handle this one.', body:'<p>Hi Kristina,</p><p style="margin-top:10px">They came down to 624,000. Still 11K above our last position but there is room. Inspection contingency ends Friday.</p><p style="margin-top:10px">Can you reach out to the listing agent today? Thanks, Marcus</p>' },
+  { sub:'Referral partner meeting request', from:'Sarah Kim - Lender', time:'Today 8:52 AM', route:'<strong>Bouncy Ball - EA Triaging.</strong> Inbound meeting request from a vendor. EA is evaluating against your referral criteria and will schedule or decline per your protocol.', body:'<p>Hi Kristina,</p><p style="margin-top:10px">I would love 20 minutes to explore a referral partnership. Available this week or next?</p><p style="margin-top:10px">Best, Sarah</p>' },
+  { sub:'Closing confirmed - gift needed by Friday', from:'Rodriguez Closing', time:'Tuesday', route:'<strong>Bouncy Ball - EA Owned.</strong> EA has confirmed the closing and is processing the gift order per your gift preferences profile. No action required from you.', body:'<p>Title confirmed Thursday 2pm for the Rodriguez family.</p><p style="margin-top:10px">EA has selected the Luxury Home Welcome Box. Budget used: 185 of your 200 allowance.</p><p style="margin-top:10px">No action needed. - Your EA</p>' },
+  { sub:'Weekly scorecard - Action required', from:'Team Standup Bot', time:'Monday', route:'<strong>Crystal Ball - Needs Your Input.</strong> Two team members missed targets for 2 consecutive weeks. As team leader only you can address performance accountability.', body:'<p>Two agents completed fewer than 60% of committed tasks for 2 consecutive weeks.</p><p style="margin-top:10px">EA recommends a 15-min 1:1 with each. Would you like your EA to schedule these?</p>' },
+  { sub:'Quote renewal - Q2 supplies', from:'Office Supplies Vendor', time:'Monday', route:'<strong>Bouncy Ball - EA Replied.</strong> Routine vendor communication. EA replied and handled this per your vendor management protocol. No action needed.', body:'<p>Your EA replied on your behalf. No action needed from you.</p>' }
 ];
 function openMsg(idx, el) {
   const m = msgs[idx]; if(!m) return;
@@ -758,16 +793,19 @@ app.post('/api/classify', async (req, res) => {
   try {
     const { taskDescription } = req.body;
     if (!taskDescription) return res.status(400).json({ error: 'Task description required', success: false });
-    const prompt = 'You are a task classification AI for executives and brokers using the Essential EA methodology.\nClassify this task as either crystal (only the executive can do this) or bouncy (can be delegated).\nCrystal Ball tasks: Decisions, negotiations, client relationships, legal, strategy, approvals.\nBouncy Ball tasks: Admin, scheduling, data entry, communication, follow-ups, coordination.\nTask: "' + taskDescription + '"\nRespond ONLY with valid JSON:\n{"classification":"crystal","emoji":"crystal","urgency":"urgent","reason":"why","recommendedAction":"what to do","confidence":0.95}';
+
+    const prompt = 'You are the Essential EA - an AI-powered executive assistant built on the methodology from the book The Essential EA by Kristina Spencer.\n\nYour job is to classify any task using the Crystal Ball and Bouncy Ball Framework.\n\nCrystal Ball tasks are tasks that ONLY the executive, broker, agent, or business owner can do. These are irreplaceable activities - if they drop this ball, it shatters and cannot be recovered. Crystal Ball tasks include: client relationships, negotiations, strategy decisions, approvals, legal matters, financial decisions, anything that requires the executive unique judgment, trust, or authority.\n\nBouncy Ball tasks are tasks that CAN and SHOULD be delegated to an EA, team member, or AI. These tasks bounce back even if dropped. Bouncy Ball tasks include: scheduling, admin work, data entry, routine communication, follow-ups, coordination, vendor management, social media, research.\n\nCEO Protection Protocol: The executive time must be fiercely protected. Every minute spent on a Bouncy Ball task is a minute stolen from a Crystal Ball task.\n\nPriority Week Framework: Crystal Ball tasks belong in the executive prime selling and relationship hours. Bouncy Ball tasks should never touch these protected hours.\n\nThis tool serves real estate agents, financial advisors, insurance agents, coaches, consultants, and executives across all industries.\n\nTone: Professional but conversational. Speak directly to the executive as their trusted EA would.\n\nTask to classify: "' + taskDescription + '"\n\nRespond ONLY with valid JSON no markdown no extra text:\n{"classification":"crystal or bouncy","emoji":"crystal or bouncy","urgency":"urgent or today or defer or ea_owned","reason":"Explain WHY this is a Crystal Ball or Bouncy Ball task using the Essential EA methodology. Reference which framework applies. 2-3 sentences.","recommendedAction":"Give a specific actionable next step. If crystal what should the executive do and when. If bouncy who should handle it and exactly what they should do.","confidence":0.95}';
+
     const response = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
-        { role: 'system', content: 'You are a task classification AI. Always respond with valid JSON only. For emoji field use the word crystal or bouncy not an actual emoji.' },
+        { role: 'system', content: 'You are the Essential EA AI assistant. You classify tasks using the Crystal Ball and Bouncy Ball Framework from the book The Essential EA by Kristina Spencer. Always respond with valid JSON only. For the emoji field use the word crystal or bouncy not an actual emoji character.' },
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
-      max_tokens: 300
+      max_tokens: 400
     });
+
     let content = response.choices[0].message.content.trim();
     if (content.includes('```')) content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const result = JSON.parse(content);
@@ -785,16 +823,19 @@ app.post('/api/generate-week', async (req, res) => {
   try {
     const { goals, revenue, timeblocks } = req.body;
     if (!goals || !revenue || !timeblocks) return res.status(400).json({ error: 'Missing required fields', success: false });
-    const prompt = 'You are an executive assistant AI using the Essential EA Priority Week Framework.\nCreate a detailed 5-day priority week plan based on:\nGoals: ' + goals + '\nRevenue Target: ' + revenue + '\nNon-Negotiable Time Blocks: ' + timeblocks + '\nFormat as a structured 5-day calendar with Crystal Ball tasks and Bouncy Ball tasks. Make it actionable and specific.';
+
+    const prompt = 'You are the Essential EA - an AI-powered executive assistant built on the methodology from the book The Essential EA by Kristina Spencer.\n\nYour job is to build a Priority Week using the Essential EA Priority Week Framework.\n\nThe Priority Week is not a to-do list. It is a strategic time architecture built around three principles:\n1. Crystal Ball Protection: The executive highest-leverage activities must be scheduled first and protected fiercely.\n2. Bouncy Ball Delegation: Every task that can be delegated must be assigned to an EA or team member. These tasks should never appear on the executive personal calendar.\n3. CEO Protection Protocol: Non-negotiable time blocks are sacred. No meeting task or request overrides these blocks.\n\nUrgency Framework:\n- Urgent Crystal Ball: Must be done by the executive today\n- Today Crystal Ball: Must be done by the executive this week\n- EA Owned Bouncy Ball: Delegate immediately\n- Defer: Not this week\n\nThis tool serves real estate agents, financial advisors, coaches, consultants, and executives across all industries.\n\nTone: Professional but conversational. Speak as a trusted EA who deeply understands the executive business and protects their time fiercely.\n\nBuild a Priority Week based on:\nGoals this week: ' + goals + '\nRevenue Target: ' + revenue + '\nNon-Negotiable Time Blocks: ' + timeblocks + '\n\nFORMAT YOUR RESPONSE EXACTLY LIKE THIS:\n\nPRIORITY WEEK\n\nCRYSTAL BALL FOCUS THIS WEEK\nYour 3 highest-leverage activities that only you can do:\n1. [Activity] - [Why only you and when to do it]\n2. [Activity] - [Why only you and when to do it]\n3. [Activity] - [Why only you and when to do it]\n\nMONDAY\nCrystal Ball (You): [specific task] - [time]\nCrystal Ball (You): [specific task] - [time]\nBouncy Ball (EA): [specific task] - [who handles it]\nProtected Block: [time block from their non-negotiables]\n\nTUESDAY\nCrystal Ball (You): [specific task] - [time]\nBouncy Ball (EA): [specific task]\nBouncy Ball (EA): [specific task]\n\nWEDNESDAY\nCrystal Ball (You): [specific task] - [time]\nBouncy Ball (EA): [specific task]\nProtected Block: [time block]\n\nTHURSDAY\nCrystal Ball (You): [specific task] - [time]\nBouncy Ball (EA): [specific task]\nBouncy Ball (EA): [specific task]\n\nFRIDAY\nCrystal Ball (You): [specific task] - [time]\nProtected Block: Friday afternoon protected per CEO Protection Protocol\n\nEA TASK LIST THIS WEEK\nEverything your EA owns so it never touches your calendar:\n- [task]: [specific instruction]\n- [task]: [specific instruction]\n- [task]: [specific instruction]\n\nREVENUE FOCUS\nTo hit your target this week your Crystal Ball priority is: [specific revenue activity]\nKey metric to watch: [one measurable indicator]\n\nCEO PROTECTION REMINDER\nYour non-negotiable blocks this week: ' + timeblocks + '\nThese are protected. Your EA will decline any requests that conflict with these blocks.';
+
     const response = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
-        { role: 'system', content: 'You are an expert executive assistant using the Essential EA methodology.' },
+        { role: 'system', content: 'You are the Essential EA AI assistant building Priority Week plans using the Essential EA methodology by Kristina Spencer. Be specific, actionable, and always use Crystal Ball and Bouncy Ball language.' },
         { role: 'user', content: prompt }
       ],
       temperature: 0.8,
-      max_tokens: 1000
+      max_tokens: 1200
     });
+
     const plan = response.choices[0].message.content.trim();
     const weeklyPlan = { id: Date.now(), goals, revenue, timeblocks, plan, createdAt: new Date().toISOString() };
     weeklyPlans.push(weeklyPlan);
@@ -803,6 +844,30 @@ app.post('/api/generate-week', async (req, res) => {
   } catch (error) {
     console.error('Error:', error.message);
     res.status(500).json({ error: error.message || 'Failed to generate plan', success: false });
+  }
+});
+
+app.post('/api/daily-brief', async (req, res) => {
+  try {
+    const { name, role, priorities, timeblocks, date } = req.body;
+
+    const prompt = 'You are the Essential EA - an AI-powered executive assistant built on the methodology from the book The Essential EA by Kristina Spencer.\n\nGenerate a personalized EA Daily Brief for ' + (name || 'the executive') + ' who is a ' + (role || 'business owner') + '.\n\nToday is ' + (date || new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })) + '.\n\nTheir priorities this week: ' + (priorities || 'Revenue generation and client relationships') + '\nTheir non-negotiable time blocks: ' + (timeblocks || 'No meetings before 9am, hard stop at 5:30pm') + '\n\nWrite a brief that sounds like it came from a highly competent deeply loyal EA who has already been working for 2 hours before the executive arrived. Professional but warm. Specific and actionable. Never generic. Use the Crystal Ball and Bouncy Ball language naturally.\n\nFormat exactly like this:\n\nGood morning, ' + (name || 'there') + '.\n\nYOUR CRYSTAL BALL PRIORITIES TODAY\n[3 specific things only they can do today based on their role and priorities. Label each as Crystal Ball.]\n\nYOUR EA HAS ALREADY HANDLED\n[3-4 specific bouncy ball tasks the EA completed this morning. Be specific and realistic for their role.]\n\nWHAT NEEDS YOUR DECISION TODAY\n[1-2 specific items requiring the executive judgment. Keep brief and decisive.]\n\nYOUR PROTECTED TIME TODAY\n[Reference their specific non-negotiable blocks. Remind them these are enforced by their EA.]\n\nONE THING TO REMEMBER TODAY\n[One motivating specific insight tied to their revenue goal or priorities. Make it feel personal.]\n\nYour EA is standing by.';
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'system', content: 'You are the Essential EA AI generating personalized daily briefs. Sound like a real highly competent executive assistant. Use Crystal Ball and Bouncy Ball language naturally. Always professional, always specific, never generic.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.8,
+      max_tokens: 600
+    });
+
+    const brief = response.choices[0].message.content.trim();
+    res.json({ success: true, brief });
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.status(500).json({ error: error.message || 'Failed to generate brief', success: false });
   }
 });
 
