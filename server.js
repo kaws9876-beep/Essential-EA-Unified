@@ -518,8 +518,8 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
             <p>Can you reach out to the listing agent today? Thanks, Marcus</p>
             <div style="margin-top:20px;padding-top:16px;border-top:1px solid #E8E2D8">
               <div class="opt-sep">EA-prepared response options</div>
-              <div class="opt-box" onclick="setReply('Hi Marcus - let me reach out about the $618K plus closing costs position. Update by noon. - Kristina')"><div class="opt-label">OPTION A - Move forward</div>Confirm position, contact listing agent.</div>
-              <div class="opt-box" onclick="setReply('Marcus - I want to review the inspection report first. Can we connect at 9:30am tomorrow? - Kristina')"><div class="opt-label">OPTION B - Review first</div>Request inspection report. Schedule call.</div>
+             <div class="opt-box" onclick="setReply('Reaching out to listing agent about 618K plus closing costs. Update by noon. - Kristina')"><div class="opt-label">OPTION A - Move forward</div>Confirm position, contact listing agent.</div>
+             <div class="opt-box" onclick="setReply('Need to review inspection report first. Can we connect at 9:30am tomorrow? - Kristina')"><div class="opt-label">OPTION B - Review first</div>Request inspection report. Schedule call.</div>
             </div>
           </div>
           <div class="detail-reply"><textarea class="reply-input" id="reply-in" rows="2" placeholder="Type your reply or click a suggested response above..."></textarea><button class="reply-send" onclick="sendReply()">Send</button></div>
