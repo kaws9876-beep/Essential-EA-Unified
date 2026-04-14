@@ -6,11 +6,11 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { OpenAI } from 'openai';
 import dotenv from 'dotenv';
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const { Pool } = require('pg');
+import postgres from 'postgres';
 
 dotenv.config();
+
+const sql = postgres(process.env.DATABASE_URL, { ssl: 'require' });
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -26,47 +26,10 @@ const pool = new Pool({
 
 async function initDB() {
   try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS tasks (
-        id SERIAL PRIMARY KEY,
-        description TEXT NOT NULL,
-        classification VARCHAR(20),
-        urgency VARCHAR(20),
-        reason TEXT,
-        recommended_action TEXT,
-        confidence FLOAT,
-        created_at TIMESTAMP DEFAULT NOW()
-      )
-    `);
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS weekly_plans (
-        id SERIAL PRIMARY KEY,
-        goals TEXT,
-        revenue TEXT,
-        timeblocks TEXT,
-        plan TEXT,
-        created_at TIMESTAMP DEFAULT NOW()
-      )
-    `);
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS daily_briefs (
-        id SERIAL PRIMARY KEY,
-        name TEXT,
-        role TEXT,
-        brief TEXT,
-        created_at TIMESTAMP DEFAULT NOW()
-      )
-    `);
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS feedback (
-        id SERIAL PRIMARY KEY,
-        name TEXT,
-        email TEXT,
-        rating INTEGER,
-        message TEXT,
-        created_at TIMESTAMP DEFAULT NOW()
-      )
-    `);
+    await sql`CREATE TABLE IF NOT EXISTS tasks (id SERIAL PRIMARY KEY, description TEXT NOT NULL, classification VARCHAR(20), urgency VARCHAR(20), reason TEXT, recommended_action TEXT, confidence FLOAT, created_at TIMESTAMP DEFAULT NOW())`;
+    await sql`CREATE TABLE IF NOT EXISTS weekly_plans (id SERIAL PRIMARY KEY, goals TEXT, revenue TEXT, timeblocks TEXT, plan TEXT, created_at TIMESTAMP DEFAULT NOW())`;
+    await sql`CREATE TABLE IF NOT EXISTS daily_briefs (id SERIAL PRIMARY KEY, name TEXT, role TEXT, brief TEXT, created_at TIMESTAMP DEFAULT NOW())`;
+    await sql`CREATE TABLE IF NOT EXISTS feedback (id SERIAL PRIMARY KEY, name TEXT, email TEXT, rating INTEGER, message TEXT, created_at TIMESTAMP DEFAULT NOW())`;
     console.log('Database tables ready');
   } catch (err) {
     console.error('Database init error:', err.message);
@@ -1030,10 +993,7 @@ app.post('/api/classify', async (req, res) => {
     if (content.includes('```')) content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const result = JSON.parse(content);
 
-    await pool.query(
-      'INSERT INTO tasks (description, classification, urgency, reason, recommended_action, confidence) VALUES ($1, $2, $3, $4, $5, $6)',
-      [taskDescription, result.classification, result.urgency, result.reason, result.recommendedAction, result.confidence]
-    );
+    await sql`INSERT INTO tasks (description, classification, urgency, reason, recommended_action, confidence) VALUES (${taskDescription}, ${result.classification}, ${result.urgency}, ${result.reason}, ${result.recommendedAction}, ${result.confidence})`;
 
     res.json({ success: true, classification: result });
   } catch (error) {
@@ -1061,10 +1021,7 @@ app.post('/api/generate-week', async (req, res) => {
 
     const plan = response.choices[0].message.content.trim();
 
-    await pool.query(
-      'INSERT INTO weekly_plans (goals, revenue, timeblocks, plan) VALUES ($1, $2, $3, $4)',
-      [goals, revenue, timeblocks, plan]
-    );
+    await sql`INSERT INTO weekly_plans (goals, revenue, timeblocks, plan) VALUES (${goals}, ${revenue}, ${timeblocks}, ${plan})`;
 
     res.json({ success: true, plan });
   } catch (error) {
@@ -1091,10 +1048,8 @@ app.post('/api/daily-brief', async (req, res) => {
 
     const brief = response.choices[0].message.content.trim();
 
-    await pool.query(
-      'INSERT INTO daily_briefs (name, role, brief) VALUES ($1, $2, $3)',
-      [name || 'Anonymous', role || 'Executive', brief]
-    );
+    const bname = name || 'Anonymous'; const brole = role || 'Executive';
+    await sql`INSERT INTO daily_briefs (name, role, brief) VALUES (${bname}, ${brole}, ${brief})`;
 
     res.json({ success: true, brief });
   } catch (error) {
@@ -1106,11 +1061,8 @@ app.post('/api/daily-brief', async (req, res) => {
 app.get('/api/history', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
-    const result = await pool.query(
-      'SELECT * FROM tasks ORDER BY created_at DESC LIMIT $1',
-      [limit]
-    );
-    res.json({ success: true, tasks: result.rows, count: result.rows.length });
+    const rows = await sql`SELECT * FROM tasks ORDER BY created_at DESC LIMIT ${limit}`;
+    res.json({ success: true, tasks: rows, count: rows.length });
   } catch (error) {
     res.status(500).json({ error: error.message, success: false });
   }
@@ -1118,17 +1070,15 @@ app.get('/api/history', async (req, res) => {
 
 app.get('/api/stats', async (req, res) => {
   try {
-    const total = await pool.query('SELECT COUNT(*) FROM tasks');
-    const crystal = await pool.query('SELECT COUNT(*) FROM tasks WHERE classification = $1', ['crystal']);
-    const bouncy = await pool.query('SELECT COUNT(*) FROM tasks WHERE classification = $1', ['bouncy']);
-    const avgConf = await pool.query('SELECT AVG(confidence) FROM tasks');
-
-    const totalCount = parseInt(total.rows[0].count);
-    const crystalCount = parseInt(crystal.rows[0].count);
-    const bouncyCount = parseInt(bouncy.rows[0].count);
-    const avg = avgConf.rows[0].avg ? (parseFloat(avgConf.rows[0].avg) * 100).toFixed(1) : '0.0';
-
-    res.json({ success: true, stats: { totalTasks: totalCount, crystal: crystalCount, bouncy: bouncyCount, avgAccuracy: avg } });
+    const [tot] = await sql`SELECT COUNT(*) FROM tasks`;
+    const [cry] = await sql`SELECT COUNT(*) FROM tasks WHERE classification = 'crystal'`;
+    const [bou] = await sql`SELECT COUNT(*) FROM tasks WHERE classification = 'bouncy'`;
+    const [avg] = await sql`SELECT AVG(confidence) FROM tasks`;
+    const totalCount = parseInt(tot.count);
+    const crystalCount = parseInt(cry.count);
+    const bouncyCount = parseInt(bou.count);
+    const avgAcc = avg.avg ? (parseFloat(avg.avg) * 100).toFixed(1) : '0.0';
+    res.json({ success: true, stats: { totalTasks: totalCount, crystal: crystalCount, bouncy: bouncyCount, avgAccuracy: avgAcc } });
   } catch (error) {
     res.status(500).json({ error: error.message, success: false });
   }
@@ -1138,10 +1088,8 @@ app.post('/api/feedback', async (req, res) => {
   try {
     const { name, email, rating, message } = req.body;
     if (!email || !message) return res.status(400).json({ error: 'Email and message required', success: false });
-    await pool.query(
-      'INSERT INTO feedback (name, email, rating, message) VALUES ($1, $2, $3, $4)',
-      [name || 'Anonymous', email, rating || 5, message]
-    );
+    const fname = name || 'Anonymous'; const frating = rating || 5;
+    await sql`INSERT INTO feedback (name, email, rating, message) VALUES (${fname}, ${email}, ${frating}, ${message})`;
     res.json({ success: true, message: 'Thank you for your feedback!' });
   } catch (error) {
     res.status(500).json({ error: error.message, success: false });
@@ -1150,8 +1098,8 @@ app.post('/api/feedback', async (req, res) => {
 
 app.get('/api/feedback', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM feedback ORDER BY created_at DESC');
-    res.json({ success: true, feedback: result.rows, count: result.rows.length });
+    const rows = await sql`SELECT * FROM feedback ORDER BY created_at DESC`;
+    res.json({ success: true, feedback: rows, count: rows.length });
   } catch (error) {
     res.status(500).json({ error: error.message, success: false });
   }
@@ -1159,21 +1107,20 @@ app.get('/api/feedback', async (req, res) => {
 
 app.get('/api/audit', async (req, res) => {
   try {
-    const totalRes = await pool.query('SELECT COUNT(*) FROM tasks');
-    const crystalRes = await pool.query("SELECT COUNT(*) FROM tasks WHERE classification = 'crystal'");
-    const bouncyRes = await pool.query("SELECT COUNT(*) FROM tasks WHERE classification = 'bouncy'");
-    const avgConfRes = await pool.query('SELECT AVG(confidence) FROM tasks');
-    const weeklyRes = await pool.query('SELECT COUNT(*) FROM weekly_plans');
-    const briefRes = await pool.query('SELECT COUNT(*) FROM daily_briefs');
-    const recentRes = await pool.query("SELECT * FROM tasks WHERE created_at > NOW() - INTERVAL '7 days' ORDER BY created_at DESC");
+    const [totalRes] = await sql`SELECT COUNT(*) FROM tasks`;
+    const [crystalRes] = await sql`SELECT COUNT(*) FROM tasks WHERE classification = 'crystal'`;
+    const [bouncyRes] = await sql`SELECT COUNT(*) FROM tasks WHERE classification = 'bouncy'`;
+    const [avgConfRes] = await sql`SELECT AVG(confidence) FROM tasks`;
+    const [weeklyRes] = await sql`SELECT COUNT(*) FROM weekly_plans`;
+    const [briefRes] = await sql`SELECT COUNT(*) FROM daily_briefs`;
+    const recentTasks = await sql`SELECT * FROM tasks WHERE created_at > NOW() - INTERVAL '7 days' ORDER BY created_at DESC`;
 
-    const total = parseInt(totalRes.rows[0].count) || 0;
-    const crystal = parseInt(crystalRes.rows[0].count) || 0;
-    const bouncy = parseInt(bouncyRes.rows[0].count) || 0;
-    const avgConf = avgConfRes.rows[0].avg ? parseFloat(avgConfRes.rows[0].avg) : 0;
-    const weeklyPlansCount = parseInt(weeklyRes.rows[0].count) || 0;
-    const dailyBriefs = parseInt(briefRes.rows[0].count) || 0;
-    const recentTasks = recentRes.rows;
+    const total = parseInt(totalRes.count) || 0;
+    const crystal = parseInt(crystalRes.count) || 0;
+    const bouncy = parseInt(bouncyRes.count) || 0;
+    const avgConf = avgConfRes.avg ? parseFloat(avgConfRes.avg) : 0;
+    const weeklyPlansCount = parseInt(weeklyRes.count) || 0;
+    const dailyBriefs = parseInt(briefRes.count) || 0;
 
     const crystalPct = total > 0 ? Math.round((crystal / total) * 100) : 0;
     const bouncyPct = total > 0 ? Math.round((bouncy / total) * 100) : 0;
@@ -1219,19 +1166,18 @@ app.get('/api/audit', async (req, res) => {
 
 app.post('/api/audit-insights', async (req, res) => {
   try {
-    const totalRes = await pool.query('SELECT COUNT(*) FROM tasks');
-    const crystalRes = await pool.query("SELECT COUNT(*) FROM tasks WHERE classification = 'crystal'");
-    const bouncyRes = await pool.query("SELECT COUNT(*) FROM tasks WHERE classification = 'bouncy'");
-    const weeklyRes = await pool.query('SELECT COUNT(*) FROM weekly_plans');
-    const briefRes = await pool.query('SELECT COUNT(*) FROM daily_briefs');
-    const recentRes = await pool.query('SELECT description, classification, reason FROM tasks ORDER BY created_at DESC LIMIT 10');
+    const [totalRes] = await sql`SELECT COUNT(*) FROM tasks`;
+    const [crystalRes] = await sql`SELECT COUNT(*) FROM tasks WHERE classification = 'crystal'`;
+    const [bouncyRes] = await sql`SELECT COUNT(*) FROM tasks WHERE classification = 'bouncy'`;
+    const [weeklyRes] = await sql`SELECT COUNT(*) FROM weekly_plans`;
+    const [briefRes] = await sql`SELECT COUNT(*) FROM daily_briefs`;
+    const recentTasks = await sql`SELECT description, classification, reason FROM tasks ORDER BY created_at DESC LIMIT 10`;
 
-    const total = parseInt(totalRes.rows[0].count) || 0;
-    const crystal = parseInt(crystalRes.rows[0].count) || 0;
-    const bouncy = parseInt(bouncyRes.rows[0].count) || 0;
-    const weekly = parseInt(weeklyRes.rows[0].count) || 0;
-    const briefs = parseInt(briefRes.rows[0].count) || 0;
-    const recentTasks = recentRes.rows;
+    const total = parseInt(totalRes.count) || 0;
+    const crystal = parseInt(crystalRes.count) || 0;
+    const bouncy = parseInt(bouncyRes.count) || 0;
+    const weekly = parseInt(weeklyRes.count) || 0;
+    const briefs = parseInt(briefRes.count) || 0;
 
     const taskSummary = recentTasks.length > 0
       ? recentTasks.slice(0,5).map(t => t.classification.toUpperCase() + ': ' + t.description).join(', ')
