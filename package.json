@@ -10,11 +10,13 @@
     "build": "echo 'Build complete'",
     "test": "echo 'Tests pass'"
   },
-  "dependencies": {
+ "dependencies": {
     "express": "^4.21.2",
     "cors": "^2.8.6",
     "dotenv": "^17.4.1",
-    "openai": "^6.34.0"
+    "openai": "^6.34.0",
+    "pg": "^8.11.0"
+  
   },
   "devDependencies": {},
   "engines": {
