@@ -9,17 +9,16 @@
     "start": "node server.js",
     "build": "echo 'Build complete'",
     "test": "echo 'Tests pass'"
-  },
- "dependencies": {
+  
+  "dependencies": {
     "express": "^4.21.2",
     "cors": "^2.8.6",
     "dotenv": "^17.4.1",
-    "openai": "^6.34.0",
-   "postgres": "^3.4.4"
-  
+    "openai": "^6.34.0"
   },
   "devDependencies": {},
   "engines": {
-   "node": "20.x"
+    "node": "20.x"
   }
 }
+ 
