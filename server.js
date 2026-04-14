@@ -6,11 +6,11 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { OpenAI } from 'openai';
 import dotenv from 'dotenv';
-import pkg from 'pg';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const { Pool } = require('pg');
 
 dotenv.config();
-
-const { Pool } = pkg;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
