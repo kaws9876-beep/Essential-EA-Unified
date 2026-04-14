@@ -14,7 +14,8 @@
     "express": "^4.21.2",
     "cors": "^2.8.6",
     "dotenv": "^17.4.1",
-    "openai": "^6.34.0"
+    "openai": "^6.34.0",
+    "postgres": "^3.4.4"
   },
   "devDependencies": {},
   "engines": {
