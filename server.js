@@ -1182,36 +1182,24 @@ app.post('/api/audit-insights', async (req, res) => {
       ? recentTasks.slice(0,5).map(t => t.classification.toUpperCase() + ': ' + t.description).join(', ')
       : 'No tasks classified yet';
 
-    const prompt = 'You are the Essential EA AI performing an Operational Efficiency Audit for an executive using The Essential EA platform by Kristina Spencer.
-
-Audit Data:
-- Total tasks classified: ' + total + '
-- Crystal Ball tasks: ' + crystal + ' (' + (total > 0 ? Math.round(crystal/total*100) : 0) + '%)
-- Bouncy Ball tasks: ' + bouncy + ' (' + (total > 0 ? Math.round(bouncy/total*100) : 0) + '%)
-- Priority Weeks generated: ' + weekly + '
-- Daily Briefs generated: ' + briefs + '
-- Recent tasks: ' + taskSummary + '
-
-Write a personalized AI Deep Dive audit analysis using the Essential EA methodology. Use Crystal Ball, Bouncy Ball, CEO Protection Protocol, and Priority Week Framework language naturally.
-
-Structure your response exactly like this:
-
-OPERATIONAL PATTERNS DETECTED
-[2-3 sentences about what the data reveals about how this executive works]
-
-WHERE YOUR TIME IS LEAKING
-[Specific insight about Crystal Ball vs Bouncy Ball ratio and what it means for their revenue]
-
-YOUR BIGGEST OPPORTUNITY RIGHT NOW
-[The single most impactful change they can make based on the data]
-
-WHAT YOUR EA RECOMMENDS
-[3 specific actions in priority order using the methodology language]
-
-PROJECTED IMPACT
-[What their operational health score could reach in 30 days if they follow the recommendations]
-
-Be specific, decisive, and speak directly to the executive. Reference their actual numbers. Sound like a trusted advisor who has studied their business.';
+    const crystalPct2 = total > 0 ? Math.round(crystal/total*100) : 0;
+    const bouncyPct2 = total > 0 ? Math.round(bouncy/total*100) : 0;
+    const prompt = 'You are the Essential EA AI performing an Operational Efficiency Audit. ' +
+      'Audit Data: Total tasks classified: ' + total + '. ' +
+      'Crystal Ball tasks: ' + crystal + ' (' + crystalPct2 + '%). ' +
+      'Bouncy Ball tasks: ' + bouncy + ' (' + bouncyPct2 + '%). ' +
+      'Priority Weeks generated: ' + weekly + '. ' +
+      'Daily Briefs generated: ' + briefs + '. ' +
+      'Recent tasks: ' + taskSummary + '. ' +
+      'Write a personalized AI Deep Dive audit analysis using the Essential EA methodology by Kristina Spencer. ' +
+      'Use Crystal Ball, Bouncy Ball, CEO Protection Protocol, and Priority Week Framework language naturally. ' +
+      'Structure your response with these sections: ' +
+      'OPERATIONAL PATTERNS DETECTED - 2-3 sentences about what the data reveals. ' +
+      'WHERE YOUR TIME IS LEAKING - Insight about Crystal Ball vs Bouncy Ball ratio. ' +
+      'YOUR BIGGEST OPPORTUNITY RIGHT NOW - The single most impactful change. ' +
+      'WHAT YOUR EA RECOMMENDS - 3 specific actions in priority order. ' +
+      'PROJECTED IMPACT - What their health score could reach in 30 days. ' +
+      'Be specific, decisive, reference actual numbers, sound like a trusted advisor.';
 
     const response = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
@@ -1245,4 +1233,3 @@ process.on('SIGTERM', () => {
 });
 
 export default app;
-
