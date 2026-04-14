@@ -351,6 +351,46 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 .history-item{background:var(--warm);border:1px solid var(--tan);border-radius:8px;padding:14px;margin-bottom:10px}
 .history-date{font-size:10px;color:var(--mid);margin-bottom:6px}
 .history-text{font-size:13px;color:var(--blk);line-height:1.6}
+.audit-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px}
+.audit-score-card{background:var(--warm);border:1px solid var(--tan);border-radius:10px;padding:20px;transition:all .2s}
+.audit-score-card:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.06)}
+.audit-score-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.audit-score-title{font-size:12px;font-weight:600;color:var(--blk);letter-spacing:.04em}
+.audit-score-val{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;line-height:1}
+.audit-score-val.excellent{color:var(--grn)}
+.audit-score-val.good{color:var(--gold2)}
+.audit-score-val.needs-work{color:var(--amb)}
+.audit-score-val.critical{color:var(--red)}
+.audit-bar-wrap{height:6px;background:var(--tan);border-radius:3px;overflow:hidden;margin-bottom:10px}
+.audit-bar{height:100%;border-radius:3px;animation:barGrow .8s ease .3s both;transition:width .5s ease}
+.audit-bar.excellent{background:var(--grn)}
+.audit-bar.good{background:var(--gold)}
+.audit-bar.needs-work{background:var(--amb)}
+.audit-bar.critical{background:var(--red)}
+.audit-insight{font-size:11.5px;color:var(--mid);line-height:1.6;margin-bottom:8px}
+.audit-action{font-size:10.5px;font-weight:600;color:var(--gold2);letter-spacing:.04em}
+.health-ring-wrap{display:flex;align-items:center;gap:24px;background:var(--blk);border-radius:10px;padding:24px;margin-bottom:22px}
+.health-ring{position:relative;width:100px;height:100px;flex-shrink:0}
+.health-ring svg{transform:rotate(-90deg)}
+.health-ring-val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.health-ring-num{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:#FAF8F4;line-height:1}
+.health-ring-lbl{font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:rgba(245,240,232,.4);margin-top:2px}
+.health-info{flex:1}
+.health-title{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:300;color:#FAF8F4;margin-bottom:6px}
+.health-sub{font-size:12.5px;color:rgba(245,240,232,.5);line-height:1.7;margin-bottom:12px}
+.health-sub strong{color:var(--gl);font-weight:500}
+.audit-gen-btn{background:var(--gold);color:var(--blk);border:none;border-radius:4px;padding:10px 20px;font-family:"DM Sans",sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.audit-gen-btn:hover{background:var(--gold2)}
+.audit-gen-btn:disabled{opacity:.5;cursor:not-allowed}
+.audit-ai-box{background:var(--blk);border-radius:10px;padding:20px;margin-bottom:22px}
+.audit-ai-title{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:12px}
+.audit-ai-text{font-size:13px;color:rgba(245,240,232,.6);line-height:1.85}
+.audit-ai-text strong{color:var(--gl);font-weight:500}
+.audit-cta{background:linear-gradient(135deg,#2C2820,#1A1A18);border:1px solid rgba(200,169,106,.3);border-radius:10px;padding:24px;margin-top:22px;text-align:center}
+.audit-cta-title{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:300;color:#FAF8F4;margin-bottom:8px}
+.audit-cta-sub{font-size:12.5px;color:rgba(245,240,232,.45);margin-bottom:16px;line-height:1.6}
+.audit-cta-btn{background:var(--gold);color:var(--blk);border:none;border-radius:4px;padding:12px 28px;font-family:"DM Sans",sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+@media(max-width:768px){.audit-grid{grid-template-columns:1fr}.health-ring-wrap{flex-direction:column;text-align:center}}
 @media(max-width:1024px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.dg{grid-template-columns:1fr 1fr}.cw{grid-column:span 2}.pw-layout{grid-template-columns:1fr}.s-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:768px){
   .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:300}
@@ -399,6 +439,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
     <div class="sb-item" onclick="nav('triage',this)"><span class="sb-icon">&#128302;</span>Crystal Ball Triage<span class="sb-badge" id="tc">0</span></div>
     <div class="sb-item" onclick="nav('inbox',this)"><span class="sb-icon">&#9993;</span>Communication<span class="sb-badge">4</span></div>
     <div class="sb-item" onclick="nav('history',this)"><span class="sb-icon">&#128336;</span>History</div>
+    <div class="sb-item" onclick="nav('audit',this)"><span class="sb-icon">&#128202;</span>Operational Audit</div>
     <div class="sb-sec">Operations</div>
     <div class="sb-item" onclick="nav('operations',this)"><span class="sb-icon">&#128101;</span>Team and Pipeline</div>
     <div class="sb-item" onclick="nav('operations',this)"><span class="sb-icon">&#128176;</span>Financial Tracking</div>
@@ -599,7 +640,15 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
       </div>
     </div>
 
-    <div class="screen" id="screen-operations">
+    <div class="screen" id="screen-audit">
+      <div class="pg-h2">Operational Efficiency Audit</div>
+      <div class="pg-s2">Your AI-powered business health report. Built on the Essential EA methodology and your real usage data.</div>
+      <div id="audit-content">
+        <div class="spin-wrap"><div class="spinner"></div> Loading your audit data...</div>
+      </div>
+    </div>
+
+        <div class="screen" id="screen-operations">
       <div class="pg-h2">Operations</div>
       <div class="pg-s2">Your business infrastructure - coming online as the platform builds.</div>
       <div class="ops-grid">
@@ -653,7 +702,7 @@ const months = ['January','February','March','April','May','June','July','August
 $('tbd').textContent = days[today.getDay()] + ', ' + months[today.getMonth()] + ' ' + today.getDate() + ', ' + today.getFullYear();
 function openSB(){ $('sidebar').classList.add('open'); $('overlay').classList.add('open'); }
 function closeSB(){ $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); }
-const titles = { dashboard:'Good morning, <em>Kristina.</em>', brief:'EA Daily Brief', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', history:'Task History', operations:'Operations', settings:'Settings' };
+const titles = { dashboard:'Good morning, <em>Kristina.</em>', brief:'EA Daily Brief', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', history:'Task History', audit:'Operational Efficiency Audit', operations:'Operations', settings:'Settings' };
 function nav(name, el) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
@@ -665,7 +714,88 @@ function nav(name, el) {
   $('content').scrollTop = 0;
   if(name === 'dashboard' || name === 'triage') loadStats();
   if(name === 'history') loadFullHistory();
+  if(name === 'audit') loadAudit();
 }
+async function loadAudit() {
+  const el = document.getElementById('audit-content');
+  el.innerHTML = '<div class="spin-wrap"><div class="spinner"></div> Generating your Operational Efficiency Audit...</div>';
+  try {
+    const r = await fetch('/api/audit');
+    const d = await r.json();
+    if(d.success) {
+      const a = d.audit;
+      const scoreClass = s => s >= 80 ? 'excellent' : s >= 65 ? 'good' : s >= 45 ? 'needs-work' : 'critical';
+      const scoreLabel = s => s >= 80 ? 'Excellent' : s >= 65 ? 'Good' : s >= 45 ? 'Needs Work' : 'Critical';
+      const circum = 2 * Math.PI * 40;
+      const offset = circum - (a.overall / 100) * circum;
+      const ringColor = a.overall >= 80 ? '#4A7A50' : a.overall >= 65 ? '#C8A96A' : a.overall >= 45 ? '#A87830' : '#8A3A30';
+      el.innerHTML = `
+        <div class="health-ring-wrap">
+          <div class="health-ring">
+            <svg width="100" height="100" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="8"/>
+              <circle cx="50" cy="50" r="40" fill="none" stroke="${ringColor}" stroke-width="8" stroke-dasharray="${circum}" stroke-dashoffset="${offset}" stroke-linecap="round"/>
+            </svg>
+            <div class="health-ring-val">
+              <div class="health-ring-num">${a.overall}</div>
+              <div class="health-ring-lbl">Score</div>
+            </div>
+          </div>
+          <div class="health-info">
+            <div class="health-title">Operational Health Score: ${scoreLabel(a.overall)}</div>
+            <div class="health-sub">${a.summary}</div>
+            <button class="audit-gen-btn" id="audit-detail-btn" onclick="generateAuditInsights()">Generate AI Deep Dive</button>
+          </div>
+        </div>
+        <div class="audit-grid">
+          ${a.dimensions.map(dim => `
+            <div class="audit-score-card">
+              <div class="audit-score-top">
+                <div class="audit-score-title">${dim.name}</div>
+                <div class="audit-score-val ${scoreClass(dim.score)}">${dim.score}</div>
+              </div>
+              <div class="audit-bar-wrap"><div class="audit-bar ${scoreClass(dim.score)}" style="width:${dim.score}%"></div></div>
+              <div class="audit-insight">${dim.insight}</div>
+              <div class="audit-action">Action: ${dim.action}</div>
+            </div>
+          `).join('')}
+        </div>
+        <div id="audit-ai-section"></div>
+        <div class="audit-cta">
+          <div class="audit-cta-title">Ready to go deeper?</div>
+          <div class="audit-cta-sub">Your Operational Audit score reveals where your business is leaking time and revenue. A Blueprint Partnership engagement builds the systems to fix it permanently.</div>
+          <button class="audit-cta-btn" onclick="window.open('mailto:kristina@operationalconsultinggroup.com?subject=Operational Audit Consultation','_blank')">Book a Consultation</button>
+        </div>
+      `;
+    } else {
+      el.innerHTML = '<div class="alert alert-err">Error loading audit: ' + (d.error||'Unknown error') + '</div>';
+    }
+  } catch(e) {
+    el.innerHTML = '<div class="alert alert-err">Error: ' + e.message + '</div>';
+  }
+}
+
+async function generateAuditInsights() {
+  const btn = document.getElementById('audit-detail-btn');
+  const section = document.getElementById('audit-ai-section');
+  if(!btn || !section) return;
+  btn.disabled = true; btn.textContent = 'Generating deep dive...';
+  section.innerHTML = '<div class="spin-wrap"><div class="spinner"></div> Your EA AI is analyzing your operational patterns...</div>';
+  try {
+    const r = await fetch('/api/audit-insights', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({}) });
+    const d = await r.json();
+    if(d.success) {
+      section.innerHTML = '<div class="audit-ai-box"><div class="audit-ai-title">EA AI Deep Dive Analysis</div><div class="audit-ai-text">' + d.insights.replace(/\n/g, '<br>') + '</div></div>';
+    } else {
+      section.innerHTML = '<div class="alert alert-err">Error: ' + (d.error||'Failed') + '</div>';
+    }
+  } catch(e) {
+    section.innerHTML = '<div class="alert alert-err">Error: ' + e.message + '</div>';
+  } finally {
+    if(btn) { btn.disabled = false; btn.textContent = 'Generate AI Deep Dive'; }
+  }
+}
+
 async function loadStats() {
   try {
     const r = await fetch('/api/stats');
@@ -1023,6 +1153,135 @@ app.get('/api/feedback', async (req, res) => {
     const result = await pool.query('SELECT * FROM feedback ORDER BY created_at DESC');
     res.json({ success: true, feedback: result.rows, count: result.rows.length });
   } catch (error) {
+    res.status(500).json({ error: error.message, success: false });
+  }
+});
+
+app.get('/api/audit', async (req, res) => {
+  try {
+    const totalRes = await pool.query('SELECT COUNT(*) FROM tasks');
+    const crystalRes = await pool.query("SELECT COUNT(*) FROM tasks WHERE classification = 'crystal'");
+    const bouncyRes = await pool.query("SELECT COUNT(*) FROM tasks WHERE classification = 'bouncy'");
+    const avgConfRes = await pool.query('SELECT AVG(confidence) FROM tasks');
+    const weeklyRes = await pool.query('SELECT COUNT(*) FROM weekly_plans');
+    const briefRes = await pool.query('SELECT COUNT(*) FROM daily_briefs');
+    const recentRes = await pool.query("SELECT * FROM tasks WHERE created_at > NOW() - INTERVAL '7 days' ORDER BY created_at DESC");
+
+    const total = parseInt(totalRes.rows[0].count) || 0;
+    const crystal = parseInt(crystalRes.rows[0].count) || 0;
+    const bouncy = parseInt(bouncyRes.rows[0].count) || 0;
+    const avgConf = avgConfRes.rows[0].avg ? parseFloat(avgConfRes.rows[0].avg) : 0;
+    const weeklyPlansCount = parseInt(weeklyRes.rows[0].count) || 0;
+    const dailyBriefs = parseInt(briefRes.rows[0].count) || 0;
+    const recentTasks = recentRes.rows;
+
+    const crystalPct = total > 0 ? Math.round((crystal / total) * 100) : 0;
+    const bouncyPct = total > 0 ? Math.round((bouncy / total) * 100) : 0;
+    const confScore = Math.round(avgConf * 100);
+
+    const d1 = Math.min(100, crystalPct >= 60 ? 85 + Math.round(crystalPct / 10) : crystalPct);
+    const d2 = Math.min(100, bouncyPct >= 30 ? 80 + Math.round(bouncyPct / 5) : bouncyPct * 2);
+    const d3 = Math.min(100, weeklyPlansCount >= 4 ? 90 : weeklyPlansCount * 22);
+    const d4 = Math.min(100, dailyBriefs >= 5 ? 88 : dailyBriefs * 17);
+    const d5 = Math.min(100, confScore > 0 ? confScore : 50);
+    const d6 = Math.min(100, total >= 20 ? 85 : total * 4);
+    const d7 = 72;
+
+    const overall = Math.round((d1 + d2 + d3 + d4 + d5 + d6 + d7) / 7);
+
+    const getInsight = (score) => score >= 80 ? 'Performing well' : score >= 65 ? 'Good progress' : score >= 45 ? 'Needs attention' : 'Critical - action required';
+
+    const dimensions = [
+      { name: 'Crystal Ball Protection', score: d1, insight: total === 0 ? 'No tasks classified yet. Start using Crystal Ball Triage to build your protection score.' : crystalPct >= 60 ? 'You are protecting your highest-leverage time well. Crystal Ball tasks represent ' + crystalPct + '% of your classified work.' : 'Only ' + crystalPct + '% of tasks are Crystal Ball. You may be spending time on delegatable work.', action: d1 < 70 ? 'Classify 5 tasks today to identify what should be delegated' : 'Keep protecting your Crystal Ball hours' },
+      { name: 'Bouncy Ball Delegation Rate', score: d2, insight: total === 0 ? 'No tasks classified yet. Your delegation rate will appear here once you start triaging.' : bouncyPct >= 30 ? 'Strong delegation rate. ' + bouncy + ' tasks are identified as EA-owned Bouncy Balls.' : 'Low delegation rate detected. You may be doing work that belongs to your EA.', action: d2 < 70 ? 'Review your recent tasks - look for Bouncy Balls you are personally handling' : 'Delegation habits are solid' },
+      { name: 'Priority Week Usage', score: d3, insight: weeklyPlansCount === 0 ? 'No Priority Weeks generated yet. A planned week protects your Crystal Ball time.' : weeklyPlansCount >= 4 ? 'Excellent Priority Week habit. You have built ' + weeklyPlansCount + ' structured weeks.' : 'You have generated ' + weeklyPlansCount + ' Priority Weeks. Consistency is key.', action: d3 < 70 ? 'Generate a Priority Week every Monday before checking email' : 'Keep up your weekly planning habit' },
+      { name: 'EA Daily Brief Adoption', score: d4, insight: dailyBriefs === 0 ? 'No Daily Briefs generated yet. Start each day with your EA brief to protect your morning.' : dailyBriefs >= 5 ? 'Strong Daily Brief habit. ' + dailyBriefs + ' briefs generated.' : 'You have generated ' + dailyBriefs + ' Daily Briefs. Make this your first action every morning.', action: d4 < 70 ? 'Generate your EA Daily Brief before opening email or social media' : 'Morning brief habit is established' },
+      { name: 'AI Classification Confidence', score: d5, insight: total === 0 ? 'No tasks classified yet. Confidence score will appear after your first classification.' : confScore >= 80 ? 'High AI confidence on your task classifications - ' + confScore + '% average accuracy.' : 'AI confidence is building. More classifications will improve accuracy.', action: d5 < 70 ? 'Classify more tasks to improve AI accuracy on your specific work type' : 'Classification accuracy is high' },
+      { name: 'Task Triage Consistency', score: d6, insight: total === 0 ? 'No tasks triaged yet. Regular triage is the foundation of operational clarity.' : total >= 20 ? 'Strong triage habit established. ' + total + ' tasks classified total.' : 'You have classified ' + total + ' tasks. Build the daily habit of triaging everything.', action: d6 < 70 ? 'Triage every task before acting on it - even if it takes 10 seconds' : 'Triage habit is strong' },
+      { name: 'CEO Protection Protocol', score: d7, insight: 'Based on your usage patterns and time block adherence. Connect your calendar for a precise score.', action: 'Add your non-negotiable blocks to every Priority Week you generate' }
+    ];
+
+    const lowScores = dimensions.filter(d => d.score < 65).map(d => d.name);
+    const summary = total === 0
+      ? 'Your audit is ready but needs data. Start by classifying tasks in Crystal Ball Triage and generating your first Priority Week. Your scores will update in real time as you use the app.'
+      : overall >= 80
+        ? 'Your operational health is strong. You are protecting your Crystal Ball time and building strong EA habits. Keep the momentum.'
+        : overall >= 65
+          ? 'Good operational foundation. ' + (lowScores.length > 0 ? lowScores.join(' and ') + ' need attention.' : 'Keep building your habits.')
+          : 'Your operations need attention. Focus on ' + (lowScores.length > 0 ? lowScores.slice(0,2).join(' and ') : 'building consistent habits') + ' first.';
+
+    res.json({ success: true, audit: { overall, summary, dimensions } });
+  } catch (error) {
+    console.error('Audit error:', error.message);
+    res.status(500).json({ error: error.message, success: false });
+  }
+});
+
+app.post('/api/audit-insights', async (req, res) => {
+  try {
+    const totalRes = await pool.query('SELECT COUNT(*) FROM tasks');
+    const crystalRes = await pool.query("SELECT COUNT(*) FROM tasks WHERE classification = 'crystal'");
+    const bouncyRes = await pool.query("SELECT COUNT(*) FROM tasks WHERE classification = 'bouncy'");
+    const weeklyRes = await pool.query('SELECT COUNT(*) FROM weekly_plans');
+    const briefRes = await pool.query('SELECT COUNT(*) FROM daily_briefs');
+    const recentRes = await pool.query('SELECT description, classification, reason FROM tasks ORDER BY created_at DESC LIMIT 10');
+
+    const total = parseInt(totalRes.rows[0].count) || 0;
+    const crystal = parseInt(crystalRes.rows[0].count) || 0;
+    const bouncy = parseInt(bouncyRes.rows[0].count) || 0;
+    const weekly = parseInt(weeklyRes.rows[0].count) || 0;
+    const briefs = parseInt(briefRes.rows[0].count) || 0;
+    const recentTasks = recentRes.rows;
+
+    const taskSummary = recentTasks.length > 0
+      ? recentTasks.slice(0,5).map(t => t.classification.toUpperCase() + ': ' + t.description).join(', ')
+      : 'No tasks classified yet';
+
+    const prompt = 'You are the Essential EA AI performing an Operational Efficiency Audit for an executive using The Essential EA platform by Kristina Spencer.
+
+Audit Data:
+- Total tasks classified: ' + total + '
+- Crystal Ball tasks: ' + crystal + ' (' + (total > 0 ? Math.round(crystal/total*100) : 0) + '%)
+- Bouncy Ball tasks: ' + bouncy + ' (' + (total > 0 ? Math.round(bouncy/total*100) : 0) + '%)
+- Priority Weeks generated: ' + weekly + '
+- Daily Briefs generated: ' + briefs + '
+- Recent tasks: ' + taskSummary + '
+
+Write a personalized AI Deep Dive audit analysis using the Essential EA methodology. Use Crystal Ball, Bouncy Ball, CEO Protection Protocol, and Priority Week Framework language naturally.
+
+Structure your response exactly like this:
+
+OPERATIONAL PATTERNS DETECTED
+[2-3 sentences about what the data reveals about how this executive works]
+
+WHERE YOUR TIME IS LEAKING
+[Specific insight about Crystal Ball vs Bouncy Ball ratio and what it means for their revenue]
+
+YOUR BIGGEST OPPORTUNITY RIGHT NOW
+[The single most impactful change they can make based on the data]
+
+WHAT YOUR EA RECOMMENDS
+[3 specific actions in priority order using the methodology language]
+
+PROJECTED IMPACT
+[What their operational health score could reach in 30 days if they follow the recommendations]
+
+Be specific, decisive, and speak directly to the executive. Reference their actual numbers. Sound like a trusted advisor who has studied their business.';
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'system', content: 'You are the Essential EA AI performing operational audits using the Crystal Ball and Bouncy Ball methodology from The Essential EA by Kristina Spencer. Be specific, data-driven, and speak as a trusted EA advisor.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 800
+    });
+
+    const insights = response.choices[0].message.content.trim();
+    res.json({ success: true, insights });
+  } catch (error) {
+    console.error('Audit insights error:', error.message);
     res.status(500).json({ error: error.message, success: false });
   }
 });
