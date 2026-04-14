@@ -6,25 +6,77 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { OpenAI } from 'openai';
 import dotenv from 'dotenv';
-import { db } from './db.js';
+import pkg from 'pg';
 
 dotenv.config();
 
+const { Pool } = pkg;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-let tasks = db.getAllTasks();
-let weeklyPlans = db.getWeeklyPlans();
-let taskIdCounter = tasks.length > 0 ? Math.max(...tasks.map(t => t.id || 0)) + 1 : 1;
-
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('railway') ? { rejectUnauthorized: false } : false
+});
+
+async function initDB() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS tasks (
+        id SERIAL PRIMARY KEY,
+        description TEXT NOT NULL,
+        classification VARCHAR(20),
+        urgency VARCHAR(20),
+        reason TEXT,
+        recommended_action TEXT,
+        confidence FLOAT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS weekly_plans (
+        id SERIAL PRIMARY KEY,
+        goals TEXT,
+        revenue TEXT,
+        timeblocks TEXT,
+        plan TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS daily_briefs (
+        id SERIAL PRIMARY KEY,
+        name TEXT,
+        role TEXT,
+        brief TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS feedback (
+        id SERIAL PRIMARY KEY,
+        name TEXT,
+        email TEXT,
+        rating INTEGER,
+        message TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    console.log('Database tables ready');
+  } catch (err) {
+    console.error('Database init error:', err.message);
+  }
+}
 
 console.log('\nStarting Essential EA...');
 console.log('PORT:', PORT);
 console.log('OpenAI Key:', process.env.OPENAI_API_KEY ? 'Set' : 'Missing');
+console.log('Database:', process.env.DATABASE_URL ? 'Connected' : 'Missing');
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
@@ -296,6 +348,9 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 .alert-err{background:#fdecea;border:1px solid #f5c6cb;color:#c62828}
 .brief-box{background:var(--blk);border-radius:10px;padding:20px;margin-top:16px;animation:popIn .25s ease}
 .brief-box pre{white-space:pre-wrap;font-family:'DM Sans',sans-serif;font-size:13px;color:rgba(245,240,232,.7);line-height:1.85}
+.history-item{background:var(--warm);border:1px solid var(--tan);border-radius:8px;padding:14px;margin-bottom:10px}
+.history-date{font-size:10px;color:var(--mid);margin-bottom:6px}
+.history-text{font-size:13px;color:var(--blk);line-height:1.6}
 @media(max-width:1024px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.dg{grid-template-columns:1fr 1fr}.cw{grid-column:span 2}.pw-layout{grid-template-columns:1fr}.s-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:768px){
   .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:300}
@@ -343,6 +398,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
     <div class="sb-item" onclick="nav('priorityweek',this)"><span class="sb-icon">&#128197;</span>Priority Week</div>
     <div class="sb-item" onclick="nav('triage',this)"><span class="sb-icon">&#128302;</span>Crystal Ball Triage<span class="sb-badge" id="tc">0</span></div>
     <div class="sb-item" onclick="nav('inbox',this)"><span class="sb-icon">&#9993;</span>Communication<span class="sb-badge">4</span></div>
+    <div class="sb-item" onclick="nav('history',this)"><span class="sb-icon">&#128336;</span>History</div>
     <div class="sb-sec">Operations</div>
     <div class="sb-item" onclick="nav('operations',this)"><span class="sb-icon">&#128101;</span>Team and Pipeline</div>
     <div class="sb-item" onclick="nav('operations',this)"><span class="sb-icon">&#128176;</span>Financial Tracking</div>
@@ -370,7 +426,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
       <div class="pg-h">Good morning, <em>Kristina.</em></div>
       <div class="pg-s">Your EA is ready. What needs your attention today?</div>
       <div class="kpi-grid">
-        <div class="kpi"><div class="kv" id="k1">0</div><div class="kl">Total Tasks Analyzed</div><div class="kd up">This session</div></div>
+        <div class="kpi"><div class="kv" id="k1">0</div><div class="kl">Total Tasks Analyzed</div><div class="kd up">All time</div></div>
         <div class="kpi"><div class="kv" id="k2">0</div><div class="kl">Crystal Ball</div><div class="kd" style="color:var(--mid)">Only you can do these</div></div>
         <div class="kpi"><div class="kv" id="k3">0</div><div class="kl">Bouncy Ball</div><div class="kd" style="color:var(--mid)">Delegate these</div></div>
         <div class="kpi"><div class="kv" id="k4">0%</div><div class="kl">Avg AI Confidence</div><div class="kd up">Accuracy</div></div>
@@ -378,7 +434,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
       <div class="dg">
         <div class="cw">
           <div class="panel">
-            <div class="ph"><span class="pt">Today's Priority Actions</span><button class="pl" onclick="nav('triage',document.querySelectorAll('.sb-item')[3])">Classify tasks</button></div>
+            <div class="ph"><span class="pt">Today Priority Actions</span><button class="pl" onclick="nav('triage',document.querySelectorAll('.sb-item')[3])">Classify tasks</button></div>
             <div class="pb">
               <div class="pi"><div class="pg2">&#128302;</div><div class="pib"><div class="pit">Call Marcus Chen - listing follow-up</div><div class="pin">Crystal ball - Relationship at risk if not actioned today</div></div><div class="ptm">9:30 AM</div></div>
               <div class="pi"><div class="pg2">&#128302;</div><div class="pib"><div class="pit">Review Q1 commission report with CFO</div><div class="pin">Crystal ball - Financial stewardship cadence</div></div><div class="ptm">2:00 PM</div></div>
@@ -418,10 +474,10 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
                 </div>
                 <div><div class="ring-lbl">Operational Health</div><div class="ring-sub">Up 4 pts vs last week.<br>Crystal ball protection 94%.</div></div>
               </div>
-              <div class="m-row"><span class="m-name">Crystal balls protected</span><span class="m-val">17/18</span><div class="bar-wrap"><div class="bar" style="width:94%"></div></div></div>
-              <div class="m-row"><span class="m-name">Bouncy balls delegated</span><span class="m-val">12/14</span><div class="bar-wrap"><div class="bar" style="width:85%"></div></div></div>
-              <div class="m-row"><span class="m-name">Inbox response time</span><span class="m-val">2.4 hrs</span><div class="bar-wrap"><div class="bar" style="width:78%"></div></div></div>
-              <div class="m-row"><span class="m-name">Leads followed up</span><span class="m-val">14/14</span><div class="bar-wrap"><div class="bar" style="width:100%"></div></div></div>
+              <div class="m-row"><span class="m-name">Crystal balls protected</span><span class="m-val" id="sc1">-</span><div class="bar-wrap"><div class="bar" id="sb1" style="width:0%"></div></div></div>
+              <div class="m-row"><span class="m-name">Bouncy balls delegated</span><span class="m-val" id="sc2">-</span><div class="bar-wrap"><div class="bar" id="sb2" style="width:0%"></div></div></div>
+              <div class="m-row"><span class="m-name">Total tasks classified</span><span class="m-val" id="sc3">-</span><div class="bar-wrap"><div class="bar" id="sb3" style="width:0%"></div></div></div>
+              <div class="m-row"><span class="m-name">Avg confidence score</span><span class="m-val" id="sc4">-</span><div class="bar-wrap"><div class="bar" id="sb4" style="width:0%"></div></div></div>
             </div>
           </div>
         </div>
@@ -470,13 +526,13 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
               <div><div class="week-title">Sample Week - <em>Click Generate for Your Plan</em></div><div class="week-meta">Priority Week Framework - The Essential EA</div></div>
             </div>
             <div class="day-grid">
-              <div class="day-col"><div class="day-hd today">Mon</div><div class="day-tasks"><div class="d-task crystal"><div class="dt-name">Listing call - Marcus</div><div class="dt-time">9:30 AM</div><div class="dt-tag tag-c">Crystal</div></div><div class="d-task bouncy"><div class="dt-name">Team standup</div><div class="dt-time">11:00 AM</div><div class="dt-tag tag-b">EA Owned</div></div></div></div>
-              <div class="day-col"><div class="day-hd">Tue</div><div class="day-tasks"><div class="d-task crystal"><div class="dt-name">Buyer consult</div><div class="dt-time">10:00 AM</div><div class="dt-tag tag-c">Crystal</div></div><div class="d-task bouncy"><div class="dt-name">Marketing review</div><div class="dt-time">EA Owned</div><div class="dt-tag tag-b">EA Owned</div></div></div></div>
-              <div class="day-col"><div class="day-hd">Wed</div><div class="day-tasks"><div class="d-task block"><div class="dt-name">Deep work block</div><div class="dt-time">9-11 AM</div><div class="dt-tag tag-p">Protected</div></div><div class="d-task crystal"><div class="dt-name">Buyer consult</div><div class="dt-time">2:00 PM</div><div class="dt-tag tag-c">Crystal</div></div></div></div>
+              <div class="day-col"><div class="day-hd today">Mon</div><div class="day-tasks"><div class="d-task crystal"><div class="dt-name">Listing call</div><div class="dt-time">9:30 AM</div><div class="dt-tag tag-c">Crystal</div></div><div class="d-task bouncy"><div class="dt-name">Team standup</div><div class="dt-time">11:00 AM</div><div class="dt-tag tag-b">EA Owned</div></div></div></div>
+              <div class="day-col"><div class="day-hd">Tue</div><div class="day-tasks"><div class="d-task crystal"><div class="dt-name">Buyer consult</div><div class="dt-time">10:00 AM</div><div class="dt-tag tag-c">Crystal</div></div><div class="d-task bouncy"><div class="dt-name">Marketing</div><div class="dt-time">EA Owned</div><div class="dt-tag tag-b">EA Owned</div></div></div></div>
+              <div class="day-col"><div class="day-hd">Wed</div><div class="day-tasks"><div class="d-task block"><div class="dt-name">Deep work</div><div class="dt-time">9-11 AM</div><div class="dt-tag tag-p">Protected</div></div><div class="d-task crystal"><div class="dt-name">Buyer consult</div><div class="dt-time">2:00 PM</div><div class="dt-tag tag-c">Crystal</div></div></div></div>
               <div class="day-col"><div class="day-hd">Thu</div><div class="day-tasks"><div class="d-task crystal"><div class="dt-name">CFO review</div><div class="dt-time">2:00 PM</div><div class="dt-tag tag-c">Crystal</div></div><div class="d-task bouncy"><div class="dt-name">Closing gifts</div><div class="dt-time">EA Owned</div><div class="dt-tag tag-b">EA Owned</div></div></div></div>
-              <div class="day-col"><div class="day-hd">Fri</div><div class="day-tasks"><div class="d-task crystal"><div class="dt-name">Photo approval</div><div class="dt-time">10:00 AM</div><div class="dt-tag tag-c">Crystal</div></div><div class="d-task block"><div class="dt-name">Friday PM protected</div><div class="dt-time">1:00 PM+</div><div class="dt-tag tag-p">Protected</div></div></div></div>
+              <div class="day-col"><div class="day-hd">Fri</div><div class="day-tasks"><div class="d-task crystal"><div class="dt-name">Photo approval</div><div class="dt-time">10:00 AM</div><div class="dt-tag tag-c">Crystal</div></div><div class="d-task block"><div class="dt-name">Fri PM protected</div><div class="dt-time">1:00 PM+</div><div class="dt-tag tag-p">Protected</div></div></div></div>
             </div>
-            <div class="pw-note"><strong>EA Note:</strong> Generate your plan above to see your personalized week built on the Priority Week Framework.</div>
+            <div class="pw-note"><strong>EA Note:</strong> Generate your plan above to see your personalized week.</div>
           </div>
           <div id="week-result" style="display:none"></div>
         </div>
@@ -501,6 +557,12 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
           <div class="tc-list" id="b-list"><div class="empty">Tasks your EA can own will appear here.</div></div>
         </div>
       </div>
+    </div>
+
+    <div class="screen" id="screen-history">
+      <div class="pg-h2">Task History</div>
+      <div class="pg-s2">Every task you have classified - saved permanently to your database.</div>
+      <div id="history-list"><div class="spin-wrap"><div class="spinner"></div> Loading your history...</div></div>
     </div>
 
     <div class="screen" id="screen-inbox" style="padding:0">
@@ -530,7 +592,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
               <button class="d-btn d-primary">Reply</button>
             </div>
           </div>
-          <div class="ai-routing"><div class="ar-icon">&#128302;</div><div><div class="ar-text" id="d-route"><strong>Crystal Ball - Needs You.</strong> Counter offer on active listing requires your direct judgment and client relationship. Your EA cannot handle this one.</div><div class="ar-pills"><div class="ar-pill arp-h">Handle personally</div><div class="ar-pill arp-f">Schedule callback</div></div></div></div>
+          <div class="ai-routing"><div class="ar-icon">&#128302;</div><div><div class="ar-text" id="d-route"><strong>Crystal Ball - Needs You.</strong> Counter offer on active listing requires your direct judgment.</div><div class="ar-pills"><div class="ar-pill arp-h">Handle personally</div><div class="ar-pill arp-f">Schedule callback</div></div></div></div>
           <div class="detail-body" id="d-body"><p>Select a message from the list to read it here.</p></div>
           <div class="detail-reply"><textarea class="reply-input" id="reply-in" rows="2" placeholder="Type your reply..."></textarea><button class="reply-send" onclick="sendReply()">Send</button></div>
         </div>
@@ -546,7 +608,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
         <div class="ops-card"><div class="ops-icon">&#128227;</div><div class="ops-title">Marketing Content</div><div class="ops-desc">AI-generated content from your brand guide.</div></div>
         <div class="ops-card"><div class="ops-icon">&#127873;</div><div class="ops-title">Gifting and Database</div><div class="ops-desc">Sphere touchpoints, closing gifts, relationship cadence.</div></div>
       </div>
-      <div class="cs"><div class="cs-title">Full Operations Suite - Coming in Phase 3</div><div class="cs-body">These modules are being integrated with your CRM and business systems. Crystal Ball Triage, Priority Week, and EA Daily Brief are live now.</div></div>
+      <div class="cs"><div class="cs-title">Full Operations Suite - Coming in Phase 3</div><div class="cs-body">Crystal Ball Triage, Priority Week, and EA Daily Brief are live now with full PostgreSQL persistence.</div></div>
     </div>
 
     <div class="screen" id="screen-settings">
@@ -564,6 +626,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
           <div><strong>Email:</strong> <span style="color:#8A8880">kristina@operationalconsultinggroup.com</span></div>
           <div><strong>Plan:</strong> <span style="color:#A88A50;font-weight:600">Blueprint - 147 per month</span></div>
           <div><strong>Member Since:</strong> <span style="color:#8A8880">April 2026 - Founding Member</span></div>
+          <div><strong>Database:</strong> <span style="color:var(--grn);font-weight:600">PostgreSQL Connected</span></div>
         </div>
       </div>
       <div class="panel">
@@ -590,7 +653,7 @@ const months = ['January','February','March','April','May','June','July','August
 $('tbd').textContent = days[today.getDay()] + ', ' + months[today.getMonth()] + ' ' + today.getDate() + ', ' + today.getFullYear();
 function openSB(){ $('sidebar').classList.add('open'); $('overlay').classList.add('open'); }
 function closeSB(){ $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); }
-const titles = { dashboard:'Good morning, <em>Kristina.</em>', brief:'EA Daily Brief', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', operations:'Operations', settings:'Settings' };
+const titles = { dashboard:'Good morning, <em>Kristina.</em>', brief:'EA Daily Brief', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', history:'Task History', operations:'Operations', settings:'Settings' };
 function nav(name, el) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
@@ -601,6 +664,7 @@ function nav(name, el) {
   closeSB();
   $('content').scrollTop = 0;
   if(name === 'dashboard' || name === 'triage') loadStats();
+  if(name === 'history') loadFullHistory();
 }
 async function loadStats() {
   try {
@@ -613,6 +677,13 @@ async function loadStats() {
       $('k3').textContent = s.bouncy;
       $('k4').textContent = s.avgAccuracy + '%';
       $('tc').textContent = s.totalTasks || '0';
+      const total = s.totalTasks || 1;
+      const cp = Math.round((s.crystal/total)*100);
+      const bp = Math.round((s.bouncy/total)*100);
+      $('sc1').textContent = s.crystal; $('sb1').style.width = cp + '%';
+      $('sc2').textContent = s.bouncy;  $('sb2').style.width = bp + '%';
+      $('sc3').textContent = s.totalTasks; $('sb3').style.width = Math.min(100,s.totalTasks*5) + '%';
+      $('sc4').textContent = s.avgAccuracy + '%'; $('sb4').style.width = s.avgAccuracy + '%';
     }
     loadHistory();
   } catch(e) { console.error(e); }
@@ -630,6 +701,25 @@ async function loadHistory() {
       $('b-list').innerHTML = bo.length ? bo.map(t => tCard(t)).join('') : '<div class="empty">No bouncy ball tasks yet.</div>';
     }
   } catch(e) { console.error(e); }
+}
+async function loadFullHistory() {
+  const el = $('history-list');
+  el.innerHTML = '<div class="spin-wrap"><div class="spinner"></div> Loading your history...</div>';
+  try {
+    const r = await fetch('/api/history?limit=100');
+    const d = await r.json();
+    if(d.success && d.tasks.length > 0) {
+      el.innerHTML = d.tasks.map(t => {
+        const ic = t.classification === 'crystal';
+        const dt = new Date(t.created_at || t.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
+        return '<div class="history-item"><div class="history-date">' + (ic ? 'Crystal Ball' : 'Bouncy Ball') + ' - ' + dt + '</div><div class="history-text">' + (t.description||'') + '</div><div style="font-size:11px;color:var(--mid);margin-top:6px">' + (t.reason||'') + '</div></div>';
+      }).join('');
+    } else {
+      el.innerHTML = '<div class="empty">No task history yet. Go to Crystal Ball Triage to classify your first task.</div>';
+    }
+  } catch(e) {
+    el.innerHTML = '<div class="alert alert-err">Error loading history: ' + e.message + '</div>';
+  }
 }
 function tCard(t) {
   const bc = t.urgency==='urgent'||t.urgency==='today' ? 'badge-u' : t.urgency==='defer' ? 'badge-f' : 'badge-e';
@@ -675,12 +765,12 @@ async function generateWeek() {
   const res = $('week-result');
   btn.disabled = true; btn.textContent = 'Building your Priority Week...';
   res.style.display = 'block';
-  res.innerHTML = '<div class="panel" style="padding:20px"><div class="spin-wrap"><div class="spinner"></div> Building your 5-day Priority Week with the Essential EA Framework...</div></div>';
+  res.innerHTML = '<div class="panel" style="padding:20px"><div class="spin-wrap"><div class="spinner"></div> Building your 5-day Priority Week...</div></div>';
   try {
     const r = await fetch('/api/generate-week', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({goals,revenue,timeblocks}) });
     const d = await r.json();
     if(d.success) {
-      res.innerHTML = '<div class="week-card"><div class="week-head"><div><div class="week-title">Your Priority Week</div><div class="week-meta">Built on the Essential EA Priority Week Framework</div></div></div><div style="padding:18px"><div class="pw-note" style="border-top:none;margin-bottom:12px"><strong>Your plan is ready.</strong> Crystal Ball tasks are in your peak hours. Bouncy Balls are delegated to your EA. CEO Protection Protocol is enforced.</div><pre style="white-space:pre-wrap;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);line-height:1.85">' + d.plan + '</pre></div></div>';
+      res.innerHTML = '<div class="week-card"><div class="week-head"><div><div class="week-title">Your Priority Week</div><div class="week-meta">Built on the Essential EA Priority Week Framework - Saved to your database</div></div></div><div style="padding:18px"><div class="pw-note" style="border-top:none;margin-bottom:12px"><strong>Your plan is ready.</strong> Crystal Ball tasks are in your peak hours. Bouncy Balls are delegated. CEO Protection Protocol is enforced.</div><pre style="white-space:pre-wrap;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);line-height:1.85">' + d.plan + '</pre></div></div>';
       $('week-preview').style.display = 'none';
     } else {
       res.innerHTML = '<div class="alert alert-err">Error: ' + d.error + '</div>';
@@ -717,11 +807,11 @@ async function generateBrief() {
   }
 }
 const msgs = [
-  { sub:'Counter offer - 2847 Elmwood Dr', from:'Marcus Chen', time:'Today 9:14 AM', route:'<strong>Crystal Ball - Needs You.</strong> Counter offer on an active listing requires your direct judgment and client relationship. Your EA cannot handle this one.', body:'<p>Hi Kristina,</p><p style="margin-top:10px">They came down to 624,000. Still 11K above our last position but there is room. Inspection contingency ends Friday.</p><p style="margin-top:10px">Can you reach out to the listing agent today? Thanks, Marcus</p>' },
-  { sub:'Referral partner meeting request', from:'Sarah Kim - Lender', time:'Today 8:52 AM', route:'<strong>Bouncy Ball - EA Triaging.</strong> Inbound meeting request from a vendor. EA is evaluating against your referral criteria and will schedule or decline per your protocol.', body:'<p>Hi Kristina,</p><p style="margin-top:10px">I would love 20 minutes to explore a referral partnership. Available this week or next?</p><p style="margin-top:10px">Best, Sarah</p>' },
-  { sub:'Closing confirmed - gift needed by Friday', from:'Rodriguez Closing', time:'Tuesday', route:'<strong>Bouncy Ball - EA Owned.</strong> EA has confirmed the closing and is processing the gift order per your gift preferences profile. No action required from you.', body:'<p>Title confirmed Thursday 2pm for the Rodriguez family.</p><p style="margin-top:10px">EA has selected the Luxury Home Welcome Box. Budget used: 185 of your 200 allowance.</p><p style="margin-top:10px">No action needed. - Your EA</p>' },
-  { sub:'Weekly scorecard - Action required', from:'Team Standup Bot', time:'Monday', route:'<strong>Crystal Ball - Needs Your Input.</strong> Two team members missed targets for 2 consecutive weeks. As team leader only you can address performance accountability.', body:'<p>Two agents completed fewer than 60% of committed tasks for 2 consecutive weeks.</p><p style="margin-top:10px">EA recommends a 15-min 1:1 with each. Would you like your EA to schedule these?</p>' },
-  { sub:'Quote renewal - Q2 supplies', from:'Office Supplies Vendor', time:'Monday', route:'<strong>Bouncy Ball - EA Replied.</strong> Routine vendor communication. EA replied and handled this per your vendor management protocol. No action needed.', body:'<p>Your EA replied on your behalf. No action needed from you.</p>' }
+  { sub:'Counter offer - 2847 Elmwood Dr', from:'Marcus Chen', time:'Today 9:14 AM', route:'<strong>Crystal Ball - Needs You.</strong> Counter offer on an active listing requires your direct judgment. Your EA cannot handle this one.', body:'<p>Hi Kristina,</p><p style="margin-top:10px">They came down to 624,000. Still 11K above our last position but there is room. Inspection contingency ends Friday.</p><p style="margin-top:10px">Can you reach out to the listing agent today? Thanks, Marcus</p>' },
+  { sub:'Referral partner meeting request', from:'Sarah Kim - Lender', time:'Today 8:52 AM', route:'<strong>Bouncy Ball - EA Triaging.</strong> Inbound meeting request from a vendor. EA is evaluating against your referral criteria.', body:'<p>Hi Kristina,</p><p style="margin-top:10px">I would love 20 minutes to explore a referral partnership. Available this week or next?</p><p style="margin-top:10px">Best, Sarah</p>' },
+  { sub:'Closing confirmed - gift needed by Friday', from:'Rodriguez Closing', time:'Tuesday', route:'<strong>Bouncy Ball - EA Owned.</strong> EA has confirmed the closing and is processing the gift order. No action required from you.', body:'<p>Title confirmed Thursday 2pm for the Rodriguez family.</p><p style="margin-top:10px">EA has selected the Luxury Home Welcome Box. Budget used: 185 of your 200 allowance.</p><p style="margin-top:10px">No action needed. - Your EA</p>' },
+  { sub:'Weekly scorecard - Action required', from:'Team Standup Bot', time:'Monday', route:'<strong>Crystal Ball - Needs Your Input.</strong> Two team members missed targets. Only you can address performance accountability.', body:'<p>Two agents completed fewer than 60% of committed tasks for 2 consecutive weeks.</p><p style="margin-top:10px">EA recommends a 15-min 1:1 with each. Would you like your EA to schedule these?</p>' },
+  { sub:'Quote renewal - Q2 supplies', from:'Office Supplies Vendor', time:'Monday', route:'<strong>Bouncy Ball - EA Replied.</strong> Routine vendor communication. EA replied per your vendor protocol. No action needed.', body:'<p>Your EA replied on your behalf. No action needed from you.</p>' }
 ];
 function openMsg(idx, el) {
   const m = msgs[idx]; if(!m) return;
@@ -794,12 +884,12 @@ app.post('/api/classify', async (req, res) => {
     const { taskDescription } = req.body;
     if (!taskDescription) return res.status(400).json({ error: 'Task description required', success: false });
 
-    const prompt = 'You are the Essential EA - an AI-powered executive assistant built on the methodology from the book The Essential EA by Kristina Spencer.\n\nYour job is to classify any task using the Crystal Ball and Bouncy Ball Framework.\n\nCrystal Ball tasks are tasks that ONLY the executive, broker, agent, or business owner can do. These are irreplaceable activities - if they drop this ball, it shatters and cannot be recovered. Crystal Ball tasks include: client relationships, negotiations, strategy decisions, approvals, legal matters, financial decisions, anything that requires the executive unique judgment, trust, or authority.\n\nBouncy Ball tasks are tasks that CAN and SHOULD be delegated to an EA, team member, or AI. These tasks bounce back even if dropped. Bouncy Ball tasks include: scheduling, admin work, data entry, routine communication, follow-ups, coordination, vendor management, social media, research.\n\nCEO Protection Protocol: The executive time must be fiercely protected. Every minute spent on a Bouncy Ball task is a minute stolen from a Crystal Ball task.\n\nPriority Week Framework: Crystal Ball tasks belong in the executive prime selling and relationship hours. Bouncy Ball tasks should never touch these protected hours.\n\nThis tool serves real estate agents, financial advisors, insurance agents, coaches, consultants, and executives across all industries.\n\nTone: Professional but conversational. Speak directly to the executive as their trusted EA would.\n\nTask to classify: "' + taskDescription + '"\n\nRespond ONLY with valid JSON no markdown no extra text:\n{"classification":"crystal or bouncy","emoji":"crystal or bouncy","urgency":"urgent or today or defer or ea_owned","reason":"Explain WHY this is a Crystal Ball or Bouncy Ball task using the Essential EA methodology. Reference which framework applies. 2-3 sentences.","recommendedAction":"Give a specific actionable next step. If crystal what should the executive do and when. If bouncy who should handle it and exactly what they should do.","confidence":0.95}';
+    const prompt = 'You are the Essential EA - an AI-powered executive assistant built on the methodology from the book The Essential EA by Kristina Spencer.\n\nClassify this task using the Crystal Ball and Bouncy Ball Framework.\n\nCrystal Ball tasks: ONLY the executive can do these. Irreplaceable - if dropped, shatters permanently. Includes: client relationships, negotiations, strategy, approvals, legal, financial decisions.\n\nBouncy Ball tasks: CAN and SHOULD be delegated. Bounces back even if dropped. Includes: scheduling, admin, data entry, routine communication, follow-ups, coordination, vendor management.\n\nCEO Protection Protocol: Every minute on a Bouncy Ball task is stolen from a Crystal Ball task.\n\nTask: "' + taskDescription + '"\n\nRespond ONLY with valid JSON:\n{"classification":"crystal or bouncy","emoji":"crystal or bouncy","urgency":"urgent or today or defer or ea_owned","reason":"2-3 sentences explaining why using Essential EA methodology","recommendedAction":"Specific next step - if crystal what to do and when, if bouncy who handles it and how","confidence":0.95}';
 
     const response = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
-        { role: 'system', content: 'You are the Essential EA AI assistant. You classify tasks using the Crystal Ball and Bouncy Ball Framework from the book The Essential EA by Kristina Spencer. Always respond with valid JSON only. For the emoji field use the word crystal or bouncy not an actual emoji character.' },
+        { role: 'system', content: 'You are the Essential EA AI. Classify tasks using Crystal Ball and Bouncy Ball Framework. Respond with valid JSON only. Use the word crystal or bouncy for emoji field.' },
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
@@ -809,10 +899,13 @@ app.post('/api/classify', async (req, res) => {
     let content = response.choices[0].message.content.trim();
     if (content.includes('```')) content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const result = JSON.parse(content);
-    const task = { id: taskIdCounter++, description: taskDescription, ...result, createdAt: new Date().toISOString() };
-    tasks.push(task);
-    db.addTask(task);
-    res.json({ success: true, task, classification: result });
+
+    await pool.query(
+      'INSERT INTO tasks (description, classification, urgency, reason, recommended_action, confidence) VALUES ($1, $2, $3, $4, $5, $6)',
+      [taskDescription, result.classification, result.urgency, result.reason, result.recommendedAction, result.confidence]
+    );
+
+    res.json({ success: true, classification: result });
   } catch (error) {
     console.error('Error:', error.message);
     res.status(500).json({ error: error.message || 'Failed to classify', success: false });
@@ -824,12 +917,12 @@ app.post('/api/generate-week', async (req, res) => {
     const { goals, revenue, timeblocks } = req.body;
     if (!goals || !revenue || !timeblocks) return res.status(400).json({ error: 'Missing required fields', success: false });
 
-    const prompt = 'You are the Essential EA - an AI-powered executive assistant built on the methodology from the book The Essential EA by Kristina Spencer.\n\nYour job is to build a Priority Week using the Essential EA Priority Week Framework.\n\nThe Priority Week is not a to-do list. It is a strategic time architecture built around three principles:\n1. Crystal Ball Protection: The executive highest-leverage activities must be scheduled first and protected fiercely.\n2. Bouncy Ball Delegation: Every task that can be delegated must be assigned to an EA or team member. These tasks should never appear on the executive personal calendar.\n3. CEO Protection Protocol: Non-negotiable time blocks are sacred. No meeting task or request overrides these blocks.\n\nUrgency Framework:\n- Urgent Crystal Ball: Must be done by the executive today\n- Today Crystal Ball: Must be done by the executive this week\n- EA Owned Bouncy Ball: Delegate immediately\n- Defer: Not this week\n\nThis tool serves real estate agents, financial advisors, coaches, consultants, and executives across all industries.\n\nTone: Professional but conversational. Speak as a trusted EA who deeply understands the executive business and protects their time fiercely.\n\nBuild a Priority Week based on:\nGoals this week: ' + goals + '\nRevenue Target: ' + revenue + '\nNon-Negotiable Time Blocks: ' + timeblocks + '\n\nFORMAT YOUR RESPONSE EXACTLY LIKE THIS:\n\nPRIORITY WEEK\n\nCRYSTAL BALL FOCUS THIS WEEK\nYour 3 highest-leverage activities that only you can do:\n1. [Activity] - [Why only you and when to do it]\n2. [Activity] - [Why only you and when to do it]\n3. [Activity] - [Why only you and when to do it]\n\nMONDAY\nCrystal Ball (You): [specific task] - [time]\nCrystal Ball (You): [specific task] - [time]\nBouncy Ball (EA): [specific task] - [who handles it]\nProtected Block: [time block from their non-negotiables]\n\nTUESDAY\nCrystal Ball (You): [specific task] - [time]\nBouncy Ball (EA): [specific task]\nBouncy Ball (EA): [specific task]\n\nWEDNESDAY\nCrystal Ball (You): [specific task] - [time]\nBouncy Ball (EA): [specific task]\nProtected Block: [time block]\n\nTHURSDAY\nCrystal Ball (You): [specific task] - [time]\nBouncy Ball (EA): [specific task]\nBouncy Ball (EA): [specific task]\n\nFRIDAY\nCrystal Ball (You): [specific task] - [time]\nProtected Block: Friday afternoon protected per CEO Protection Protocol\n\nEA TASK LIST THIS WEEK\nEverything your EA owns so it never touches your calendar:\n- [task]: [specific instruction]\n- [task]: [specific instruction]\n- [task]: [specific instruction]\n\nREVENUE FOCUS\nTo hit your target this week your Crystal Ball priority is: [specific revenue activity]\nKey metric to watch: [one measurable indicator]\n\nCEO PROTECTION REMINDER\nYour non-negotiable blocks this week: ' + timeblocks + '\nThese are protected. Your EA will decline any requests that conflict with these blocks.';
+    const prompt = 'You are the Essential EA building a Priority Week using the Essential EA methodology by Kristina Spencer.\n\nPriority Week Framework:\n1. Crystal Ball Protection: Schedule highest-leverage activities first and protect fiercely.\n2. Bouncy Ball Delegation: Every delegatable task goes to EA. Never on the executive calendar.\n3. CEO Protection Protocol: Non-negotiable blocks are sacred. EA enforces them.\n\nBuild a Priority Week for:\nGoals: ' + goals + '\nRevenue Target: ' + revenue + '\nProtected Blocks: ' + timeblocks + '\n\nFORMAT:\n\nPRIORITY WEEK\n\nCRYSTAL BALL FOCUS THIS WEEK\n1. [Activity] - [Why only you]\n2. [Activity] - [Why only you]\n3. [Activity] - [Why only you]\n\nMONDAY\nCrystal Ball (You): [task] - [time]\nBouncy Ball (EA): [task]\nProtected: [block]\n\nTUESDAY\nCrystal Ball (You): [task] - [time]\nBouncy Ball (EA): [task]\n\nWEDNESDAY\nCrystal Ball (You): [task] - [time]\nBouncy Ball (EA): [task]\nProtected: [block]\n\nTHURSDAY\nCrystal Ball (You): [task] - [time]\nBouncy Ball (EA): [task]\n\nFRIDAY\nCrystal Ball (You): [task] - [time]\nProtected: Friday afternoon - CEO Protection Protocol\n\nEA TASK LIST\n- [task]: [instruction]\n- [task]: [instruction]\n- [task]: [instruction]\n\nREVENUE FOCUS\nTo hit your target: [specific activity]\nKey metric: [measurable indicator]\n\nCEO PROTECTION REMINDER\nProtected blocks: ' + timeblocks;
 
     const response = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
-        { role: 'system', content: 'You are the Essential EA AI assistant building Priority Week plans using the Essential EA methodology by Kristina Spencer. Be specific, actionable, and always use Crystal Ball and Bouncy Ball language.' },
+        { role: 'system', content: 'You are the Essential EA AI. Build Priority Week plans using Crystal Ball and Bouncy Ball language from The Essential EA by Kristina Spencer.' },
         { role: 'user', content: prompt }
       ],
       temperature: 0.8,
@@ -837,9 +930,12 @@ app.post('/api/generate-week', async (req, res) => {
     });
 
     const plan = response.choices[0].message.content.trim();
-    const weeklyPlan = { id: Date.now(), goals, revenue, timeblocks, plan, createdAt: new Date().toISOString() };
-    weeklyPlans.push(weeklyPlan);
-    db.addWeeklyPlan(weeklyPlan);
+
+    await pool.query(
+      'INSERT INTO weekly_plans (goals, revenue, timeblocks, plan) VALUES ($1, $2, $3, $4)',
+      [goals, revenue, timeblocks, plan]
+    );
+
     res.json({ success: true, plan });
   } catch (error) {
     console.error('Error:', error.message);
@@ -851,12 +947,12 @@ app.post('/api/daily-brief', async (req, res) => {
   try {
     const { name, role, priorities, timeblocks, date } = req.body;
 
-    const prompt = 'You are the Essential EA - an AI-powered executive assistant built on the methodology from the book The Essential EA by Kristina Spencer.\n\nGenerate a personalized EA Daily Brief for ' + (name || 'the executive') + ' who is a ' + (role || 'business owner') + '.\n\nToday is ' + (date || new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })) + '.\n\nTheir priorities this week: ' + (priorities || 'Revenue generation and client relationships') + '\nTheir non-negotiable time blocks: ' + (timeblocks || 'No meetings before 9am, hard stop at 5:30pm') + '\n\nWrite a brief that sounds like it came from a highly competent deeply loyal EA who has already been working for 2 hours before the executive arrived. Professional but warm. Specific and actionable. Never generic. Use the Crystal Ball and Bouncy Ball language naturally.\n\nFormat exactly like this:\n\nGood morning, ' + (name || 'there') + '.\n\nYOUR CRYSTAL BALL PRIORITIES TODAY\n[3 specific things only they can do today based on their role and priorities. Label each as Crystal Ball.]\n\nYOUR EA HAS ALREADY HANDLED\n[3-4 specific bouncy ball tasks the EA completed this morning. Be specific and realistic for their role.]\n\nWHAT NEEDS YOUR DECISION TODAY\n[1-2 specific items requiring the executive judgment. Keep brief and decisive.]\n\nYOUR PROTECTED TIME TODAY\n[Reference their specific non-negotiable blocks. Remind them these are enforced by their EA.]\n\nONE THING TO REMEMBER TODAY\n[One motivating specific insight tied to their revenue goal or priorities. Make it feel personal.]\n\nYour EA is standing by.';
+    const prompt = 'You are the Essential EA generating a personalized Daily Brief for ' + (name || 'the executive') + ' who is a ' + (role || 'business owner') + '.\n\nToday: ' + (date || new Date().toLocaleDateString()) + '\nPriorities: ' + (priorities || 'Revenue and client relationships') + '\nProtected blocks: ' + (timeblocks || 'Hard stop at 5:30pm') + '\n\nWrite as a highly competent EA who has been working 2 hours already. Professional, warm, specific. Use Crystal Ball and Bouncy Ball language naturally.\n\nFormat:\n\nGood morning, ' + (name || 'there') + '.\n\nYOUR CRYSTAL BALL PRIORITIES TODAY\n[3 specific Crystal Ball tasks for their role]\n\nYOUR EA HAS ALREADY HANDLED\n[3-4 specific Bouncy Ball tasks completed this morning]\n\nWHAT NEEDS YOUR DECISION TODAY\n[1-2 items needing executive judgment]\n\nYOUR PROTECTED TIME TODAY\n[Their specific blocks - enforced by EA]\n\nONE THING TO REMEMBER TODAY\n[Personal insight tied to their goals]\n\nYour EA is standing by.';
 
     const response = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
-        { role: 'system', content: 'You are the Essential EA AI generating personalized daily briefs. Sound like a real highly competent executive assistant. Use Crystal Ball and Bouncy Ball language naturally. Always professional, always specific, never generic.' },
+        { role: 'system', content: 'You are the Essential EA AI. Generate personalized daily briefs using Crystal Ball and Bouncy Ball language. Professional, specific, never generic.' },
         { role: 'user', content: prompt }
       ],
       temperature: 0.8,
@@ -864,6 +960,12 @@ app.post('/api/daily-brief', async (req, res) => {
     });
 
     const brief = response.choices[0].message.content.trim();
+
+    await pool.query(
+      'INSERT INTO daily_briefs (name, role, brief) VALUES ($1, $2, $3)',
+      [name || 'Anonymous', role || 'Executive', brief]
+    );
+
     res.json({ success: true, brief });
   } catch (error) {
     console.error('Error:', error.message);
@@ -871,41 +973,55 @@ app.post('/api/daily-brief', async (req, res) => {
   }
 });
 
-app.get('/api/history', (req, res) => {
+app.get('/api/history', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
-    res.json({ success: true, tasks: tasks.slice(-limit).reverse(), count: tasks.length });
+    const result = await pool.query(
+      'SELECT * FROM tasks ORDER BY created_at DESC LIMIT $1',
+      [limit]
+    );
+    res.json({ success: true, tasks: result.rows, count: result.rows.length });
   } catch (error) {
     res.status(500).json({ error: error.message, success: false });
   }
 });
 
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', async (req, res) => {
   try {
-    const crystalCount = tasks.filter(t => t.classification === 'crystal').length;
-    const bouncyCount = tasks.filter(t => t.classification === 'bouncy').length;
-    const avgConfidence = tasks.length > 0 ? (tasks.reduce((sum, t) => sum + (t.confidence || 0), 0) / tasks.length).toFixed(2) : 0;
-    res.json({ success: true, stats: { totalTasks: tasks.length, crystal: crystalCount, bouncy: bouncyCount, avgAccuracy: (parseFloat(avgConfidence) * 100).toFixed(1) } });
+    const total = await pool.query('SELECT COUNT(*) FROM tasks');
+    const crystal = await pool.query('SELECT COUNT(*) FROM tasks WHERE classification = $1', ['crystal']);
+    const bouncy = await pool.query('SELECT COUNT(*) FROM tasks WHERE classification = $1', ['bouncy']);
+    const avgConf = await pool.query('SELECT AVG(confidence) FROM tasks');
+
+    const totalCount = parseInt(total.rows[0].count);
+    const crystalCount = parseInt(crystal.rows[0].count);
+    const bouncyCount = parseInt(bouncy.rows[0].count);
+    const avg = avgConf.rows[0].avg ? (parseFloat(avgConf.rows[0].avg) * 100).toFixed(1) : '0.0';
+
+    res.json({ success: true, stats: { totalTasks: totalCount, crystal: crystalCount, bouncy: bouncyCount, avgAccuracy: avg } });
   } catch (error) {
     res.status(500).json({ error: error.message, success: false });
   }
 });
 
-app.post('/api/feedback', (req, res) => {
+app.post('/api/feedback', async (req, res) => {
   try {
     const { name, email, rating, message } = req.body;
     if (!email || !message) return res.status(400).json({ error: 'Email and message required', success: false });
-    const feedback = { id: Date.now(), name: name || 'Anonymous', email, rating: rating || 5, message, createdAt: new Date().toISOString() };
-    db.addFeedback(feedback);
-    res.json({ success: true, feedback, message: 'Thank you for your feedback!' });
+    await pool.query(
+      'INSERT INTO feedback (name, email, rating, message) VALUES ($1, $2, $3, $4)',
+      [name || 'Anonymous', email, rating || 5, message]
+    );
+    res.json({ success: true, message: 'Thank you for your feedback!' });
   } catch (error) {
     res.status(500).json({ error: error.message, success: false });
   }
 });
 
-app.get('/api/feedback', (req, res) => {
+app.get('/api/feedback', async (req, res) => {
   try {
-    res.json({ success: true, feedback: db.getFeedback(), count: db.getFeedback().length });
+    const result = await pool.query('SELECT * FROM feedback ORDER BY created_at DESC');
+    res.json({ success: true, feedback: result.rows, count: result.rows.length });
   } catch (error) {
     res.status(500).json({ error: error.message, success: false });
   }
@@ -915,7 +1031,8 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });
 });
 
-const server = app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', async () => {
+  await initDB();
   console.log('\nEssential EA is running on port ' + PORT);
 });
 
