@@ -4,22 +4,46 @@ import express from 'express';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { OpenAI } from 'openai';
 import dotenv from 'dotenv';
+import postgres from 'postgres';
 
 dotenv.config();
 
+const sql = postgres(process.env.DATABASE_URL, { ssl: 'require' });
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('railway') ? { rejectUnauthorized: false } : false
+});
+
+async function initDB() {
+  try {
+    await sql`CREATE TABLE IF NOT EXISTS tasks (id SERIAL PRIMARY KEY, description TEXT NOT NULL, classification VARCHAR(20), urgency VARCHAR(20), reason TEXT, recommended_action TEXT, confidence FLOAT, created_at TIMESTAMP DEFAULT NOW())`;
+    await sql`CREATE TABLE IF NOT EXISTS weekly_plans (id SERIAL PRIMARY KEY, goals TEXT, revenue TEXT, timeblocks TEXT, plan TEXT, created_at TIMESTAMP DEFAULT NOW())`;
+    await sql`CREATE TABLE IF NOT EXISTS daily_briefs (id SERIAL PRIMARY KEY, name TEXT, role TEXT, brief TEXT, created_at TIMESTAMP DEFAULT NOW())`;
+    await sql`CREATE TABLE IF NOT EXISTS feedback (id SERIAL PRIMARY KEY, name TEXT, email TEXT, rating INTEGER, message TEXT, created_at TIMESTAMP DEFAULT NOW())`;
+    console.log('Database tables ready');
+  } catch (err) {
+    console.error('Database init error:', err.message);
+  }
+}
+
+console.log('\nStarting Essential EA...');
+console.log('PORT:', PORT);
+console.log('OpenAI Key:', process.env.OPENAI_API_KEY ? 'Set' : 'Missing');
+console.log('Database:', process.env.DATABASE_URL ? 'Connected' : 'Missing');
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
-app.use(cors({
-  origin: ['https://essential-ea-unified.vercel.app', 'http://localhost:3000'],
-  credentials: true
-}));
+app.use(cors());
 
 const html = `<!DOCTYPE html>
 <html lang="en">
@@ -668,44 +692,43 @@ async function loadAudit() {
       const circum = 2 * Math.PI * 40;
       const offset = circum - (a.overall / 100) * circum;
       const ringColor = a.overall >= 80 ? '#4A7A50' : a.overall >= 65 ? '#C8A96A' : a.overall >= 45 ? '#A87830' : '#8A3A30';
-      el.innerHTML = `
-        <div class="health-ring-wrap">
-          <div class="health-ring">
-            <svg width="100" height="100" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="8"/>
-              <circle cx="50" cy="50" r="40" fill="none" stroke="${ringColor}" stroke-width="8" stroke-dasharray="${circum}" stroke-dashoffset="${offset}" stroke-linecap="round"/>
-            </svg>
-            <div class="health-ring-val">
-              <div class="health-ring-num">${a.overall}</div>
-              <div class="health-ring-lbl">Score</div>
-            </div>
-          </div>
-          <div class="health-info">
-            <div class="health-title">Operational Health Score: ${scoreLabel(a.overall)}</div>
-            <div class="health-sub">${a.summary}</div>
-            <button class="audit-gen-btn" id="audit-detail-btn" onclick="generateAuditInsights()">Generate AI Deep Dive</button>
-          </div>
-        </div>
-        <div class="audit-grid">
-          ${a.dimensions.map(dim => `
-            <div class="audit-score-card">
-              <div class="audit-score-top">
-                <div class="audit-score-title">${dim.name}</div>
-                <div class="audit-score-val ${scoreClass(dim.score)}">${dim.score}</div>
-              </div>
-              <div class="audit-bar-wrap"><div class="audit-bar ${scoreClass(dim.score)}" style="width:${dim.score}%"></div></div>
-              <div class="audit-insight">${dim.insight}</div>
-              <div class="audit-action">Action: ${dim.action}</div>
-            </div>
-          `).join('')}
-        </div>
-        <div id="audit-ai-section"></div>
-        <div class="audit-cta">
-          <div class="audit-cta-title">Ready to go deeper?</div>
-          <div class="audit-cta-sub">Your Operational Audit score reveals where your business is leaking time and revenue. A Blueprint Partnership engagement builds the systems to fix it permanently.</div>
-          <button class="audit-cta-btn" onclick="window.open('mailto:kristina@operationalconsultinggroup.com?subject=Operational Audit Consultation','_blank')">Book a Consultation</button>
-        </div>
-      `;
+      const dims = a.dimensions.map(dim => {
+        const sc = scoreClass(dim.score);
+        return '<div class="audit-score-card">' +
+          '<div class="audit-score-top">' +
+          '<div class="audit-score-title">' + dim.name + '</div>' +
+          '<div class="audit-score-val ' + sc + '">' + dim.score + '</div>' +
+          '</div>' +
+          '<div class="audit-bar-wrap"><div class="audit-bar ' + sc + '" style="width:' + dim.score + '%"></div></div>' +
+          '<div class="audit-insight">' + dim.insight + '</div>' +
+          '<div class="audit-action">Action: ' + dim.action + '</div>' +
+          '</div>';
+      }).join('');
+      el.innerHTML =
+        '<div class="health-ring-wrap">' +
+          '<div class="health-ring">' +
+            '<svg width="100" height="100" viewBox="0 0 100 100">' +
+              '<circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="8"/>' +
+              '<circle cx="50" cy="50" r="40" fill="none" stroke="' + ringColor + '" stroke-width="8" stroke-dasharray="' + circum + '" stroke-dashoffset="' + offset + '" stroke-linecap="round"/>' +
+            '</svg>' +
+            '<div class="health-ring-val">' +
+              '<div class="health-ring-num">' + a.overall + '</div>' +
+              '<div class="health-ring-lbl">Score</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="health-info">' +
+            '<div class="health-title">Operational Health Score: ' + scoreLabel(a.overall) + '</div>' +
+            '<div class="health-sub">' + a.summary + '</div>' +
+            '<button class="audit-gen-btn" id="audit-detail-btn" onclick="generateAuditInsights()">Generate AI Deep Dive</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="audit-grid">' + dims + '</div>' +
+        '<div id="audit-ai-section"></div>' +
+        '<div class="audit-cta">' +
+          '<div class="audit-cta-title">Ready to go deeper?</div>' +
+          '<div class="audit-cta-sub">Your Operational Audit score reveals where your business is leaking time and revenue. A Blueprint Partnership engagement builds the systems to fix it permanently.</div>' +
+          '<button class="audit-cta-btn" onclick="window.open('mailto:kristina@operationalconsultinggroup.com?subject=Operational Audit Consultation','_blank')">Book a Consultation</button>' +
+        '</div>';
     } else {
       el.innerHTML = '<div class="alert alert-err">Error loading audit: ' + (d.error||'Unknown error') + '</div>';
     }
@@ -721,7 +744,7 @@ async function generateAuditInsights() {
   btn.disabled = true; btn.textContent = 'Generating deep dive...';
   section.innerHTML = '<div class="spin-wrap"><div class="spinner"></div> Your EA AI is analyzing your operational patterns...</div>';
   try {
-    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/audit-insights', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({}) });
+    const r = await fetch('/api/audit-insights', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({}) });
     const d = await r.json();
     if(d.success) {
       section.innerHTML = '<div class="audit-ai-box"><div class="audit-ai-title">EA AI Deep Dive Analysis</div><div class="audit-ai-text">' + d.insights.replace(/\n/g, '<br>') + '</div></div>';
@@ -737,7 +760,7 @@ async function generateAuditInsights() {
 
 async function loadStats() {
   try {
-    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/stats');
+    const r = await fetch('/api/stats');
     const d = await r.json();
     if(d.success) {
       const s = d.stats;
@@ -759,7 +782,7 @@ async function loadStats() {
 }
 async function loadHistory() {
   try {
-    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/history?limit=20');
+    const r = await fetch('/api/history?limit=20');
     const d = await r.json();
     if(d.success) {
       const cr = d.tasks.filter(t => t.classification === 'crystal');
@@ -775,7 +798,7 @@ async function loadFullHistory() {
   const el = $('history-list');
   el.innerHTML = '<div class="spin-wrap"><div class="spinner"></div> Loading your history...</div>';
   try {
-    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/history?limit=100');
+    const r = await fetch('/api/history?limit=100');
     const d = await r.json();
     if(d.success && d.tasks.length > 0) {
       el.innerHTML = d.tasks.map(t => {
@@ -806,7 +829,7 @@ async function doClassify() {
   res.style.display = 'block';
   res.innerHTML = '<div class="spin-wrap"><div class="spinner"></div> Analyzing with the Crystal Ball Framework...</div>';
   try {
-    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/classify', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({taskDescription:val}) });
+    const r = await fetch('/api/classify', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({taskDescription:val}) });
     const d = await r.json();
     if(d.success) {
       const c = d.classification;
@@ -836,7 +859,7 @@ async function generateWeek() {
   res.style.display = 'block';
   res.innerHTML = '<div class="panel" style="padding:20px"><div class="spin-wrap"><div class="spinner"></div> Building your 5-day Priority Week...</div></div>';
   try {
-    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/generate-week', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({goals,revenue,timeblocks}) });
+    const r = await fetch('/api/generate-week', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({goals,revenue,timeblocks}) });
     const d = await r.json();
     if(d.success) {
       res.innerHTML = '<div class="week-card"><div class="week-head"><div><div class="week-title">Your Priority Week</div><div class="week-meta">Built on the Essential EA Priority Week Framework - Saved to your database</div></div></div><div style="padding:18px"><div class="pw-note" style="border-top:none;margin-bottom:12px"><strong>Your plan is ready.</strong> Crystal Ball tasks are in your peak hours. Bouncy Balls are delegated. CEO Protection Protocol is enforced.</div><pre style="white-space:pre-wrap;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);line-height:1.85">' + d.plan + '</pre></div></div>';
@@ -862,7 +885,7 @@ async function generateBrief() {
   res.style.display = 'block';
   res.innerHTML = '<div class="spin-wrap"><div class="spinner"></div> Your EA is reviewing your calendar and priorities...</div>';
   try {
-    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/daily-brief', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name,role,priorities,timeblocks:blocks,date:new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}) });
+    const r = await fetch('/api/daily-brief', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name,role,priorities,timeblocks:blocks,date:new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}) });
     const d = await r.json();
     if(d.success) {
       res.innerHTML = '<div class="brief-box"><pre>' + d.brief + '</pre></div>';
@@ -921,7 +944,7 @@ async function submitFB() {
   st.style.display='block';
   st.innerHTML='<div class="spin-wrap"><div class="spinner"></div> Sending...</div>';
   try {
-    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/feedback', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name,email,rating:parseInt($('fb-rating').value),message:msg}) });
+    const r = await fetch('/api/feedback', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name,email,rating:parseInt($('fb-rating').value),message:msg}) });
     const d = await r.json();
     if(d.success) {
       st.innerHTML='<div class="alert alert-ok">Thank you! Your feedback has been received.</div>';
@@ -939,18 +962,282 @@ loadStats();
 </body>
 </html>`;
 
-
 app.get('/', (req, res) => {
   res.setHeader('Content-Type', 'text/html');
   res.send(html);
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.post('/api/classify', async (req, res) => {
+  try {
+    const { taskDescription } = req.body;
+    if (!taskDescription) return res.status(400).json({ error: 'Task description required', success: false });
+
+    const prompt = 'You are the Essential EA - an AI-powered executive assistant built on the methodology from the book The Essential EA by Kristina Spencer.\n\nClassify this task using the Crystal Ball and Bouncy Ball Framework.\n\nCrystal Ball tasks: ONLY the executive can do these. Irreplaceable - if dropped, shatters permanently. Includes: client relationships, negotiations, strategy, approvals, legal, financial decisions.\n\nBouncy Ball tasks: CAN and SHOULD be delegated. Bounces back even if dropped. Includes: scheduling, admin, data entry, routine communication, follow-ups, coordination, vendor management.\n\nCEO Protection Protocol: Every minute on a Bouncy Ball task is stolen from a Crystal Ball task.\n\nTask: "' + taskDescription + '"\n\nRespond ONLY with valid JSON:\n{"classification":"crystal or bouncy","emoji":"crystal or bouncy","urgency":"urgent or today or defer or ea_owned","reason":"2-3 sentences explaining why using Essential EA methodology","recommendedAction":"Specific next step - if crystal what to do and when, if bouncy who handles it and how","confidence":0.95}';
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'system', content: 'You are the Essential EA AI. Classify tasks using Crystal Ball and Bouncy Ball Framework. Respond with valid JSON only. Use the word crystal or bouncy for emoji field.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 400
+    });
+
+    let content = response.choices[0].message.content.trim();
+    if (content.includes('```')) content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const result = JSON.parse(content);
+
+    await sql`INSERT INTO tasks (description, classification, urgency, reason, recommended_action, confidence) VALUES (${taskDescription}, ${result.classification}, ${result.urgency}, ${result.reason}, ${result.recommendedAction}, ${result.confidence})`;
+
+    res.json({ success: true, classification: result });
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.status(500).json({ error: error.message || 'Failed to classify', success: false });
+  }
+});
+
+app.post('/api/generate-week', async (req, res) => {
+  try {
+    const { goals, revenue, timeblocks } = req.body;
+    if (!goals || !revenue || !timeblocks) return res.status(400).json({ error: 'Missing required fields', success: false });
+
+    const prompt = 'You are the Essential EA building a Priority Week using the Essential EA methodology by Kristina Spencer.\n\nPriority Week Framework:\n1. Crystal Ball Protection: Schedule highest-leverage activities first and protect fiercely.\n2. Bouncy Ball Delegation: Every delegatable task goes to EA. Never on the executive calendar.\n3. CEO Protection Protocol: Non-negotiable blocks are sacred. EA enforces them.\n\nBuild a Priority Week for:\nGoals: ' + goals + '\nRevenue Target: ' + revenue + '\nProtected Blocks: ' + timeblocks + '\n\nFORMAT:\n\nPRIORITY WEEK\n\nCRYSTAL BALL FOCUS THIS WEEK\n1. [Activity] - [Why only you]\n2. [Activity] - [Why only you]\n3. [Activity] - [Why only you]\n\nMONDAY\nCrystal Ball (You): [task] - [time]\nBouncy Ball (EA): [task]\nProtected: [block]\n\nTUESDAY\nCrystal Ball (You): [task] - [time]\nBouncy Ball (EA): [task]\n\nWEDNESDAY\nCrystal Ball (You): [task] - [time]\nBouncy Ball (EA): [task]\nProtected: [block]\n\nTHURSDAY\nCrystal Ball (You): [task] - [time]\nBouncy Ball (EA): [task]\n\nFRIDAY\nCrystal Ball (You): [task] - [time]\nProtected: Friday afternoon - CEO Protection Protocol\n\nEA TASK LIST\n- [task]: [instruction]\n- [task]: [instruction]\n- [task]: [instruction]\n\nREVENUE FOCUS\nTo hit your target: [specific activity]\nKey metric: [measurable indicator]\n\nCEO PROTECTION REMINDER\nProtected blocks: ' + timeblocks;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'system', content: 'You are the Essential EA AI. Build Priority Week plans using Crystal Ball and Bouncy Ball language from The Essential EA by Kristina Spencer.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.8,
+      max_tokens: 1200
+    });
+
+    const plan = response.choices[0].message.content.trim();
+
+    await sql`INSERT INTO weekly_plans (goals, revenue, timeblocks, plan) VALUES (${goals}, ${revenue}, ${timeblocks}, ${plan})`;
+
+    res.json({ success: true, plan });
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.status(500).json({ error: error.message || 'Failed to generate plan', success: false });
+  }
+});
+
+app.post('/api/daily-brief', async (req, res) => {
+  try {
+    const { name, role, priorities, timeblocks, date } = req.body;
+
+    const prompt = 'You are the Essential EA generating a personalized Daily Brief for ' + (name || 'the executive') + ' who is a ' + (role || 'business owner') + '.\n\nToday: ' + (date || new Date().toLocaleDateString()) + '\nPriorities: ' + (priorities || 'Revenue and client relationships') + '\nProtected blocks: ' + (timeblocks || 'Hard stop at 5:30pm') + '\n\nWrite as a highly competent EA who has been working 2 hours already. Professional, warm, specific. Use Crystal Ball and Bouncy Ball language naturally.\n\nFormat:\n\nGood morning, ' + (name || 'there') + '.\n\nYOUR CRYSTAL BALL PRIORITIES TODAY\n[3 specific Crystal Ball tasks for their role]\n\nYOUR EA HAS ALREADY HANDLED\n[3-4 specific Bouncy Ball tasks completed this morning]\n\nWHAT NEEDS YOUR DECISION TODAY\n[1-2 items needing executive judgment]\n\nYOUR PROTECTED TIME TODAY\n[Their specific blocks - enforced by EA]\n\nONE THING TO REMEMBER TODAY\n[Personal insight tied to their goals]\n\nYour EA is standing by.';
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'system', content: 'You are the Essential EA AI. Generate personalized daily briefs using Crystal Ball and Bouncy Ball language. Professional, specific, never generic.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.8,
+      max_tokens: 600
+    });
+
+    const brief = response.choices[0].message.content.trim();
+
+    const bname = name || 'Anonymous'; const brole = role || 'Executive';
+    await sql`INSERT INTO daily_briefs (name, role, brief) VALUES (${bname}, ${brole}, ${brief})`;
+
+    res.json({ success: true, brief });
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.status(500).json({ error: error.message || 'Failed to generate brief', success: false });
+  }
+});
+
+app.get('/api/history', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const rows = await sql`SELECT * FROM tasks ORDER BY created_at DESC LIMIT ${limit}`;
+    res.json({ success: true, tasks: rows, count: rows.length });
+  } catch (error) {
+    res.status(500).json({ error: error.message, success: false });
+  }
+});
+
+app.get('/api/stats', async (req, res) => {
+  try {
+    const [tot] = await sql`SELECT COUNT(*) FROM tasks`;
+    const [cry] = await sql`SELECT COUNT(*) FROM tasks WHERE classification = 'crystal'`;
+    const [bou] = await sql`SELECT COUNT(*) FROM tasks WHERE classification = 'bouncy'`;
+    const [avg] = await sql`SELECT AVG(confidence) FROM tasks`;
+    const totalCount = parseInt(tot.count);
+    const crystalCount = parseInt(cry.count);
+    const bouncyCount = parseInt(bou.count);
+    const avgAcc = avg.avg ? (parseFloat(avg.avg) * 100).toFixed(1) : '0.0';
+    res.json({ success: true, stats: { totalTasks: totalCount, crystal: crystalCount, bouncy: bouncyCount, avgAccuracy: avgAcc } });
+  } catch (error) {
+    res.status(500).json({ error: error.message, success: false });
+  }
+});
+
+app.post('/api/feedback', async (req, res) => {
+  try {
+    const { name, email, rating, message } = req.body;
+    if (!email || !message) return res.status(400).json({ error: 'Email and message required', success: false });
+    const fname = name || 'Anonymous'; const frating = rating || 5;
+    await sql`INSERT INTO feedback (name, email, rating, message) VALUES (${fname}, ${email}, ${frating}, ${message})`;
+    res.json({ success: true, message: 'Thank you for your feedback!' });
+  } catch (error) {
+    res.status(500).json({ error: error.message, success: false });
+  }
+});
+
+app.get('/api/feedback', async (req, res) => {
+  try {
+    const rows = await sql`SELECT * FROM feedback ORDER BY created_at DESC`;
+    res.json({ success: true, feedback: rows, count: rows.length });
+  } catch (error) {
+    res.status(500).json({ error: error.message, success: false });
+  }
+});
+
+app.get('/api/audit', async (req, res) => {
+  try {
+    const [totalRes] = await sql`SELECT COUNT(*) FROM tasks`;
+    const [crystalRes] = await sql`SELECT COUNT(*) FROM tasks WHERE classification = 'crystal'`;
+    const [bouncyRes] = await sql`SELECT COUNT(*) FROM tasks WHERE classification = 'bouncy'`;
+    const [avgConfRes] = await sql`SELECT AVG(confidence) FROM tasks`;
+    const [weeklyRes] = await sql`SELECT COUNT(*) FROM weekly_plans`;
+    const [briefRes] = await sql`SELECT COUNT(*) FROM daily_briefs`;
+    const recentTasks = await sql`SELECT * FROM tasks WHERE created_at > NOW() - INTERVAL '7 days' ORDER BY created_at DESC`;
+
+    const total = parseInt(totalRes.count) || 0;
+    const crystal = parseInt(crystalRes.count) || 0;
+    const bouncy = parseInt(bouncyRes.count) || 0;
+    const avgConf = avgConfRes.avg ? parseFloat(avgConfRes.avg) : 0;
+    const weeklyPlansCount = parseInt(weeklyRes.count) || 0;
+    const dailyBriefs = parseInt(briefRes.count) || 0;
+
+    const crystalPct = total > 0 ? Math.round((crystal / total) * 100) : 0;
+    const bouncyPct = total > 0 ? Math.round((bouncy / total) * 100) : 0;
+    const confScore = Math.round(avgConf * 100);
+
+    const d1 = Math.min(100, crystalPct >= 60 ? 85 + Math.round(crystalPct / 10) : crystalPct);
+    const d2 = Math.min(100, bouncyPct >= 30 ? 80 + Math.round(bouncyPct / 5) : bouncyPct * 2);
+    const d3 = Math.min(100, weeklyPlansCount >= 4 ? 90 : weeklyPlansCount * 22);
+    const d4 = Math.min(100, dailyBriefs >= 5 ? 88 : dailyBriefs * 17);
+    const d5 = Math.min(100, confScore > 0 ? confScore : 50);
+    const d6 = Math.min(100, total >= 20 ? 85 : total * 4);
+    const d7 = 72;
+
+    const overall = Math.round((d1 + d2 + d3 + d4 + d5 + d6 + d7) / 7);
+
+    const getInsight = (score) => score >= 80 ? 'Performing well' : score >= 65 ? 'Good progress' : score >= 45 ? 'Needs attention' : 'Critical - action required';
+
+    const dimensions = [
+      { name: 'Crystal Ball Protection', score: d1, insight: total === 0 ? 'No tasks classified yet. Start using Crystal Ball Triage to build your protection score.' : crystalPct >= 60 ? 'You are protecting your highest-leverage time well. Crystal Ball tasks represent ' + crystalPct + '% of your classified work.' : 'Only ' + crystalPct + '% of tasks are Crystal Ball. You may be spending time on delegatable work.', action: d1 < 70 ? 'Classify 5 tasks today to identify what should be delegated' : 'Keep protecting your Crystal Ball hours' },
+      { name: 'Bouncy Ball Delegation Rate', score: d2, insight: total === 0 ? 'No tasks classified yet. Your delegation rate will appear here once you start triaging.' : bouncyPct >= 30 ? 'Strong delegation rate. ' + bouncy + ' tasks are identified as EA-owned Bouncy Balls.' : 'Low delegation rate detected. You may be doing work that belongs to your EA.', action: d2 < 70 ? 'Review your recent tasks - look for Bouncy Balls you are personally handling' : 'Delegation habits are solid' },
+      { name: 'Priority Week Usage', score: d3, insight: weeklyPlansCount === 0 ? 'No Priority Weeks generated yet. A planned week protects your Crystal Ball time.' : weeklyPlansCount >= 4 ? 'Excellent Priority Week habit. You have built ' + weeklyPlansCount + ' structured weeks.' : 'You have generated ' + weeklyPlansCount + ' Priority Weeks. Consistency is key.', action: d3 < 70 ? 'Generate a Priority Week every Monday before checking email' : 'Keep up your weekly planning habit' },
+      { name: 'EA Daily Brief Adoption', score: d4, insight: dailyBriefs === 0 ? 'No Daily Briefs generated yet. Start each day with your EA brief to protect your morning.' : dailyBriefs >= 5 ? 'Strong Daily Brief habit. ' + dailyBriefs + ' briefs generated.' : 'You have generated ' + dailyBriefs + ' Daily Briefs. Make this your first action every morning.', action: d4 < 70 ? 'Generate your EA Daily Brief before opening email or social media' : 'Morning brief habit is established' },
+      { name: 'AI Classification Confidence', score: d5, insight: total === 0 ? 'No tasks classified yet. Confidence score will appear after your first classification.' : confScore >= 80 ? 'High AI confidence on your task classifications - ' + confScore + '% average accuracy.' : 'AI confidence is building. More classifications will improve accuracy.', action: d5 < 70 ? 'Classify more tasks to improve AI accuracy on your specific work type' : 'Classification accuracy is high' },
+      { name: 'Task Triage Consistency', score: d6, insight: total === 0 ? 'No tasks triaged yet. Regular triage is the foundation of operational clarity.' : total >= 20 ? 'Strong triage habit established. ' + total + ' tasks classified total.' : 'You have classified ' + total + ' tasks. Build the daily habit of triaging everything.', action: d6 < 70 ? 'Triage every task before acting on it - even if it takes 10 seconds' : 'Triage habit is strong' },
+      { name: 'CEO Protection Protocol', score: d7, insight: 'Based on your usage patterns and time block adherence. Connect your calendar for a precise score.', action: 'Add your non-negotiable blocks to every Priority Week you generate' }
+    ];
+
+    const lowScores = dimensions.filter(d => d.score < 65).map(d => d.name);
+    const summary = total === 0
+      ? 'Your audit is ready but needs data. Start by classifying tasks in Crystal Ball Triage and generating your first Priority Week. Your scores will update in real time as you use the app.'
+      : overall >= 80
+        ? 'Your operational health is strong. You are protecting your Crystal Ball time and building strong EA habits. Keep the momentum.'
+        : overall >= 65
+          ? 'Good operational foundation. ' + (lowScores.length > 0 ? lowScores.join(' and ') + ' need attention.' : 'Keep building your habits.')
+          : 'Your operations need attention. Focus on ' + (lowScores.length > 0 ? lowScores.slice(0,2).join(' and ') : 'building consistent habits') + ' first.';
+
+    res.json({ success: true, audit: { overall, summary, dimensions } });
+  } catch (error) {
+    console.error('Audit error:', error.message);
+    res.status(500).json({ error: error.message, success: false });
+  }
+});
+
+app.post('/api/audit-insights', async (req, res) => {
+  try {
+    const [totalRes] = await sql`SELECT COUNT(*) FROM tasks`;
+    const [crystalRes] = await sql`SELECT COUNT(*) FROM tasks WHERE classification = 'crystal'`;
+    const [bouncyRes] = await sql`SELECT COUNT(*) FROM tasks WHERE classification = 'bouncy'`;
+    const [weeklyRes] = await sql`SELECT COUNT(*) FROM weekly_plans`;
+    const [briefRes] = await sql`SELECT COUNT(*) FROM daily_briefs`;
+    const recentTasks = await sql`SELECT description, classification, reason FROM tasks ORDER BY created_at DESC LIMIT 10`;
+
+    const total = parseInt(totalRes.count) || 0;
+    const crystal = parseInt(crystalRes.count) || 0;
+    const bouncy = parseInt(bouncyRes.count) || 0;
+    const weekly = parseInt(weeklyRes.count) || 0;
+    const briefs = parseInt(briefRes.count) || 0;
+
+    const taskSummary = recentTasks.length > 0
+      ? recentTasks.slice(0,5).map(t => t.classification.toUpperCase() + ': ' + t.description).join(', ')
+      : 'No tasks classified yet';
+
+    const prompt = 'You are the Essential EA AI performing an Operational Efficiency Audit for an executive using The Essential EA platform by Kristina Spencer.
+
+Audit Data:
+- Total tasks classified: ' + total + '
+- Crystal Ball tasks: ' + crystal + ' (' + (total > 0 ? Math.round(crystal/total*100) : 0) + '%)
+- Bouncy Ball tasks: ' + bouncy + ' (' + (total > 0 ? Math.round(bouncy/total*100) : 0) + '%)
+- Priority Weeks generated: ' + weekly + '
+- Daily Briefs generated: ' + briefs + '
+- Recent tasks: ' + taskSummary + '
+
+Write a personalized AI Deep Dive audit analysis using the Essential EA methodology. Use Crystal Ball, Bouncy Ball, CEO Protection Protocol, and Priority Week Framework language naturally.
+
+Structure your response exactly like this:
+
+OPERATIONAL PATTERNS DETECTED
+[2-3 sentences about what the data reveals about how this executive works]
+
+WHERE YOUR TIME IS LEAKING
+[Specific insight about Crystal Ball vs Bouncy Ball ratio and what it means for their revenue]
+
+YOUR BIGGEST OPPORTUNITY RIGHT NOW
+[The single most impactful change they can make based on the data]
+
+WHAT YOUR EA RECOMMENDS
+[3 specific actions in priority order using the methodology language]
+
+PROJECTED IMPACT
+[What their operational health score could reach in 30 days if they follow the recommendations]
+
+Be specific, decisive, and speak directly to the executive. Reference their actual numbers. Sound like a trusted advisor who has studied their business.';
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'system', content: 'You are the Essential EA AI performing operational audits using the Crystal Ball and Bouncy Ball methodology from The Essential EA by Kristina Spencer. Be specific, data-driven, and speak as a trusted EA advisor.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 800
+    });
+
+    const insights = response.choices[0].message.content.trim();
+    res.json({ success: true, insights });
+  } catch (error) {
+    console.error('Audit insights error:', error.message);
+    res.status(500).json({ error: error.message, success: false });
+  }
 });
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });
 });
 
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log('Essential EA frontend running on port ' + PORT);
+const server = app.listen(PORT, '0.0.0.0', async () => {
+  await initDB();
+  console.log('\nEssential EA is running on port ' + PORT);
 });
 
 process.on('SIGTERM', () => {
@@ -958,3 +1245,4 @@ process.on('SIGTERM', () => {
 });
 
 export default app;
+
