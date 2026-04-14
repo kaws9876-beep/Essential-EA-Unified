@@ -9,7 +9,7 @@
     "start": "node server.js",
     "build": "echo 'Build complete'",
     "test": "echo 'Tests pass'"
-  
+  },
   "dependencies": {
     "express": "^4.21.2",
     "cors": "^2.8.6",
@@ -21,4 +21,3 @@
     "node": "20.x"
   }
 }
- 
