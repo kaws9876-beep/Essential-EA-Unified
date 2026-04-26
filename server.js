@@ -4,7 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { OpenAI } from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 import dotenv from 'dotenv';
 import postgres from 'postgres';
 
@@ -17,10 +17,9 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
-app.use(cors());
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const openai_key = process.env.OPENAI_API_KEY; // kept for Whisper transcription only
+
 
 async function initDB() {
   try {
@@ -36,7 +35,9 @@ async function initDB() {
 
 console.log('\nStarting Essential EA...');
 console.log('PORT:', PORT);
-console.log('OpenAI Key:', process.env.OPENAI_API_KEY ? 'Set' : 'Missing');
+console.log('Anthropic Key:', process.env.ANTHROPIC_API_KEY ? 'Set' : 'Missing');
+console.log('OpenAI Key (Whisper):', process.env.OPENAI_API_KEY ? 'Set' : 'Missing');
+console.log('ElevenLabs Key:', process.env.ELEVENLABS_API_KEY ? 'Set' : 'Missing');
 console.log('Database:', process.env.DATABASE_URL ? 'Connected' : 'Missing');
 
 app.use(express.json({ limit: '10mb' }));
@@ -54,7 +55,7 @@ const html = `<!DOCTYPE html>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;-webkit-text-size-adjust:100%}
 body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A1A18;overflow:hidden;-webkit-font-smoothing:antialiased}
-:root{--blk:#1A1A18;--blk2:#222220;--blk3:#2C2C2A;--cream:#FAF8F4;--warm:#FFFEF9;--tan:#E8E2D8;--tan2:#D8D0C4;--mid:#8A8880;--gold:#C8A96A;--gold2:#A88A50;--gl:#E8D0A0;--grn:#4A7A50;--amb:#A87830;--red:#8A3A30;--sw:240px;--th:54px}
+:root{--blk:#1A1A18;--blk2:#222220;--blk3:#2C2C2A;--cream:#FAF8F4;--warm:#FFFEF9;--tan:#E8E2D8;--tan2:#D8D0C4;--mid:#8A8880;--gold:#C49A8A;--gold2:#A67868;--gl:#E8C4B8;--grn:#4A7A50;--amb:#A87830;--red:#8A3A30;--sw:240px;--th:54px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
@@ -77,7 +78,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 .sb-sec{font-size:8.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.2);padding:10px 20px 4px}
 .sb-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;font-size:13px;color:rgba(255,255,255,.45);border-left:2px solid transparent;transition:all .15s}
 .sb-item:hover{color:#FAF8F4;background:rgba(255,255,255,.04)}
-.sb-item.active{color:#FAF8F4;background:rgba(200,169,106,.1);border-left-color:var(--gold);font-weight:500}
+.sb-item.active{color:#FAF8F4;background:rgba(255,255,255,.06);border-left-color:var(--gold);font-weight:500}
 .sb-icon{width:18px;text-align:center;font-size:14px;flex-shrink:0}
 .sb-badge{margin-left:auto;background:var(--gold);color:var(--blk);font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px}
 .sb-status{padding:12px 20px;border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:8px;flex-shrink:0}
@@ -95,8 +96,8 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 .tbtn{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:7px 14px;border-radius:3px;border:none;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;white-space:nowrap}
 .tbtn-g{background:transparent;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5)}
 .tbtn-g:hover{border-color:var(--gold);color:var(--gold)}
-.tbtn-p{background:var(--gold);color:var(--blk)}
-.tbtn-p:hover{background:var(--gold2)}
+.tbtn-p{background:#FAF8F4;color:#1A1A18}
+.tbtn-p:hover{background:#E8E2D8}
 .content{flex:1;overflow-y:auto;overflow-x:hidden;padding:24px;background:var(--cream);-webkit-overflow-scrolling:touch}
 .content::-webkit-scrollbar{width:4px}
 .content::-webkit-scrollbar-thumb{background:var(--tan2);border-radius:2px}
@@ -125,7 +126,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 .pi{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--tan)}
 .pi:last-child{border-bottom:none}
 .pg2,.pb3{width:26px;height:26px;border-radius:50%;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:12px}
-.pg2{background:rgba(200,169,106,.12);border:1px solid rgba(200,169,106,.25)}
+.pg2{background:rgba(196,154,138,.12);border:1px solid rgba(196,154,138,.25)}
 .pb3{background:rgba(138,58,48,.08);border:1px solid rgba(138,58,48,.18)}
 .pib{flex:1;min-width:0}
 .pit{font-size:13px;font-weight:500;color:var(--blk);margin-bottom:2px;line-height:1.35}
@@ -137,7 +138,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 .ai-txt strong{color:var(--gl);font-weight:500}
 .ai-acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .abtn{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 14px;border-radius:3px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
-.abtn-p{background:var(--gold);color:var(--blk)}
+.abtn-p{background:#FAF8F4;color:#1A1A18}
 .abtn-g{background:transparent;color:rgba(245,240,232,.4);border:1px solid rgba(255,255,255,.12)}
 .tl-item{display:flex;gap:12px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--tan)}
 .tl-item:last-child{border-bottom:none}
@@ -187,7 +188,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 .dt-name{font-size:10.5px;color:var(--blk);font-weight:500;line-height:1.3;margin-bottom:2px}
 .dt-time{font-size:9px;color:var(--mid)}
 .dt-tag{display:inline-block;font-size:7.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:1px 5px;border-radius:2px;margin-top:3px}
-.tag-c{background:rgba(200,169,106,.12);color:var(--gold2)}
+.tag-c{background:rgba(196,154,138,.12);color:var(--gold2)}
 .tag-b{background:rgba(138,58,48,.08);color:#A86050}
 .tag-p{background:rgba(74,122,80,.1);color:var(--grn)}
 .pw-note{padding:12px 18px;border-top:1px solid var(--tan);font-size:12px;color:var(--mid);line-height:1.7}
@@ -206,16 +207,16 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 .tr-meta span{color:rgba(245,240,232,.45)}
 .tr-meta strong{color:var(--gold)}
 .tr-body{font-size:12.5px;color:rgba(245,240,232,.55);line-height:1.7;margin-bottom:8px}
-.tr-act{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:2px;background:rgba(200,169,106,.15);color:var(--gold)}
+.tr-act{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:2px;background:rgba(196,154,138,.15);color:var(--gold)}
 .t-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .tc-head{padding:13px 16px 11px;border-radius:10px 10px 0 0;border:1px solid var(--tan);border-bottom:none;display:flex;align-items:center;gap:10px}
-.tc-head.ch{background:rgba(200,169,106,.05)}
+.tc-head.ch{background:rgba(196,154,138,.05)}
 .tc-head.bh{background:rgba(138,58,48,.04)}
 .tc-icon{font-size:17px}
 .tc-title{font-size:12.5px;font-weight:600;color:var(--blk)}
 .tc-sub{font-size:9.5px;color:var(--mid);margin-top:1px}
 .tc-count{margin-left:auto;font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:9px}
-.cc{background:rgba(200,169,106,.12);color:var(--gold2)}
+.cc{background:rgba(196,154,138,.12);color:var(--gold2)}
 .bc{background:rgba(138,58,48,.1);color:#A86050}
 .tc-list{border:1px solid var(--tan);border-top:none;border-radius:0 0 10px 10px;background:var(--warm);min-height:80px}
 .t-item{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-bottom:1px solid var(--tan);cursor:pointer;transition:background .15s}
@@ -226,7 +227,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 .ti-task{font-size:12.5px;font-weight:500;color:var(--blk);margin-bottom:2px;line-height:1.35}
 .ti-reason{font-size:10px;color:var(--mid);line-height:1.45}
 .ti-badge{flex-shrink:0;font-size:8.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:2px;margin-top:2px;white-space:nowrap}
-.badge-u{background:rgba(200,169,106,.12);color:var(--gold2)}
+.badge-u{background:rgba(196,154,138,.12);color:var(--gold2)}
 .badge-f{background:rgba(168,120,48,.1);color:var(--amb)}
 .badge-e{background:var(--cream);color:var(--mid);border:1px solid var(--tan)}
 .empty{padding:24px 14px;text-align:center;font-size:12px;color:var(--mid);font-style:italic}
@@ -240,7 +241,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 .fpill.active{background:var(--blk);color:#FAF8F4}
 .msg{padding:12px 14px;border-bottom:1px solid var(--tan);cursor:pointer;transition:background .15s;border-left:2px solid transparent}
 .msg:hover{background:var(--cream)}
-.msg.active{background:rgba(200,169,106,.06);border-left-color:var(--gold)}
+.msg.active{background:rgba(196,154,138,.06);border-left-color:var(--gold)}
 .msg.unread .msg-sub{color:var(--blk);font-weight:600}
 .msg.flagged{border-left-color:var(--amb)}
 .msg-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px}
@@ -250,7 +251,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 .msg-prev{font-size:10px;color:var(--mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .msg-tags{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
 .mtag{font-size:7.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 5px;border-radius:2px}
-.mt-you{background:rgba(200,169,106,.12);color:var(--gold2)}
+.mt-you{background:rgba(196,154,138,.12);color:var(--gold2)}
 .mt-ea{background:rgba(74,122,80,.1);color:var(--grn)}
 .mt-none{background:var(--cream);color:var(--mid);border:1px solid var(--tan)}
 .mt-urgent{background:rgba(138,58,48,.1);color:#A86050}
@@ -263,21 +264,21 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 .detail-acts{display:flex;gap:6px;flex-shrink:0;margin-left:12px}
 .d-btn{font-size:9.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;padding:6px 12px;border-radius:3px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
 .d-ghost{background:transparent;border:1px solid var(--tan);color:var(--mid)}
-.d-primary{background:var(--blk);color:#FAF8F4}
+.d-primary{background:#2C2C2A;color:#FAF8F4;border:1px solid rgba(255,255,255,.15)}
 .ai-routing{margin:14px 20px 0;background:var(--blk);border-radius:6px;padding:12px 16px;display:flex;align-items:flex-start;gap:10px;flex-shrink:0}
 .ar-icon{font-size:15px;flex-shrink:0;margin-top:1px}
 .ar-text{font-size:12px;color:rgba(245,240,232,.5);line-height:1.65}
 .ar-text strong{color:var(--gl);font-weight:500}
 .ar-pills{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 .ar-pill{font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:9px;cursor:pointer;font-family:'DM Sans',sans-serif}
-.arp-h{background:rgba(200,169,106,.12);color:var(--gold);border:1px solid rgba(200,169,106,.2)}
+.arp-h{background:rgba(196,154,138,.12);color:var(--gold);border:1px solid rgba(196,154,138,.2)}
 .arp-f{background:rgba(168,120,48,.1);color:#C8963A;border:1px solid rgba(168,120,48,.2)}
 .detail-body{flex:1;overflow-y:auto;padding:16px 20px;font-size:13px;color:#6A6860;line-height:1.85}
 .detail-reply{border-top:1px solid var(--tan);padding:12px 20px;display:flex;gap:8px;align-items:flex-end;background:var(--warm);flex-shrink:0}
 .reply-input{flex:1;background:var(--cream);border:1px solid var(--tan);border-radius:4px;padding:9px 12px;resize:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--blk);outline:none;min-height:40px}
 .reply-input:focus{border-color:var(--gold)}
 .reply-input::placeholder{color:var(--mid)}
-.reply-send{background:var(--blk);color:#FAF8F4;border:none;border-radius:4px;padding:9px 16px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
+.reply-send{background:#2C2C2A;color:#FAF8F4;border:none;border-radius:4px;padding:9px 16px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
 .ops-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:18px}
 .ops-card{background:var(--warm);border:1px solid var(--tan);border-radius:10px;padding:20px;cursor:pointer;transition:all .2s}
 .ops-card:hover{border-color:var(--gold);transform:translateY(-2px)}
@@ -303,7 +304,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 .fi2,.fa2{width:100%;padding:11px 14px;background:var(--warm);border:1px solid var(--tan);border-radius:4px;color:var(--blk);font-family:'DM Sans',sans-serif;font-size:13.5px;outline:none;transition:border-color .15s}
 .fi2:focus,.fa2:focus{border-color:var(--gold)}
 .fa2{resize:vertical;min-height:90px}
-.sub-btn{width:100%;padding:12px 24px;background:var(--blk);color:#FAF8F4;border:none;border-radius:4px;font-weight:600;cursor:pointer;font-size:13.5px;font-family:'DM Sans',sans-serif}
+.sub-btn{width:100%;padding:12px 24px;background:#2C2C2A;color:#FAF8F4;border:none;border-radius:4px;font-weight:600;cursor:pointer;font-size:13.5px;font-family:'DM Sans',sans-serif}
 .alert{padding:12px 14px;border-radius:4px;font-size:13px;margin-top:10px}
 .alert-ok{background:#e8f5e9;border:1px solid #a5d6a7;color:#2e7d32}
 .alert-err{background:#fdecea;border:1px solid #f5c6cb;color:#c62828}
@@ -340,18 +341,58 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 .health-title{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:300;color:#FAF8F4;margin-bottom:6px}
 .health-sub{font-size:12.5px;color:rgba(245,240,232,.5);line-height:1.7;margin-bottom:12px}
 .health-sub strong{color:var(--gl);font-weight:500}
-.audit-gen-btn{background:var(--gold);color:var(--blk);border:none;border-radius:4px;padding:10px 20px;font-family:"DM Sans",sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .15s}
-.audit-gen-btn:hover{background:var(--gold2)}
+.audit-gen-btn{background:#FAF8F4;color:#1A1A18;border:none;border-radius:4px;padding:10px 20px;font-family:"DM Sans",sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.audit-gen-btn:hover{background:#E8E2D8}
 .audit-gen-btn:disabled{opacity:.5;cursor:not-allowed}
 .audit-ai-box{background:var(--blk);border-radius:10px;padding:20px;margin-bottom:22px}
 .audit-ai-title{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:12px}
 .audit-ai-text{font-size:13px;color:rgba(245,240,232,.6);line-height:1.85}
 .audit-ai-text strong{color:var(--gl);font-weight:500}
-.audit-cta{background:linear-gradient(135deg,#2C2820,#1A1A18);border:1px solid rgba(200,169,106,.3);border-radius:10px;padding:24px;margin-top:22px;text-align:center}
+.audit-cta{background:linear-gradient(135deg,#222220,#1A1A18);border:1px solid rgba(196,154,138,.3);border-radius:10px;padding:24px;margin-top:22px;text-align:center}
 .audit-cta-title{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:300;color:#FAF8F4;margin-bottom:8px}
 .audit-cta-sub{font-size:12.5px;color:rgba(245,240,232,.45);margin-bottom:16px;line-height:1.6}
-.audit-cta-btn{background:var(--gold);color:var(--blk);border:none;border-radius:4px;padding:12px 28px;font-family:"DM Sans",sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.audit-cta-btn{background:#FAF8F4;color:#1A1A18;border:none;border-radius:4px;padding:12px 28px;font-family:"DM Sans",sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
 @media(max-width:768px){.audit-grid{grid-template-columns:1fr}.health-ring-wrap{flex-direction:column;text-align:center}}
+.ea-actions{margin-top:14px;border-top:1px solid rgba(255,255,255,.1);padding-top:14px}
+.ea-actions-title{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+.ea-action-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.ea-action-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:10px 12px;cursor:pointer;font-family:"DM Sans",sans-serif;transition:all .2s;text-align:left}
+.ea-action-btn:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25)}
+.ea-action-icon{font-size:16px;margin-bottom:4px}
+.ea-action-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#FAF8F4;display:block}
+.ea-action-desc{font-size:9.5px;color:rgba(245,240,232,.4);margin-top:2px}
+.ea-result{margin-top:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:14px;display:none}
+.ea-result.show{display:block}
+.ea-result-label{font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.ea-result-content{font-size:12.5px;color:rgba(245,240,232,.7);line-height:1.75;white-space:pre-wrap}
+.ea-result-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.ea-copy-btn{font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:7px 14px;border-radius:3px;border:1px solid #E8E2D8;cursor:pointer;font-family:"DM Sans",sans-serif;background:#FAF8F4;color:#1A1A18}
+.ea-clear-btn{font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:7px 14px;border-radius:3px;border:1px solid rgba(255,255,255,.15);cursor:pointer;font-family:"DM Sans",sans-serif;background:transparent;color:rgba(245,240,232,.5)}
+.doc-upload-area{border:2px dashed rgba(196,154,138,.3);border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px;background:var(--warm)}
+.doc-upload-area:hover{border-color:var(--gold);background:rgba(196,154,138,.05)}
+.doc-upload-area.drag-over{border-color:var(--gold);background:rgba(196,154,138,.08)}
+.doc-upload-icon{font-size:28px;margin-bottom:8px}
+.doc-upload-title{font-size:13px;font-weight:600;color:var(--blk);margin-bottom:4px}
+.doc-upload-sub{font-size:11px;color:var(--mid)}
+.doc-result{background:var(--blk);border-radius:10px;padding:20px;margin-top:16px;display:none}
+.doc-result.show{display:block}
+.doc-result pre{white-space:pre-wrap;font-family:"DM Sans",sans-serif;font-size:12.5px;color:rgba(245,240,232,.7);line-height:1.85}
+.ea-task-list{background:var(--warm);border:1px solid var(--tan);border-radius:10px;overflow:hidden;margin-top:16px}
+.ea-task-item{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-bottom:1px solid var(--tan)}
+.ea-task-item:last-child{border-bottom:none}
+.ea-task-check{width:18px;height:18px;border-radius:3px;border:2px solid var(--tan);flex-shrink:0;margin-top:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px}
+.ea-task-check.done{background:var(--grn);border-color:var(--grn);color:#fff}
+.ea-task-body{flex:1}
+.ea-task-title{font-size:13px;font-weight:500;color:var(--blk);margin-bottom:3px}
+.ea-task-instruction{font-size:11px;color:var(--mid);line-height:1.5}
+.ea-task-tag{font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:2px;background:rgba(138,58,48,.08);color:#A86050;margin-top:4px;display:inline-block}
+.play-btn{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:3px;padding:5px 10px;cursor:pointer;font-family:"DM Sans",sans-serif;font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(245,240,232,.5);transition:all .15s;margin-top:8px}
+.play-btn:hover{border-color:var(--gold);color:var(--gold)}
+.play-btn.playing{border-color:var(--gold);color:var(--gold);background:rgba(196,154,138,.1)}
+.play-btn svg{width:10px;height:10px;fill:currentColor}
+.play-btn-light{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--tan);border-radius:3px;padding:5px 10px;cursor:pointer;font-family:"DM Sans",sans-serif;font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mid);transition:all .15s;margin-top:8px}
+.play-btn-light:hover{border-color:var(--gold);color:var(--gold2)}
+.play-btn-light.playing{border-color:var(--gold);color:var(--gold2);background:rgba(196,154,138,.05)}
 @media(max-width:1024px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.dg{grid-template-columns:1fr 1fr}.cw{grid-column:span 2}.pw-layout{grid-template-columns:1fr}.s-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:768px){
   .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:300}
@@ -400,6 +441,8 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
     <div class="sb-item" onclick="nav('triage',this)"><span class="sb-icon">&#128302;</span>Crystal Ball Triage<span class="sb-badge" id="tc">0</span></div>
     <div class="sb-item" onclick="nav('inbox',this)"><span class="sb-icon">&#9993;</span>Communication<span class="sb-badge">4</span></div>
     <div class="sb-item" onclick="nav('history',this)"><span class="sb-icon">&#128336;</span>History</div>
+    <div class="sb-item" onclick="nav('docreader',this)"><span class="sb-icon">&#128196;</span>Document Reader</div>
+    <div class="sb-item" onclick="nav('eatasklist',this)"><span class="sb-icon">&#9989;</span>EA Task List<span class="sb-badge" id="tl-badge">0</span></div>
     <div class="sb-item" onclick="nav('audit',this)"><span class="sb-icon">&#128202;</span>Operational Audit</div>
     <div class="sb-sec">Operations</div>
     <div class="sb-item" onclick="nav('operations',this)"><span class="sb-icon">&#128101;</span>Team and Pipeline</div>
@@ -471,7 +514,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
             <div class="pb">
               <div class="ring-wrap">
                 <div class="ring">
-                  <svg width="62" height="62" viewBox="0 0 62 62"><circle cx="31" cy="31" r="25" fill="none" stroke="#E8E2D8" stroke-width="4.5"/><circle cx="31" cy="31" r="25" fill="none" stroke="#C8A96A" stroke-width="4.5" stroke-dasharray="157" stroke-dashoffset="20" stroke-linecap="round"/></svg>
+                  <svg width="62" height="62" viewBox="0 0 62 62"><circle cx="31" cy="31" r="25" fill="none" stroke="#E8E2D8" stroke-width="4.5"/><circle cx="31" cy="31" r="25" fill="none" stroke="#C49A8A" stroke-width="4.5" stroke-dasharray="157" stroke-dashoffset="20" stroke-linecap="round"/></svg>
                   <div class="ring-val">87</div>
                 </div>
                 <div><div class="ring-lbl">Operational Health</div><div class="ring-sub">Up 4 pts vs last week.<br>Crystal ball protection 94%.</div></div>
@@ -609,6 +652,30 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
       </div>
     </div>
 
+        <div class="screen" id="screen-docreader">
+      <div class="pg-h2">Document Reader</div>
+      <div class="pg-s2">Upload any document. Your EA AI reads it, summarizes it, and classifies every action item as Crystal Ball or Bouncy Ball.</div>
+      <div class="doc-upload-area" id="drop-zone" onclick="document.getElementById('doc-file-input').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDocDrop(event)">
+        <input type="file" id="doc-file-input" accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.png,.jpg,.jpeg" style="display:none" onchange="handleDocFile(this.files[0])">
+        <div class="doc-upload-icon">&#128196;</div>
+        <div class="doc-upload-title">Drop your document here or click to upload</div>
+        <div class="doc-upload-sub">PDF, Word, Excel, TXT, CSV, Images supported - Any industry</div>
+      </div>
+      <div id="doc-result" class="doc-result">
+        <div class="ai-lbl">EA Document Analysis</div>
+        <pre id="doc-result-content"></pre>
+        <button class="ea-copy-btn" style="margin-top:12px" onclick="navigator.clipboard.writeText(document.getElementById('doc-result-content').textContent).then(()=>this.textContent='Copied!').catch(()=>{})">Copy Analysis</button>
+      </div>
+    </div>
+
+    <div class="screen" id="screen-eatasklist">
+      <div class="pg-h2">EA Task List</div>
+      <div class="pg-s2">Every Bouncy Ball task your EA is handling. These never touch your calendar.</div>
+      <div id="ea-task-list-content">
+        <div class="empty" style="padding:40px;text-align:center;color:var(--mid)">No tasks in your EA list yet. Classify a Bouncy Ball task and click Add to EA Task List.</div>
+      </div>
+    </div>
+
         <div class="screen" id="screen-operations">
       <div class="pg-h2">Operations</div>
       <div class="pg-s2">Your business infrastructure - coming online as the platform builds.</div>
@@ -634,7 +701,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
         <div class="ph"><span class="pt">Account Information</span></div>
         <div class="pb" style="display:grid;gap:12px;font-size:13.5px">
           <div><strong>Email:</strong> <span style="color:#8A8880">kristina@operationalconsultinggroup.com</span></div>
-          <div><strong>Plan:</strong> <span style="color:#A88A50;font-weight:600">Blueprint - 147 per month</span></div>
+          <div><strong>Plan:</strong> <span style="color:#A67868;font-weight:600">Blueprint - 147 per month</span></div>
           <div><strong>Member Since:</strong> <span style="color:#8A8880">April 2026 - Founding Member</span></div>
           <div><strong>Database:</strong> <span style="color:var(--grn);font-weight:600">PostgreSQL Connected</span></div>
         </div>
@@ -663,7 +730,7 @@ const months = ['January','February','March','April','May','June','July','August
 $('tbd').textContent = days[today.getDay()] + ', ' + months[today.getMonth()] + ' ' + today.getDate() + ', ' + today.getFullYear();
 function openSB(){ $('sidebar').classList.add('open'); $('overlay').classList.add('open'); }
 function closeSB(){ $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); }
-const titles = { dashboard:'Good morning, <em>Kristina.</em>', brief:'EA Daily Brief', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', history:'Task History', audit:'Operational Efficiency Audit', operations:'Operations', settings:'Settings' };
+const titles = { dashboard:'Good morning, <em>Kristina.</em>', brief:'EA Daily Brief', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', history:'Task History', audit:'Operational Efficiency Audit', docreader:'Document Reader', eatasklist:'EA Task List', operations:'Operations', settings:'Settings' };
 function nav(name, el) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
@@ -676,6 +743,7 @@ function nav(name, el) {
   if(name === 'dashboard' || name === 'triage') loadStats();
   if(name === 'history') loadFullHistory();
   if(name === 'audit') loadAudit();
+  if(name === 'eatasklist') renderEATaskList();
 }
 async function loadAudit() {
   const el = document.getElementById('audit-content');
@@ -689,7 +757,7 @@ async function loadAudit() {
       const scoreLabel = s => s >= 80 ? 'Excellent' : s >= 65 ? 'Good' : s >= 45 ? 'Needs Work' : 'Critical';
       const circum = 2 * Math.PI * 40;
       const offset = circum - (a.overall / 100) * circum;
-      const ringColor = a.overall >= 80 ? '#4A7A50' : a.overall >= 65 ? '#C8A96A' : a.overall >= 45 ? '#A87830' : '#8A3A30';
+      const ringColor = a.overall >= 80 ? '#4A7A50' : a.overall >= 65 ? '#C49A8A' : a.overall >= 45 ? '#A87830' : '#8A3A30';
       const dims = a.dimensions.map(dim => {
         const sc = scoreClass(dim.score);
         return '<div class="audit-score-card">' +
@@ -753,6 +821,190 @@ async function generateAuditInsights() {
     section.innerHTML = '<div class="alert alert-err">Error: ' + e.message + '</div>';
   } finally {
     if(btn) { btn.disabled = false; btn.textContent = 'Generate AI Deep Dive'; }
+  }
+}
+
+const eaTaskListData = [];
+
+async function eaDraftEmail(taskId, task, action) {
+  showEAResult(taskId, 'Drafting email...');
+  document.getElementById('ea-result-label-' + taskId).textContent = 'Drafted Email - Ready to Send';
+  try {
+    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-draft', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ type: 'email', task, action })
+    });
+    const d = await r.json();
+    if(d.success) showEAResult(taskId, d.output, true);
+    else showEAResult(taskId, 'Error: ' + (d.error||'Failed'), false);
+  } catch(e) { showEAResult(taskId, 'Error: ' + e.message, false); }
+}
+
+async function eaGenerateDoc(taskId, task, action) {
+  showEAResult(taskId, 'Generating document...');
+  document.getElementById('ea-result-label-' + taskId).textContent = 'Generated Document';
+  try {
+    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-draft', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ type: 'document', task, action })
+    });
+    const d = await r.json();
+    if(d.success) showEAResult(taskId, d.output, true);
+    else showEAResult(taskId, 'Error: ' + (d.error||'Failed'), false);
+  } catch(e) { showEAResult(taskId, 'Error: ' + e.message, false); }
+}
+
+async function eaSuggestSchedule(taskId, task) {
+  showEAResult(taskId, 'Finding the best time block...');
+  document.getElementById('ea-result-label-' + taskId).textContent = 'Suggested Schedule';
+  try {
+    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-draft', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ type: 'schedule', task, action: '' })
+    });
+    const d = await r.json();
+    if(d.success) showEAResult(taskId, d.output, true);
+    else showEAResult(taskId, 'Error: ' + (d.error||'Failed'), false);
+  } catch(e) { showEAResult(taskId, 'Error: ' + e.message, false); }
+}
+
+function eaAddToTaskList(taskId, task, action) {
+  eaTaskListData.push({ id: taskId, task, action, done: false, addedAt: new Date().toLocaleString() });
+  document.getElementById('tl-badge').textContent = eaTaskListData.length;
+  showEAResult(taskId, 'Added to EA Task List. Your EA will handle: ' + action, true);
+  document.getElementById('ea-result-label-' + taskId).textContent = 'Added to EA Task List';
+}
+
+function showEAResult(taskId, text, show) {
+  const el = document.getElementById('ea-result-' + taskId);
+  const content = document.getElementById('ea-result-content-' + taskId);
+  if(el) el.classList.add('show');
+  if(content) content.textContent = text;
+}
+
+function clearEAResult(taskId) {
+  const el = document.getElementById('ea-result-' + taskId);
+  if(el) el.classList.remove('show');
+}
+
+function copyEAResult(taskId) {
+  const content = document.getElementById('ea-result-content-' + taskId);
+  if(content) {
+    navigator.clipboard.writeText(content.textContent).then(() => {
+      const btn = content.parentElement.querySelector('.ea-copy-btn');
+      if(btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy to Clipboard', 2000); }
+    });
+  }
+}
+
+function handleDocDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if(file) handleDocFile(file);
+}
+
+async function handleDocFile(file) {
+  if(!file) return;
+  const result = document.getElementById('doc-result');
+  const content = document.getElementById('doc-result-content');
+  result.classList.add('show');
+  content.textContent = 'Reading ' + file.name + '...';
+  try {
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      let fileContent = '';
+      if(file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.csv')) {
+        fileContent = e.target.result;
+      } else if(file.type.startsWith('image/')) {
+        content.textContent = 'Analyzing image document ' + file.name + '...';
+        const base64 = e.target.result.split(',')[1];
+        const r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-read-doc', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ filename: file.name, content: base64, isImage: true })
+        });
+        const d = await r.json();
+        if(d.success) content.textContent = d.analysis;
+        else content.textContent = 'Error: ' + (d.error||'Failed to analyze');
+        return;
+      } else {
+        fileContent = 'Document: ' + file.name + ' (binary file - extracting key details for analysis)';
+      }
+      const r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-read-doc', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ filename: file.name, content: fileContent, isImage: false })
+      });
+      const d = await r.json();
+      if(d.success) content.textContent = d.analysis;
+      else content.textContent = 'Error: ' + (d.error||'Failed to analyze');
+    };
+    if(file.type.startsWith('image/')) {
+      reader.readAsDataURL(file);
+    } else {
+      reader.readAsText(file);
+    }
+  } catch(err) {
+    content.textContent = 'Error reading file: ' + err.message;
+  }
+}
+
+function renderEATaskList() {
+  const el = document.getElementById('ea-task-list-content');
+  if(!el) return;
+  if(eaTaskListData.length === 0) {
+    el.innerHTML = '<div class="empty" style="padding:40px;text-align:center;color:var(--mid)">No tasks in your EA list yet. Classify a Bouncy Ball task and click Add to EA Task List.</div>';
+    return;
+  }
+  el.innerHTML = '<div class="ea-task-list">' + eaTaskListData.map((t,i) =>
+    '<div class="ea-task-item">' +
+    '<div class="ea-task-check ' + (t.done?'done':'') + '" onclick="toggleEATask(' + i + ')">' + (t.done?'&#10003;':'') + '</div>' +
+    '<div class="ea-task-body">' +
+    '<div class="ea-task-title">' + t.task + '</div>' +
+    '<div class="ea-task-instruction">' + t.action + '</div>' +
+    '<div class="ea-task-tag">EA Owned - Added ' + t.addedAt + '</div>' +
+    '</div></div>'
+  ).join('') + '</div>';
+}
+
+function toggleEATask(idx) {
+  eaTaskListData[idx].done = !eaTaskListData[idx].done;
+  renderEATaskList();
+}
+
+async function playEAVoice(btn, text) {
+  if(btn.classList.contains('playing')) {
+    window._eaAudio && window._eaAudio.pause();
+    btn.classList.remove('playing');
+    btn.innerHTML = '<svg viewBox="0 0 10 10"><polygon points="0,0 10,5 0,10"/></svg>Listen';
+    return;
+  }
+  document.querySelectorAll('.play-btn.playing,.play-btn-light.playing').forEach(b => {
+    b.classList.remove('playing');
+    b.innerHTML = '<svg viewBox="0 0 10 10"><polygon points="0,0 10,5 0,10"/></svg>Listen';
+  });
+  window._eaAudio && window._eaAudio.pause();
+  btn.classList.add('playing');
+  btn.innerHTML = '<svg viewBox="0 0 10 10"><rect x="1" y="1" width="3" height="8"/><rect x="6" y="1" width="3" height="8"/></svg>Playing...';
+  try {
+    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/speak', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ text: text.substring(0, 2500) })
+    });
+    if(!r.ok) throw new Error('Voice unavailable');
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    window._eaAudio = new Audio(url);
+    window._eaAudio.play();
+    window._eaAudio.onended = () => {
+      btn.classList.remove('playing');
+      btn.innerHTML = '<svg viewBox="0 0 10 10"><polygon points="0,0 10,5 0,10"/></svg>Listen';
+      URL.revokeObjectURL(url);
+    };
+  } catch(e) {
+    btn.classList.remove('playing');
+    btn.innerHTML = '<svg viewBox="0 0 10 10"><polygon points="0,0 10,5 0,10"/></svg>Listen';
+    console.error('Voice error:', e.message);
   }
 }
 
@@ -833,7 +1085,45 @@ async function doClassify() {
       const c = d.classification;
       const ic = c.classification === 'crystal';
       const em = ic ? '&#128302;' : '&#127934;';
-      res.innerHTML = '<div class="t-result-box"><div class="tr-hd"><div class="tr-em">' + em + '</div><div class="tr-ti">' + (ic ? 'Crystal Ball - Only You Can Do This' : 'Bouncy Ball - Your EA Owns This') + '</div></div><div class="tr-meta"><span><strong>Urgency:</strong> ' + (c.urgency||'') + '</span><span><strong>Confidence:</strong> ' + (c.confidence ? (c.confidence*100).toFixed(0)+'%' : '') + '</span></div><div class="tr-body"><strong>Why:</strong> ' + (c.reason||'') + '</div><div class="tr-body"><strong>Action:</strong> ' + (c.recommendedAction||'') + '</div><div class="tr-act">' + (ic ? 'Keep - Schedule - Protect this time' : 'Delegate - Remove from your calendar') + '</div></div>';
+      const taskId = 'task_' + Date.now();
+      const actLabel = ic ? 'Keep - Schedule - Protect this time' : 'Delegate - Remove from your calendar';
+      const eaButtons = ic ? '' :
+        '<div class="ea-actions">' +
+        '<div class="ea-actions-title">EA Execution Mode - Your EA Will Handle This</div>' +
+        '<div class="ea-action-grid">' +
+        '<button class="ea-action-btn" onclick="eaDraftEmail('' + taskId + '','' + (val||'').replace(/'/g,'') + '','' + (c.recommendedAction||'').replace(/'/g,'') + '')">' +
+        '<div class="ea-action-icon">&#9993;</div>' +
+        '<span class="ea-action-label">Draft Email</span>' +
+        '<div class="ea-action-desc">AI writes the reply for you</div>' +
+        '</button>' +
+        '<button class="ea-action-btn" onclick="eaGenerateDoc('' + taskId + '','' + (val||'').replace(/'/g,'') + '','' + (c.recommendedAction||'').replace(/'/g,'') + '')">' +
+        '<div class="ea-action-icon">&#128196;</div>' +
+        '<span class="ea-action-label">Generate Document</span>' +
+        '<div class="ea-action-desc">AI creates the document</div>' +
+        '</button>' +
+        '<button class="ea-action-btn" onclick="eaAddToTaskList('' + taskId + '','' + (val||'').replace(/'/g,'') + '','' + (c.recommendedAction||'').replace(/'/g,'') + '')">' +
+        '<div class="ea-action-icon">&#9989;</div>' +
+        '<span class="ea-action-label">Add to EA Task List</span>' +
+        '<div class="ea-action-desc">Queue for later handling</div>' +
+        '</button>' +
+        '<button class="ea-action-btn" onclick="eaSuggestSchedule('' + taskId + '','' + (val||'').replace(/'/g,'') + '')">' +
+        '<div class="ea-action-icon">&#128197;</div>' +
+        '<span class="ea-action-label">Suggest Schedule</span>' +
+        '<div class="ea-action-desc">Find the right time block</div>' +
+        '</button>' +
+        '</div>' +
+        '<div class="ea-result" id="ea-result-' + taskId + '">' +
+        '<div class="ea-result-label" id="ea-result-label-' + taskId + '">EA Output</div>' +
+        '<div class="ea-result-content" id="ea-result-content-' + taskId + '"></div>' +
+        '<div class="ea-result-actions">' +
+        '<button class="ea-copy-btn" onclick="copyEAResult('' + taskId + '')">Copy to Clipboard</button>' +
+        '<button class="ea-clear-btn" onclick="clearEAResult('' + taskId + '')">Clear</button>' +
+        '</div>' +
+        '</div>' +
+        '</div>';
+      const triageText = (ic ? 'Crystal Ball. Only you can do this. ' : 'Bouncy Ball. Your EA owns this. ') + (c.reason||'') + ' Recommended action: ' + (c.recommendedAction||'');
+      const triageId = 'triage_' + Date.now();
+      res.innerHTML = '<div class="t-result-box"><div class="tr-hd"><div class="tr-em">' + em + '</div><div class="tr-ti">' + (ic ? 'Crystal Ball - Only You Can Do This' : 'Bouncy Ball - Your EA Owns This') + '</div></div><div class="tr-meta"><span><strong>Urgency:</strong> ' + (c.urgency||'') + '</span><span><strong>Confidence:</strong> ' + (c.confidence ? (c.confidence*100).toFixed(0)+'%' : '') + '</span></div><div class="tr-body"><strong>Why:</strong> ' + (c.reason||'') + '</div><div class="tr-body"><strong>Action:</strong> ' + (c.recommendedAction||'') + '</div><div class="tr-act">' + actLabel + '</div><button class="play-btn" id="pb-'+triageId+'" onclick="playEAVoice(this,'+JSON.stringify(triageText).replace(/</g,'\u003c')+')"><svg viewBox=\"0 0 10 10\"><polygon points=\"0,0 10,5 0,10\"/></svg>Listen</button>' + eaButtons + '</div>';
       inp.value = '';
       loadStats();
     } else {
@@ -860,7 +1150,8 @@ async function generateWeek() {
     const r = await fetch('/api/generate-week', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({goals,revenue,timeblocks}) });
     const d = await r.json();
     if(d.success) {
-      res.innerHTML = '<div class="week-card"><div class="week-head"><div><div class="week-title">Your Priority Week</div><div class="week-meta">Built on the Essential EA Priority Week Framework - Saved to your database</div></div></div><div style="padding:18px"><div class="pw-note" style="border-top:none;margin-bottom:12px"><strong>Your plan is ready.</strong> Crystal Ball tasks are in your peak hours. Bouncy Balls are delegated. CEO Protection Protocol is enforced.</div><pre style="white-space:pre-wrap;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);line-height:1.85">' + d.plan + '</pre></div></div>';
+      const weekId = 'week_' + Date.now();
+      res.innerHTML = '<div class="week-card"><div class="week-head"><div><div class="week-title">Your Priority Week</div><div class="week-meta">Built on the Essential EA Priority Week Framework</div></div><button class="play-btn" id="pb-'+weekId+'" onclick="playEAVoice(this,' + JSON.stringify(d.plan.substring(0,1500)).replace(/</g,'\u003c') + ')"><svg viewBox=\"0 0 10 10\"><polygon points=\"0,0 10,5 0,10\"/></svg>Listen to Plan</button></div><div style="padding:18px"><div class="pw-note" style="border-top:none;margin-bottom:12px"><strong>Your plan is ready.</strong> Crystal Ball tasks are in your peak hours. Bouncy Balls are delegated. CEO Protection Protocol is enforced.</div><pre style="white-space:pre-wrap;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);line-height:1.85">' + d.plan + '</pre></div></div>';
       $('week-preview').style.display = 'none';
     } else {
       res.innerHTML = '<div class="alert alert-err">Error: ' + d.error + '</div>';
@@ -886,7 +1177,8 @@ async function generateBrief() {
     const r = await fetch('/api/daily-brief', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name,role,priorities,timeblocks:blocks,date:new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}) });
     const d = await r.json();
     if(d.success) {
-      res.innerHTML = '<div class="brief-box"><pre>' + d.brief + '</pre></div>';
+      const briefId = 'brief_' + Date.now();
+      res.innerHTML = '<div class="brief-box"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div class="ai-lbl" style="margin-bottom:0">Your EA Daily Brief</div><button class="play-btn" id="pb-'+briefId+'" onclick="playEAVoice(this,' + JSON.stringify(d.brief).replace(/</g,'\u003c') + ')"><svg viewBox=\"0 0 10 10\"><polygon points=\"0,0 10,5 0,10\"/></svg>Listen to Brief</button></div><pre>' + d.brief + '</pre></div>';
     } else {
       res.innerHTML = '<div class="alert alert-err">Error: ' + (d.error||'Failed to generate brief') + '</div>';
     }
@@ -976,17 +1268,17 @@ app.post('/api/classify', async (req, res) => {
 
     const prompt = 'You are the Essential EA - an AI-powered executive assistant built on the methodology from the book The Essential EA by Kristina Spencer.\n\nClassify this task using the Crystal Ball and Bouncy Ball Framework.\n\nCrystal Ball tasks: ONLY the executive can do these. Irreplaceable - if dropped, shatters permanently. Includes: client relationships, negotiations, strategy, approvals, legal, financial decisions.\n\nBouncy Ball tasks: CAN and SHOULD be delegated. Bounces back even if dropped. Includes: scheduling, admin, data entry, routine communication, follow-ups, coordination, vendor management.\n\nCEO Protection Protocol: Every minute on a Bouncy Ball task is stolen from a Crystal Ball task.\n\nTask: "' + taskDescription + '"\n\nRespond ONLY with valid JSON:\n{"classification":"crystal or bouncy","emoji":"crystal or bouncy","urgency":"urgent or today or defer or ea_owned","reason":"2-3 sentences explaining why using Essential EA methodology","recommendedAction":"Specific next step - if crystal what to do and when, if bouncy who handles it and how","confidence":0.95}';
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: 'You are the Essential EA AI. Classify tasks using Crystal Ball and Bouncy Ball Framework. Respond with valid JSON only. Use the word crystal or bouncy for emoji field.' },
-        { role: 'user', content: prompt }
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 400,
+      system: [
+        { type: 'text', text: 'You are the Essential EA AI - an operational intelligence platform built on the methodology from The Essential EA by Kristina Spencer. You serve real estate agents, financial advisors, insurance agents, coaches, consultants, and executives. Your tone is professional but conversational. You speak as a trusted EA advisor who protects the executive time fiercely. You always use Crystal Ball and Bouncy Ball Framework language naturally. Crystal Ball tasks are irreplaceable activities only the executive can do - if dropped they shatter permanently. Bouncy Ball tasks can and should be delegated - they bounce back. CEO Protection Protocol means the executive prime hours are sacred. Priority Week Framework means Crystal Ball tasks go in peak hours 9am to 12pm and Bouncy Balls never touch those hours.', cache_control: { type: 'ephemeral' } },
+        { type: 'text', text: 'For classification tasks respond with valid JSON only. No markdown. No extra text. Use the word crystal or bouncy for the emoji field.' }
       ],
-      temperature: 0.7,
-      max_tokens: 400
+      messages: [{ role: 'user', content: prompt }]
     });
 
-    let content = response.choices[0].message.content.trim();
+    let content = response.content[0].text.trim();
     if (content.includes('```')) content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const result = JSON.parse(content);
 
@@ -1006,17 +1298,17 @@ app.post('/api/generate-week', async (req, res) => {
 
     const prompt = 'You are the Essential EA building a Priority Week using the Essential EA methodology by Kristina Spencer.\n\nPriority Week Framework:\n1. Crystal Ball Protection: Schedule highest-leverage activities first and protect fiercely.\n2. Bouncy Ball Delegation: Every delegatable task goes to EA. Never on the executive calendar.\n3. CEO Protection Protocol: Non-negotiable blocks are sacred. EA enforces them.\n\nBuild a Priority Week for:\nGoals: ' + goals + '\nRevenue Target: ' + revenue + '\nProtected Blocks: ' + timeblocks + '\n\nFORMAT:\n\nPRIORITY WEEK\n\nCRYSTAL BALL FOCUS THIS WEEK\n1. [Activity] - [Why only you]\n2. [Activity] - [Why only you]\n3. [Activity] - [Why only you]\n\nMONDAY\nCrystal Ball (You): [task] - [time]\nBouncy Ball (EA): [task]\nProtected: [block]\n\nTUESDAY\nCrystal Ball (You): [task] - [time]\nBouncy Ball (EA): [task]\n\nWEDNESDAY\nCrystal Ball (You): [task] - [time]\nBouncy Ball (EA): [task]\nProtected: [block]\n\nTHURSDAY\nCrystal Ball (You): [task] - [time]\nBouncy Ball (EA): [task]\n\nFRIDAY\nCrystal Ball (You): [task] - [time]\nProtected: Friday afternoon - CEO Protection Protocol\n\nEA TASK LIST\n- [task]: [instruction]\n- [task]: [instruction]\n- [task]: [instruction]\n\nREVENUE FOCUS\nTo hit your target: [specific activity]\nKey metric: [measurable indicator]\n\nCEO PROTECTION REMINDER\nProtected blocks: ' + timeblocks;
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: 'You are the Essential EA AI. Build Priority Week plans using Crystal Ball and Bouncy Ball language from The Essential EA by Kristina Spencer.' },
-        { role: 'user', content: prompt }
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 1200,
+      system: [
+        { type: 'text', text: 'You are the Essential EA AI - an operational intelligence platform built on the methodology from The Essential EA by Kristina Spencer. You serve real estate agents, financial advisors, insurance agents, coaches, consultants, and executives. Your tone is professional but conversational. You speak as a trusted EA advisor who protects the executive time fiercely. You always use Crystal Ball and Bouncy Ball Framework language naturally. Crystal Ball tasks are irreplaceable activities only the executive can do - if dropped they shatter permanently. Bouncy Ball tasks can and should be delegated - they bounce back. CEO Protection Protocol means the executive prime hours are sacred. Priority Week Framework means Crystal Ball tasks go in peak hours 9am to 12pm and Bouncy Balls never touch those hours.', cache_control: { type: 'ephemeral' } },
+        { type: 'text', text: 'Build Priority Week plans using the Crystal Ball and Bouncy Ball Framework. Be specific, actionable, and decisive. Label every task clearly as Crystal Ball or Bouncy Ball.' }
       ],
-      temperature: 0.8,
-      max_tokens: 1200
+      messages: [{ role: 'user', content: prompt }]
     });
 
-    const plan = response.choices[0].message.content.trim();
+    const plan = response.content[0].text.trim();
 
     await sql`INSERT INTO weekly_plans (goals, revenue, timeblocks, plan) VALUES (${goals}, ${revenue}, ${timeblocks}, ${plan})`;
 
@@ -1033,17 +1325,17 @@ app.post('/api/daily-brief', async (req, res) => {
 
     const prompt = 'You are the Essential EA generating a personalized Daily Brief for ' + (name || 'the executive') + ' who is a ' + (role || 'business owner') + '.\n\nToday: ' + (date || new Date().toLocaleDateString()) + '\nPriorities: ' + (priorities || 'Revenue and client relationships') + '\nProtected blocks: ' + (timeblocks || 'Hard stop at 5:30pm') + '\n\nWrite as a highly competent EA who has been working 2 hours already. Professional, warm, specific. Use Crystal Ball and Bouncy Ball language naturally.\n\nFormat:\n\nGood morning, ' + (name || 'there') + '.\n\nYOUR CRYSTAL BALL PRIORITIES TODAY\n[3 specific Crystal Ball tasks for their role]\n\nYOUR EA HAS ALREADY HANDLED\n[3-4 specific Bouncy Ball tasks completed this morning]\n\nWHAT NEEDS YOUR DECISION TODAY\n[1-2 items needing executive judgment]\n\nYOUR PROTECTED TIME TODAY\n[Their specific blocks - enforced by EA]\n\nONE THING TO REMEMBER TODAY\n[Personal insight tied to their goals]\n\nYour EA is standing by.';
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: 'You are the Essential EA AI. Generate personalized daily briefs using Crystal Ball and Bouncy Ball language. Professional, specific, never generic.' },
-        { role: 'user', content: prompt }
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 600,
+      system: [
+        { type: 'text', text: 'You are the Essential EA AI - an operational intelligence platform built on the methodology from The Essential EA by Kristina Spencer. You serve real estate agents, financial advisors, insurance agents, coaches, consultants, and executives. Your tone is professional but conversational. You speak as a trusted EA advisor who protects the executive time fiercely. You always use Crystal Ball and Bouncy Ball Framework language naturally. Crystal Ball tasks are irreplaceable activities only the executive can do - if dropped they shatter permanently. Bouncy Ball tasks can and should be delegated - they bounce back. CEO Protection Protocol means the executive prime hours are sacred. Priority Week Framework means Crystal Ball tasks go in peak hours 9am to 12pm and Bouncy Balls never touch those hours.', cache_control: { type: 'ephemeral' } },
+        { type: 'text', text: 'Generate personalized EA Daily Briefs. Sound like a real highly competent executive assistant who has been working 2 hours already. Professional, warm, specific. Never generic.' }
       ],
-      temperature: 0.8,
-      max_tokens: 600
+      messages: [{ role: 'user', content: prompt }]
     });
 
-    const brief = response.choices[0].message.content.trim();
+    const brief = response.content[0].text.trim();
 
     const bname = name || 'Anonymous'; const brole = role || 'Executive';
     await sql`INSERT INTO daily_briefs (name, role, brief) VALUES (${bname}, ${brole}, ${brief})`;
@@ -1199,21 +1491,187 @@ app.post('/api/audit-insights', async (req, res) => {
       'PROJECTED IMPACT - What their health score could reach in 30 days. ' +
       'Be specific, decisive, reference actual numbers, sound like a trusted advisor.';
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: 'You are the Essential EA AI performing operational audits using the Crystal Ball and Bouncy Ball methodology from The Essential EA by Kristina Spencer. Be specific, data-driven, and speak as a trusted EA advisor.' },
-        { role: 'user', content: prompt }
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 800,
+      system: [
+        { type: 'text', text: 'You are the Essential EA AI - an operational intelligence platform built on the methodology from The Essential EA by Kristina Spencer. You serve real estate agents, financial advisors, insurance agents, coaches, consultants, and executives. Your tone is professional but conversational. You speak as a trusted EA advisor who protects the executive time fiercely. You always use Crystal Ball and Bouncy Ball Framework language naturally. Crystal Ball tasks are irreplaceable activities only the executive can do - if dropped they shatter permanently. Bouncy Ball tasks can and should be delegated - they bounce back. CEO Protection Protocol means the executive prime hours are sacred. Priority Week Framework means Crystal Ball tasks go in peak hours 9am to 12pm and Bouncy Balls never touch those hours.', cache_control: { type: 'ephemeral' } },
+        { type: 'text', text: 'Perform operational audits. Be specific, data-driven, and decisive. Reference actual numbers. Sound like a trusted advisor who has studied the business.' }
       ],
-      temperature: 0.7,
-      max_tokens: 800
+      messages: [{ role: 'user', content: prompt }]
     });
 
-    const insights = response.choices[0].message.content.trim();
+    const insights = response.content[0].text.trim();
     res.json({ success: true, insights });
   } catch (error) {
     console.error('Audit insights error:', error.message);
     res.status(500).json({ error: error.message, success: false });
+  }
+});
+
+app.post('/api/ea-draft', async (req, res) => {
+  try {
+    const { type, task, action } = req.body;
+    if(!task) return res.status(400).json({ error: 'Task required', success: false });
+
+    let prompt = '';
+    let label = '';
+
+    if(type === 'email') {
+      label = 'Email Draft';
+      prompt = 'You are a highly competent executive assistant using the Essential EA methodology by Kristina Spencer. ' +
+        'Draft a professional, neutral email on behalf of the executive for this task: ' + task + '. ' +
+        'Recommended action: ' + action + '. ' +
+        'Write a complete email with subject line and body. ' +
+        'Tone: professional but warm. Concise. No fluff. ' +
+        'Format: SUBJECT: [subject line] then blank line then the email body. ' +
+        'Sign off with [Executive Name] as the signature placeholder.';
+    } else if(type === 'document') {
+      label = 'Generated Document';
+      prompt = 'You are a highly competent executive assistant using the Essential EA methodology by Kristina Spencer. ' +
+        'Generate a professional document for this task: ' + task + '. ' +
+        'Recommended action: ' + action + '. ' +
+        'Create a complete, ready-to-use document appropriate for the task type. ' +
+        'Include all relevant sections a professional would expect. ' +
+        'Use [PLACEHOLDER] for any specific details that need to be filled in. ' +
+        'Be thorough but concise. Professional tone throughout.';
+    } else if(type === 'schedule') {
+      label = 'Schedule Suggestion';
+      prompt = 'You are a highly competent executive assistant using the Essential EA methodology by Kristina Spencer. ' +
+        'This is a Bouncy Ball task that should be delegated or handled efficiently: ' + task + '. ' +
+        'Using the Priority Week Framework and CEO Protection Protocol, suggest: ' +
+        '1. The best time of day to handle this (avoid Crystal Ball prime hours of 9am-12pm) ' +
+        '2. How long it should take ' +
+        '3. Whether it should be batched with similar tasks ' +
+        '4. Whether it can be fully delegated to an EA or team member ' +
+        '5. The specific calendar block recommendation ' +
+        'Be specific, decisive, and use Crystal Ball and Bouncy Ball language naturally.';
+    }
+
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 800,
+      system: [
+        { type: 'text', text: 'You are the Essential EA AI - an operational intelligence platform built on the methodology from The Essential EA by Kristina Spencer. You serve real estate agents, financial advisors, insurance agents, coaches, consultants, and executives. Your tone is professional but conversational. You speak as a trusted EA advisor who protects the executive time fiercely. You always use Crystal Ball and Bouncy Ball Framework language naturally. Crystal Ball tasks are irreplaceable activities only the executive can do - if dropped they shatter permanently. Bouncy Ball tasks can and should be delegated - they bounce back. CEO Protection Protocol means the executive prime hours are sacred. Priority Week Framework means Crystal Ball tasks go in peak hours 9am to 12pm and Bouncy Balls never touch those hours.', cache_control: { type: 'ephemeral' } },
+        { type: 'text', text: 'Execute tasks on behalf of the executive. Draft emails, documents, and schedules that are professional, specific, and ready to use. Never generic or templated.' }
+      ],
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    const output = response.content[0].text.trim();
+    res.json({ success: true, output, label });
+  } catch (error) {
+    console.error('EA draft error:', error.message);
+    res.status(500).json({ error: error.message, success: false });
+  }
+});
+
+app.post('/api/ea-read-doc', async (req, res) => {
+  try {
+    const { filename, content, isImage } = req.body;
+    if(!filename) return res.status(400).json({ error: 'Filename required', success: false });
+
+    const ext = filename.split('.').pop().toLowerCase();
+
+    let messages = [];
+
+    if(isImage) {
+      messages = [
+        { role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: content } },
+          { type: 'text', text: 'Analyze this document image. Provide: 1. DOCUMENT SUMMARY - what this document is and its key points. 2. CRYSTAL BALL ACTION ITEMS - things only the executive can handle personally (decisions, approvals, negotiations). 3. BOUNCY BALL ACTION ITEMS - things that can be delegated to an EA or team member. 4. DEADLINES AND DATES - any time-sensitive items. 5. EA RECOMMENDATION - the single most important next action. Be specific and use Essential EA methodology language.' }
+        ]}
+      ];
+    } else {
+      const contentPreview = content.length > 3000 ? content.substring(0, 3000) + '...[truncated]' : content;
+      messages = [
+        { role: 'user', content: 'Analyze this document: ' + filename + '
+
+Content:
+' + contentPreview + '
+
+Provide:
+1. DOCUMENT SUMMARY - what this document is and its key points in 2-3 sentences.
+2. CRYSTAL BALL ACTION ITEMS - things only the executive can handle personally. List each one.
+3. BOUNCY BALL ACTION ITEMS - things that can be delegated to an EA or team member. List each one.
+4. DEADLINES AND DATES - any time-sensitive items found in the document.
+5. EA RECOMMENDATION - the single most important next action the executive should take today.
+
+Use Essential EA methodology language. Be specific to this document.' }
+      ];
+    }
+
+    let response;
+    if(isImage) {
+      // Use Claude Sonnet for vision - Haiku does not support vision
+      response = await anthropic.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: 'You are the Essential EA AI - an operational intelligence platform built on the methodology from The Essential EA by Kristina Spencer. You serve real estate agents, financial advisors, insurance agents, coaches, consultants, and executives. Your tone is professional but conversational. You speak as a trusted EA advisor who protects the executive time fiercely. You always use Crystal Ball and Bouncy Ball Framework language naturally. Crystal Ball tasks are irreplaceable activities only the executive can do - if dropped they shatter permanently. Bouncy Ball tasks can and should be delegated - they bounce back. CEO Protection Protocol means the executive prime hours are sacred. Priority Week Framework means Crystal Ball tasks go in peak hours 9am to 12pm and Bouncy Balls never touch those hours. Analyze documents and identify Crystal Ball and Bouncy Ball action items. Be specific to the actual document content.',
+        messages
+      });
+    } else {
+      response = await anthropic.messages.create({
+        model: 'claude-haiku-4-5',
+        max_tokens: 1000,
+        system: [
+          { type: 'text', text: 'You are the Essential EA AI - an operational intelligence platform built on the methodology from The Essential EA by Kristina Spencer. You serve real estate agents, financial advisors, insurance agents, coaches, consultants, and executives. Your tone is professional but conversational. You speak as a trusted EA advisor who protects the executive time fiercely. You always use Crystal Ball and Bouncy Ball Framework language naturally. Crystal Ball tasks are irreplaceable activities only the executive can do - if dropped they shatter permanently. Bouncy Ball tasks can and should be delegated - they bounce back. CEO Protection Protocol means the executive prime hours are sacred. Priority Week Framework means Crystal Ball tasks go in peak hours 9am to 12pm and Bouncy Balls never touch those hours.', cache_control: { type: 'ephemeral' } },
+          { type: 'text', text: 'Analyze documents and identify Crystal Ball and Bouncy Ball action items. Be specific to the actual document content.' }
+        ],
+        messages
+      });
+    }
+
+    const analysis = response.content[0].text.trim();
+    res.json({ success: true, analysis });
+  } catch (error) {
+    console.error('Doc reader error:', error.message);
+    res.status(500).json({ error: error.message, success: false });
+  }
+});
+
+app.post('/api/speak', async (req, res) => {
+  try {
+    const { text } = req.body;
+    if(!text) return res.status(400).json({ error: 'Text required' });
+    if(!process.env.ELEVENLABS_API_KEY) return res.status(503).json({ error: 'Voice not configured' });
+
+    const clean = text
+      .replace(/[#*_~`]/g, '')
+      .replace(/
+
++/g, '. ')
+      .replace(/
+/g, ' ')
+      .substring(0, 2500);
+
+    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM', {
+      method: 'POST',
+      headers: {
+        'xi-api-key': process.env.ELEVENLABS_API_KEY,
+        'Content-Type': 'application/json',
+        'Accept': 'audio/mpeg'
+      },
+      body: JSON.stringify({
+        text: clean,
+        model_id: 'eleven_flash_v2_5',
+        voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true }
+      })
+    });
+
+    if(!response.ok) {
+      const err = await response.text();
+      console.error('ElevenLabs error:', err);
+      return res.status(502).json({ error: 'Voice service error' });
+    }
+
+    const audioBuffer = await response.arrayBuffer();
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Content-Length', audioBuffer.byteLength);
+    res.send(Buffer.from(audioBuffer));
+  } catch (error) {
+    console.error('Speak error:', error.message);
+    res.status(500).json({ error: error.message });
   }
 });
 
