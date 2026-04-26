@@ -1625,14 +1625,7 @@ app.post('/api/speak', async (req, res) => {
     if(!text) return res.status(400).json({ error: 'Text required' });
     if(!process.env.ELEVENLABS_API_KEY) return res.status(503).json({ error: 'Voice not configured' });
 
-    const clean = text
-      .replace(/[#*_~`]/g, '')
-      .replace(/
-
-+/g, '. ')
-      .replace(/
-/g, ' ')
-      .substring(0, 2500);
+    const clean = text.replace(/[#*_~`]/g, '').replace(/\n\n+/g, '. ').replace(/\n/g, ' ').substring(0, 2500);
 
     const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM', {
       method: 'POST',
