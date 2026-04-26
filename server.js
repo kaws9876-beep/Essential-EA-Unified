@@ -870,6 +870,9 @@ async function generateAuditInsights() {
 const eaTaskListData = [];
 
 async function eaDraftEmail(taskId, task, action) {
+  taskId = taskId || 'ea_'+Date.now();
+  task = task || window._eaTask || '';
+  action = action || window._eaAction || '';
   showEAResult(taskId, 'Drafting email...');
   var _lbl=document.getElementById('ea-result-label');if(_lbl)_lbl.textContent='Drafted Email - Ready to Send';
   try {
@@ -884,6 +887,9 @@ async function eaDraftEmail(taskId, task, action) {
 }
 
 async function eaGenerateDoc(taskId, task, action) {
+  taskId = taskId || 'ea_'+Date.now();
+  task = task || window._eaTask || '';
+  action = action || window._eaAction || '';
   showEAResult(taskId, 'Generating document...');
   var _lbl=document.getElementById('ea-result-label');if(_lbl)_lbl.textContent='Generated Document';
   try {
@@ -898,6 +904,8 @@ async function eaGenerateDoc(taskId, task, action) {
 }
 
 async function eaSuggestSchedule(taskId, task) {
+  taskId = taskId || 'ea_'+Date.now();
+  task = task || window._eaTask || '';
   showEAResult(taskId, 'Finding the best time block...');
   var _lbl=document.getElementById('ea-result-label');if(_lbl)_lbl.textContent='Suggested Schedule';
   try {
@@ -1138,6 +1146,9 @@ async function doClassify() {
         '<button class="ea-action-btn" onclick="eaGenerateDoc()"><div class="ea-action-icon">&#128196;</div><span class="ea-action-label">Generate Document</span><div class="ea-action-desc">AI creates the document</div></button>' +
         '<button class="ea-action-btn" onclick="eaAddToTaskList()"><div class="ea-action-icon">&#9989;</div><span class="ea-action-label">Add to EA Task List</span><div class="ea-action-desc">Queue for later handling</div></button>' +
         '<button class="ea-action-btn" onclick="eaSuggestSchedule()"><div class="ea-action-icon">&#128197;</div><span class="ea-action-label">Suggest Schedule</span><div class="ea-action-desc">Find the right time block</div></button>' +
+        '</div>' +
+        '<div style="margin:12px 0 8px;padding:12px 16px;background:linear-gradient(135deg,rgba(196,154,138,0.15),rgba(196,154,138,0.05));border:1px solid rgba(196,154,138,0.3);border-radius:8px;display:flex;align-items:center;justify-content:space-between">' +
+        '<div style="font-size:12px;color:rgba(26,26,24,0.7);line-height:1.5"><strong style="color:#C49A8A;display:block;margin-bottom:2px">Your EA is ready to handle this.</strong>Choose an action above and your EA executes it instantly.</div>' +
         '</div>' +
         '<div id="ea-result-box" style="display:none;margin-top:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:14px">' +
         '<div style="font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#C49A8A;margin-bottom:8px" id="ea-result-label">EA Output</div>' +
@@ -1709,6 +1720,27 @@ app.get('/api/speak', async (req, res) => {
   } catch (error) {
     console.error('Speak GET error:', error.message);
     res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/ea-execute', async (req, res) => {
+  try {
+    const { task, action, type } = req.body;
+    const bookContext = await getBookContext(task || action || '');
+    const prompt = 'You are the Essential EA executing a task on behalf of the executive. Task: ' + (task||'') + '. Requested action: ' + (action||type||'handle this') + '. Execute this completely and professionally. Produce a ready-to-use output - if it is an email write the full email, if it is a document write the full document, if it is a schedule provide the time blocks, if it is a task provide the action plan.' + bookContext;
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 1000,
+      system: [
+        { type: 'text', text: METHODOLOGY_CONTEXT, cache_control: { type: 'ephemeral' } },
+        { type: 'text', text: 'Execute delegatable tasks completely. Produce professional ready-to-use outputs. Sound like a highly competent EA.' }
+      ],
+      messages: [{ role: 'user', content: prompt }]
+    });
+    const output = response.content[0].text.trim();
+    res.json({ success: true, output });
+  } catch(error) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
