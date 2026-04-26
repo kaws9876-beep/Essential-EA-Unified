@@ -1038,6 +1038,7 @@ async function doClassify() {
     if(d.success) {
       const c = d.classification;
       const ic = c.classification === 'crystal';
+      const triageId = 'task_' + Date.now();
       window._lastEAText = (ic ? 'Crystal Ball. Only you can do this. ' : 'Bouncy Ball. Your EA owns this. ') + (c.reason||'') + ' ' + (c.recommendedAction||'');
       const em = ic ? '&#128302;' : '&#127934;';
       const taskId = 'task_' + Date.now();
@@ -1062,9 +1063,8 @@ async function doClassify() {
         '</div>';
       window._eaTask = val || '';
       window._eaAction = c.recommendedAction || '';
-      const triageId = 'triage_' + Date.now();
       const triageText = window._lastEAText || '';
-      res.innerHTML = '<div class="t-result-box"><div class="tr-hd"><div class="tr-em">' + em + '</div><div class="tr-ti">' + (ic ? 'Crystal Ball - Only You Can Do This' : 'Bouncy Ball - Your EA Owns This') + '</div></div><div class="tr-meta"><span><strong>Urgency:</strong> ' + (c.urgency||'') + '</span><span><strong>Confidence:</strong> ' + (c.confidence ? (c.confidence*100).toFixed(0)+'%' : '') + '</span></div><div class="tr-body"><strong>Why:</strong> ' + (c.reason||'') + '</div><div class="tr-body"><strong>Action:</strong> ' + (c.recommendedAction||'') + '</div><div class="tr-act">' + actLabel + '</div><button class=\"play-btn\" onclick=\"playEAVoice(this,window._lastEAText)\">Listen</button>' + eaButtons + '</div>';
+      res.innerHTML = '<div class="t-result-box"><div class="tr-hd"><div class="tr-em">' + em + '</div><div class="tr-ti">' + (ic ? 'Crystal Ball - Only You Can Do This' : 'Bouncy Ball - Your EA Owns This') + '</div></div><div class="tr-meta"><span><strong>Urgency:</strong> ' + (c.urgency||'') + '</span><span><strong>Confidence:</strong> ' + (c.confidence ? (c.confidence*100).toFixed(0)+'%' : '') + '</span></div><div class="tr-body"><strong>Why:</strong> ' + (c.reason||'') + '</div><div class="tr-body"><strong>Action:</strong> ' + (c.recommendedAction||'') + '</div><div class="tr-act">' + actLabel + '</div><button class="play-btn" onclick="playEAVoice(this,window._lastEAText)">Listen</button>' + eaButtons + '</div>';
       inp.value = '';
       loadStats();
     } else {
