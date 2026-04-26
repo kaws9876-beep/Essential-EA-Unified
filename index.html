@@ -784,7 +784,7 @@ const eaTaskListData = [];
 async function eaDraftEmail(taskId, task, action) {
   if(!task) { taskId='ea_'+Date.now(); task=window._eaTask||''; action=window._eaAction||''; }
   showEAResult(taskId, 'Drafting email...');
-  document.getElementById('ea-result-label-' + taskId).textContent = 'Drafted Email - Ready to Send';
+  const lbl = document.getElementById('ea-result-label'); if(lbl) lbl.textContent = 'Drafted Email - Ready to Send';
   try {
     const r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-draft', {
       method: 'POST', headers: {'Content-Type':'application/json'},
@@ -799,7 +799,7 @@ async function eaDraftEmail(taskId, task, action) {
 async function eaGenerateDoc(taskId, task, action) {
   if(!task) { taskId='ea_'+Date.now(); task=window._eaTask||''; action=window._eaAction||''; }
   showEAResult(taskId, 'Generating document...');
-  document.getElementById('ea-result-label-' + taskId).textContent = 'Generated Document';
+  const lbl = document.getElementById('ea-result-label'); if(lbl) lbl.textContent = 'Generated Document';
   try {
     const r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-draft', {
       method: 'POST', headers: {'Content-Type':'application/json'},
@@ -814,7 +814,7 @@ async function eaGenerateDoc(taskId, task, action) {
 async function eaSuggestSchedule(taskId, task) {
   if(!task) { taskId='ea_'+Date.now(); task=window._eaTask||''; }
   showEAResult(taskId, 'Finding the best time block...');
-  document.getElementById('ea-result-label-' + taskId).textContent = 'Suggested Schedule';
+  const lbl = document.getElementById('ea-result-label'); if(lbl) lbl.textContent = 'Suggested Schedule';
   try {
     const r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-draft', {
       method: 'POST', headers: {'Content-Type':'application/json'},
@@ -831,14 +831,14 @@ function eaAddToTaskList(taskId, task, action) {
   eaTaskListData.push({ id: taskId, task, action, done: false, addedAt: new Date().toLocaleString() });
   document.getElementById('tl-badge').textContent = eaTaskListData.length;
   showEAResult(taskId, 'Added to EA Task List. Your EA will handle: ' + action, true);
-  document.getElementById('ea-result-label-' + taskId).textContent = 'Added to EA Task List';
+  const lbl2 = document.getElementById('ea-result-label'); if(lbl2) lbl2.textContent = 'Suggested Schedule';
 }
 
 function showEAResult(taskId, text, show) {
   const el = document.getElementById('ea-result-box');
   const cnt = document.getElementById('ea-result-content');
   if(el) el.style.display = 'block';
-  if(cnt) cnt.textContent = text;
+  if(cnt) cnt.textContent = text || '';
 }
 
 function clearEAResult(taskId) {
