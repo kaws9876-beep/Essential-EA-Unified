@@ -1657,6 +1657,32 @@ app.post('/api/speak', async (req, res) => {
   }
 });
 
+app.get('/api/speak', async (req, res) => {
+  try {
+    const text = req.query.text;
+    if(!text) return res.status(400).json({ error: 'Text required' });
+    if(!process.env.ELEVENLABS_API_KEY) return res.status(503).json({ error: 'Voice not configured' });
+    const clean = text.replace(/[#*_~`]/g, '').replace(/\n/g, ' ').substring(0, 500);
+    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM', {
+      method: 'POST',
+      headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY, 'Content-Type': 'application/json', 'Accept': 'audio/mpeg' },
+      body: JSON.stringify({ text: clean, model_id: 'eleven_turbo_v2', voice_settings: { stability: 0.5, similarity_boost: 0.75 } })
+    });
+    if(!response.ok) {
+      const err = await response.text();
+      console.error('ElevenLabs GET error:', response.status, err.substring(0,200));
+      return res.status(502).json({ error: 'Voice error: ' + response.status });
+    }
+    const audioBuffer = await response.arrayBuffer();
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.send(Buffer.from(audioBuffer));
+  } catch (error) {
+    console.error('Speak GET error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });
 });
