@@ -15,8 +15,8 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.1",
     "openai": "^6.34.0",
-    "postgres": "^3.4.4"
-    "@anthropic-ai/sdk": "^0.39.0",
+    "postgres": "^3.4.4",
+    "@anthropic-ai/sdk": "^0.39.0"
   },
   "devDependencies": {},
   "engines": {
