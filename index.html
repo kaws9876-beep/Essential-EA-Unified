@@ -2,16 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Essential EA">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#1A1A18">
-<meta name="description" content="The Essential EA - AI-powered operational intelligence platform by Kristina Spencer">
-<link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="data:image/png;base64,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">
-<link rel="icon" type="image/png" href="data:image/png;base64,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">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>The Essential EA</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -316,6 +307,46 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 .audit-cta-sub{font-size:12.5px;color:rgba(245,240,232,.45);margin-bottom:16px;line-height:1.6}
 .audit-cta-btn{background:#FAF8F4;color:#1A1A18;border:none;border-radius:4px;padding:12px 28px;font-family:"DM Sans",sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
 @media(max-width:768px){.audit-grid{grid-template-columns:1fr}.health-ring-wrap{flex-direction:column;text-align:center}}
+.ea-actions{margin-top:14px;border-top:1px solid rgba(255,255,255,.1);padding-top:14px}
+.ea-actions-title{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+.ea-action-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.ea-action-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:10px 12px;cursor:pointer;font-family:"DM Sans",sans-serif;transition:all .2s;text-align:left}
+.ea-action-btn:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25)}
+.ea-action-icon{font-size:16px;margin-bottom:4px}
+.ea-action-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#FAF8F4;display:block}
+.ea-action-desc{font-size:9.5px;color:rgba(245,240,232,.4);margin-top:2px}
+.ea-result{margin-top:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:14px;display:none}
+.ea-result.show{display:block}
+.ea-result-label{font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.ea-result-content{font-size:12.5px;color:rgba(245,240,232,.7);line-height:1.75;white-space:pre-wrap}
+.ea-result-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.ea-copy-btn{font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:7px 14px;border-radius:3px;border:1px solid #E8E2D8;cursor:pointer;font-family:"DM Sans",sans-serif;background:#FAF8F4;color:#1A1A18}
+.ea-clear-btn{font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:7px 14px;border-radius:3px;border:1px solid rgba(255,255,255,.15);cursor:pointer;font-family:"DM Sans",sans-serif;background:transparent;color:rgba(245,240,232,.5)}
+.doc-upload-area{border:2px dashed rgba(196,154,138,.3);border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px;background:var(--warm)}
+.doc-upload-area:hover{border-color:var(--gold);background:rgba(196,154,138,.05)}
+.doc-upload-area.drag-over{border-color:var(--gold);background:rgba(196,154,138,.08)}
+.doc-upload-icon{font-size:28px;margin-bottom:8px}
+.doc-upload-title{font-size:13px;font-weight:600;color:var(--blk);margin-bottom:4px}
+.doc-upload-sub{font-size:11px;color:var(--mid)}
+.doc-result{background:var(--blk);border-radius:10px;padding:20px;margin-top:16px;display:none}
+.doc-result.show{display:block}
+.doc-result pre{white-space:pre-wrap;font-family:"DM Sans",sans-serif;font-size:12.5px;color:rgba(245,240,232,.7);line-height:1.85}
+.ea-task-list{background:var(--warm);border:1px solid var(--tan);border-radius:10px;overflow:hidden;margin-top:16px}
+.ea-task-item{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-bottom:1px solid var(--tan)}
+.ea-task-item:last-child{border-bottom:none}
+.ea-task-check{width:18px;height:18px;border-radius:3px;border:2px solid var(--tan);flex-shrink:0;margin-top:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px}
+.ea-task-check.done{background:var(--grn);border-color:var(--grn);color:#fff}
+.ea-task-body{flex:1}
+.ea-task-title{font-size:13px;font-weight:500;color:var(--blk);margin-bottom:3px}
+.ea-task-instruction{font-size:11px;color:var(--mid);line-height:1.5}
+.ea-task-tag{font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:2px;background:rgba(138,58,48,.08);color:#A86050;margin-top:4px;display:inline-block}
+.play-btn{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:3px;padding:5px 10px;cursor:pointer;font-family:"DM Sans",sans-serif;font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(245,240,232,.5);transition:all .15s;margin-top:8px}
+.play-btn:hover{border-color:var(--gold);color:var(--gold)}
+.play-btn.playing{border-color:var(--gold);color:var(--gold);background:rgba(196,154,138,.1)}
+.play-btn svg{width:10px;height:10px;fill:currentColor}
+.play-btn-light{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--tan);border-radius:3px;padding:5px 10px;cursor:pointer;font-family:"DM Sans",sans-serif;font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mid);transition:all .15s;margin-top:8px}
+.play-btn-light:hover{border-color:var(--gold);color:var(--gold2)}
+.play-btn-light.playing{border-color:var(--gold);color:var(--gold2);background:rgba(196,154,138,.05)}
 @media(max-width:1024px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.dg{grid-template-columns:1fr 1fr}.cw{grid-column:span 2}.pw-layout{grid-template-columns:1fr}.s-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:768px){
   .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:300}
@@ -341,24 +372,14 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
   .s-grid{grid-template-columns:1fr}
   .tb-date{display:none}
 }
-
-.play-btn{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:3px;padding:5px 10px;cursor:pointer;font-family:"DM Sans",sans-serif;font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(245,240,232,.5);transition:all .15s;margin-top:8px}
-.play-btn:hover{border-color:#C49A8A;color:#C49A8A}
-.play-btn.playing{border-color:#C49A8A;color:#C49A8A;background:rgba(196,154,138,.1)}
 </style>
 </head>
 <body>
-<div id="splash-screen" style="position:fixed;inset:0;background:#1A1A18;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s ease">
-  <img src="data:image/png;base64,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" style="width:80px;height:80px;border-radius:12px;margin-bottom:24px">
-  <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:#FAF8F4;margin-bottom:8px">The <em style="font-style:italic;font-weight:600;color:rgba(196,154,138,.8)">Essential</em> EA</div>
-  <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.3)">Operational Intelligence</div>
-  <div style="margin-top:32px;width:40px;height:2px;background:rgba(196,154,138,.3);border-radius:2px;overflow:hidden"><div id="splash-bar" style="height:100%;background:#C49A8A;width:0%;transition:width 1.2s ease"></div></div>
-</div>
 <div class="overlay" id="overlay" onclick="closeSB()"></div>
 <div class="shell">
 <aside class="sidebar" id="sidebar">
   <div class="sb-top">
-    <div class="sb-logo-img"><img src="data:image/png;base64,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" alt="The Essential EA" style="width:36px;height:36px;border-radius:4px;margin-right:10px;vertical-align:middle"><span style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:300;color:#FAF8F4;vertical-align:middle">The <em style="font-style:italic;font-weight:600;color:rgba(196,154,138,.8)">Essential</em> EA</span></div>
+    <div class="sb-logo">The <em>Essential</em> EA</div>
     <div class="sb-tag">Operational Intelligence</div>
   </div>
   <div class="sb-user">
@@ -374,6 +395,8 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
     <div class="sb-item" onclick="nav('triage',this)"><span class="sb-icon">&#128302;</span>Crystal Ball Triage<span class="sb-badge" id="tc">0</span></div>
     <div class="sb-item" onclick="nav('inbox',this)"><span class="sb-icon">&#9993;</span>Communication<span class="sb-badge">4</span></div>
     <div class="sb-item" onclick="nav('history',this)"><span class="sb-icon">&#128336;</span>History</div>
+    <div class="sb-item" onclick="nav('docreader',this)"><span class="sb-icon">&#128196;</span>Document Reader</div>
+    <div class="sb-item" onclick="nav('eatasklist',this)"><span class="sb-icon">&#9989;</span>EA Task List<span class="sb-badge" id="tl-badge">0</span></div>
     <div class="sb-item" onclick="nav('audit',this)"><span class="sb-icon">&#128202;</span>Operational Audit</div>
     <div class="sb-sec">Operations</div>
     <div class="sb-item" onclick="nav('operations',this)"><span class="sb-icon">&#128101;</span>Team and Pipeline</div>
@@ -583,6 +606,30 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
       </div>
     </div>
 
+        <div class="screen" id="screen-docreader">
+      <div class="pg-h2">Document Reader</div>
+      <div class="pg-s2">Upload any document. Your EA AI reads it, summarizes it, and classifies every action item as Crystal Ball or Bouncy Ball.</div>
+      <div class="doc-upload-area" id="drop-zone" onclick="document.getElementById('doc-file-input').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDocDrop(event)">
+        <input type="file" id="doc-file-input" accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.png,.jpg,.jpeg" style="display:none" onchange="handleDocFile(this.files[0])">
+        <div class="doc-upload-icon">&#128196;</div>
+        <div class="doc-upload-title">Drop your document here or click to upload</div>
+        <div class="doc-upload-sub">PDF, Word, Excel, TXT, CSV, Images supported - Any industry</div>
+      </div>
+      <div id="doc-result" class="doc-result">
+        <div class="ai-lbl">EA Document Analysis</div>
+        <pre id="doc-result-content"></pre>
+        <button class="ea-copy-btn" style="margin-top:12px" onclick="navigator.clipboard.writeText(document.getElementById('doc-result-content').textContent).then(()=>this.textContent='Copied!').catch(()=>{})">Copy Analysis</button>
+      </div>
+    </div>
+
+    <div class="screen" id="screen-eatasklist">
+      <div class="pg-h2">EA Task List</div>
+      <div class="pg-s2">Every Bouncy Ball task your EA is handling. These never touch your calendar.</div>
+      <div id="ea-task-list-content">
+        <div class="empty" style="padding:40px;text-align:center;color:var(--mid)">No tasks in your EA list yet. Classify a Bouncy Ball task and click Add to EA Task List.</div>
+      </div>
+    </div>
+
         <div class="screen" id="screen-operations">
       <div class="pg-h2">Operations</div>
       <div class="pg-s2">Your business infrastructure - coming online as the platform builds.</div>
@@ -635,9 +682,10 @@ const today = new Date();
 const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 $('tbd').textContent = days[today.getDay()] + ', ' + months[today.getMonth()] + ' ' + today.getDate() + ', ' + today.getFullYear();
+function bookConsult(){window.location.href="mailto:kristina@operationalconsultinggroup.com?subject=Operational Audit Consultation";}
 function openSB(){ $('sidebar').classList.add('open'); $('overlay').classList.add('open'); }
 function closeSB(){ $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); }
-const titles = { dashboard:'Good morning, <em>Kristina.</em>', brief:'EA Daily Brief', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', history:'Task History', audit:'Operational Efficiency Audit', operations:'Operations', settings:'Settings' };
+const titles = { dashboard:'Good morning, <em>Kristina.</em>', brief:'EA Daily Brief', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', history:'Task History', audit:'Operational Efficiency Audit', docreader:'Document Reader', eatasklist:'EA Task List', operations:'Operations', settings:'Settings' };
 function nav(name, el) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
@@ -650,6 +698,7 @@ function nav(name, el) {
   if(name === 'dashboard' || name === 'triage') loadStats();
   if(name === 'history') loadFullHistory();
   if(name === 'audit') loadAudit();
+  if(name === 'eatasklist') renderEATaskList();
 }
 async function loadAudit() {
   const el = document.getElementById('audit-content');
@@ -664,44 +713,43 @@ async function loadAudit() {
       const circum = 2 * Math.PI * 40;
       const offset = circum - (a.overall / 100) * circum;
       const ringColor = a.overall >= 80 ? '#4A7A50' : a.overall >= 65 ? '#C49A8A' : a.overall >= 45 ? '#A87830' : '#8A3A30';
-      el.innerHTML = `
-        <div class="health-ring-wrap">
-          <div class="health-ring">
-            <svg width="100" height="100" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="8"/>
-              <circle cx="50" cy="50" r="40" fill="none" stroke="${ringColor}" stroke-width="8" stroke-dasharray="${circum}" stroke-dashoffset="${offset}" stroke-linecap="round"/>
-            </svg>
-            <div class="health-ring-val">
-              <div class="health-ring-num">${a.overall}</div>
-              <div class="health-ring-lbl">Score</div>
-            </div>
-          </div>
-          <div class="health-info">
-            <div class="health-title">Operational Health Score: ${scoreLabel(a.overall)}</div>
-            <div class="health-sub">${a.summary}</div>
-            <button class="audit-gen-btn" id="audit-detail-btn" onclick="generateAuditInsights()">Generate AI Deep Dive</button>
-          </div>
-        </div>
-        <div class="audit-grid">
-          ${a.dimensions.map(dim => `
-            <div class="audit-score-card">
-              <div class="audit-score-top">
-                <div class="audit-score-title">${dim.name}</div>
-                <div class="audit-score-val ${scoreClass(dim.score)}">${dim.score}</div>
-              </div>
-              <div class="audit-bar-wrap"><div class="audit-bar ${scoreClass(dim.score)}" style="width:${dim.score}%"></div></div>
-              <div class="audit-insight">${dim.insight}</div>
-              <div class="audit-action">Action: ${dim.action}</div>
-            </div>
-          `).join('')}
-        </div>
-        <div id="audit-ai-section"></div>
-        <div class="audit-cta">
-          <div class="audit-cta-title">Ready to go deeper?</div>
-          <div class="audit-cta-sub">Your Operational Audit score reveals where your business is leaking time and revenue. A Blueprint Partnership engagement builds the systems to fix it permanently.</div>
-          <button class="audit-cta-btn" onclick="window.open('mailto:kristina@operationalconsultinggroup.com?subject=Operational Audit Consultation','_blank')">Book a Consultation</button>
-        </div>
-      `;
+      const dims = a.dimensions.map(dim => {
+        const sc = scoreClass(dim.score);
+        return '<div class="audit-score-card">' +
+          '<div class="audit-score-top">' +
+          '<div class="audit-score-title">' + dim.name + '</div>' +
+          '<div class="audit-score-val ' + sc + '">' + dim.score + '</div>' +
+          '</div>' +
+          '<div class="audit-bar-wrap"><div class="audit-bar ' + sc + '" style="width:' + dim.score + '%"></div></div>' +
+          '<div class="audit-insight">' + dim.insight + '</div>' +
+          '<div class="audit-action">Action: ' + dim.action + '</div>' +
+          '</div>';
+      }).join('');
+      el.innerHTML =
+        '<div class="health-ring-wrap">' +
+          '<div class="health-ring">' +
+            '<svg width="100" height="100" viewBox="0 0 100 100">' +
+              '<circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="8"/>' +
+              '<circle cx="50" cy="50" r="40" fill="none" stroke="' + ringColor + '" stroke-width="8" stroke-dasharray="' + circum + '" stroke-dashoffset="' + offset + '" stroke-linecap="round"/>' +
+            '</svg>' +
+            '<div class="health-ring-val">' +
+              '<div class="health-ring-num">' + a.overall + '</div>' +
+              '<div class="health-ring-lbl">Score</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="health-info">' +
+            '<div class="health-title">Operational Health Score: ' + scoreLabel(a.overall) + '</div>' +
+            '<div class="health-sub">' + a.summary + '</div>' +
+            '<button class="audit-gen-btn" id="audit-detail-btn" onclick="generateAuditInsights()">Generate AI Deep Dive</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="audit-grid">' + dims + '</div>' +
+        '<div id="audit-ai-section"></div>' +
+        '<div class="audit-cta">' +
+          '<div class="audit-cta-title">Ready to go deeper?</div>' +
+          '<div class="audit-cta-sub">Your Operational Audit score reveals where your business is leaking time and revenue. A Blueprint Partnership engagement builds the systems to fix it permanently.</div>' +
+          '<button class=\"audit-cta-btn\" onclick=\"bookConsult()\">Book a Consultation</button>' +
+        '</div>';
     } else {
       el.innerHTML = '<div class="alert alert-err">Error loading audit: ' + (d.error||'Unknown error') + '</div>';
     }
@@ -728,6 +776,190 @@ async function generateAuditInsights() {
     section.innerHTML = '<div class="alert alert-err">Error: ' + e.message + '</div>';
   } finally {
     if(btn) { btn.disabled = false; btn.textContent = 'Generate AI Deep Dive'; }
+  }
+}
+
+const eaTaskListData = [];
+
+async function eaDraftEmail(taskId, task, action) {
+  showEAResult(taskId, 'Drafting email...');
+  document.getElementById('ea-result-label-' + taskId).textContent = 'Drafted Email - Ready to Send';
+  try {
+    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-draft', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ type: 'email', task, action })
+    });
+    const d = await r.json();
+    if(d.success) showEAResult(taskId, d.output, true);
+    else showEAResult(taskId, 'Error: ' + (d.error||'Failed'), false);
+  } catch(e) { showEAResult(taskId, 'Error: ' + e.message, false); }
+}
+
+async function eaGenerateDoc(taskId, task, action) {
+  showEAResult(taskId, 'Generating document...');
+  document.getElementById('ea-result-label-' + taskId).textContent = 'Generated Document';
+  try {
+    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-draft', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ type: 'document', task, action })
+    });
+    const d = await r.json();
+    if(d.success) showEAResult(taskId, d.output, true);
+    else showEAResult(taskId, 'Error: ' + (d.error||'Failed'), false);
+  } catch(e) { showEAResult(taskId, 'Error: ' + e.message, false); }
+}
+
+async function eaSuggestSchedule(taskId, task) {
+  showEAResult(taskId, 'Finding the best time block...');
+  document.getElementById('ea-result-label-' + taskId).textContent = 'Suggested Schedule';
+  try {
+    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-draft', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ type: 'schedule', task, action: '' })
+    });
+    const d = await r.json();
+    if(d.success) showEAResult(taskId, d.output, true);
+    else showEAResult(taskId, 'Error: ' + (d.error||'Failed'), false);
+  } catch(e) { showEAResult(taskId, 'Error: ' + e.message, false); }
+}
+
+function eaAddToTaskList(taskId, task, action) {
+  eaTaskListData.push({ id: taskId, task, action, done: false, addedAt: new Date().toLocaleString() });
+  document.getElementById('tl-badge').textContent = eaTaskListData.length;
+  showEAResult(taskId, 'Added to EA Task List. Your EA will handle: ' + action, true);
+  document.getElementById('ea-result-label-' + taskId).textContent = 'Added to EA Task List';
+}
+
+function showEAResult(taskId, text, show) {
+  const el = document.getElementById('ea-result-' + taskId);
+  const content = document.getElementById('ea-result-content-' + taskId);
+  if(el) el.classList.add('show');
+  if(content) content.textContent = text;
+}
+
+function clearEAResult(taskId) {
+  const el = document.getElementById('ea-result-' + taskId);
+  if(el) el.classList.remove('show');
+}
+
+function copyEAResult(taskId) {
+  const content = document.getElementById('ea-result-content-' + taskId);
+  if(content) {
+    navigator.clipboard.writeText(content.textContent).then(() => {
+      const btn = content.parentElement.querySelector('.ea-copy-btn');
+      if(btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy to Clipboard', 2000); }
+    });
+  }
+}
+
+function handleDocDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if(file) handleDocFile(file);
+}
+
+async function handleDocFile(file) {
+  if(!file) return;
+  const result = document.getElementById('doc-result');
+  const content = document.getElementById('doc-result-content');
+  result.classList.add('show');
+  content.textContent = 'Reading ' + file.name + '...';
+  try {
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      let fileContent = '';
+      if(file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.csv')) {
+        fileContent = e.target.result;
+      } else if(file.type.startsWith('image/')) {
+        content.textContent = 'Analyzing image document ' + file.name + '...';
+        const base64 = e.target.result.split(',')[1];
+        const r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-read-doc', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ filename: file.name, content: base64, isImage: true })
+        });
+        const d = await r.json();
+        if(d.success) content.textContent = d.analysis;
+        else content.textContent = 'Error: ' + (d.error||'Failed to analyze');
+        return;
+      } else {
+        fileContent = 'Document: ' + file.name + ' (binary file - extracting key details for analysis)';
+      }
+      const r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-read-doc', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ filename: file.name, content: fileContent, isImage: false })
+      });
+      const d = await r.json();
+      if(d.success) content.textContent = d.analysis;
+      else content.textContent = 'Error: ' + (d.error||'Failed to analyze');
+    };
+    if(file.type.startsWith('image/')) {
+      reader.readAsDataURL(file);
+    } else {
+      reader.readAsText(file);
+    }
+  } catch(err) {
+    content.textContent = 'Error reading file: ' + err.message;
+  }
+}
+
+function renderEATaskList() {
+  const el = document.getElementById('ea-task-list-content');
+  if(!el) return;
+  if(eaTaskListData.length === 0) {
+    el.innerHTML = '<div class="empty" style="padding:40px;text-align:center;color:var(--mid)">No tasks in your EA list yet. Classify a Bouncy Ball task and click Add to EA Task List.</div>';
+    return;
+  }
+  el.innerHTML = '<div class="ea-task-list">' + eaTaskListData.map((t,i) =>
+    '<div class="ea-task-item">' +
+    '<div class="ea-task-check ' + (t.done?'done':'') + '" onclick="toggleEATask(' + i + ')">' + (t.done?'&#10003;':'') + '</div>' +
+    '<div class="ea-task-body">' +
+    '<div class="ea-task-title">' + t.task + '</div>' +
+    '<div class="ea-task-instruction">' + t.action + '</div>' +
+    '<div class="ea-task-tag">EA Owned - Added ' + t.addedAt + '</div>' +
+    '</div></div>'
+  ).join('') + '</div>';
+}
+
+function toggleEATask(idx) {
+  eaTaskListData[idx].done = !eaTaskListData[idx].done;
+  renderEATaskList();
+}
+
+async function playEAVoice(btn, text) {
+  if(btn.classList.contains('playing')) {
+    window._eaAudio && window._eaAudio.pause();
+    btn.classList.remove('playing');
+    btn.innerHTML = '<svg viewBox="0 0 10 10"><polygon points="0,0 10,5 0,10"/></svg>Listen';
+    return;
+  }
+  document.querySelectorAll('.play-btn.playing,.play-btn-light.playing').forEach(b => {
+    b.classList.remove('playing');
+    b.innerHTML = '<svg viewBox="0 0 10 10"><polygon points="0,0 10,5 0,10"/></svg>Listen';
+  });
+  window._eaAudio && window._eaAudio.pause();
+  btn.classList.add('playing');
+  btn.innerHTML = '<svg viewBox="0 0 10 10"><rect x="1" y="1" width="3" height="8"/><rect x="6" y="1" width="3" height="8"/></svg>Playing...';
+  try {
+    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/speak', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ text: text.substring(0, 2500) })
+    });
+    if(!r.ok) throw new Error('Voice unavailable');
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    window._eaAudio = new Audio(url);
+    window._eaAudio.play();
+    window._eaAudio.onended = () => {
+      btn.classList.remove('playing');
+      btn.innerHTML = '<svg viewBox="0 0 10 10"><polygon points="0,0 10,5 0,10"/></svg>Listen';
+      URL.revokeObjectURL(url);
+    };
+  } catch(e) {
+    btn.classList.remove('playing');
+    btn.innerHTML = '<svg viewBox="0 0 10 10"><polygon points="0,0 10,5 0,10"/></svg>Listen';
+    console.error('Voice error:', e.message);
   }
 }
 
@@ -807,9 +1039,46 @@ async function doClassify() {
     if(d.success) {
       const c = d.classification;
       const ic = c.classification === 'crystal';
-      window._triageText = (ic ? 'Crystal Ball. Only you can do this. ' : 'Bouncy Ball. Your EA owns this. ') + (c.reason||'') + ' Action: ' + (c.recommendedAction||'');
       const em = ic ? '&#128302;' : '&#127934;';
-      res.innerHTML = '<div class="t-result-box"><div class="tr-hd"><div class="tr-em">' + em + '</div><div class="tr-ti">' + (ic ? 'Crystal Ball - Only You Can Do This' : 'Bouncy Ball - Your EA Owns This') + '</div></div><div class="tr-meta"><span><strong>Urgency:</strong> ' + (c.urgency||'') + '</span><span><strong>Confidence:</strong> ' + (c.confidence ? (c.confidence*100).toFixed(0)+'%' : '') + '</span></div><div class="tr-body"><strong>Why:</strong> ' + (c.reason||'') + '</div><div class="tr-body"><strong>Action:</strong> ' + (c.recommendedAction||'') + '</div><div class="tr-act">' + (ic ? 'Keep - Schedule - Protect this time' : 'Delegate - Remove from your calendar') + '</div></<button onclick=\"playEAVoice(this)\" style=\"display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:3px;padding:5px 10px;cursor:pointer;font-family:DM Sans,sans-serif;font-size:9.5px;font-weight:600;color:rgba(245,240,232,.4);margin-top:8px\">&#9654; Listen</button>div>';
+      const taskId = 'task_' + Date.now();
+      const actLabel = ic ? 'Keep - Schedule - Protect this time' : 'Delegate - Remove from your calendar';
+      const eaButtons = ic ? '' :
+        '<div class="ea-actions">' +
+        '<div class="ea-actions-title">EA Execution Mode - Your EA Will Handle This</div>' +
+        '<div class="ea-action-grid">' +
+        '<button class="ea-action-btn" onclick="eaDraftEmail('' + taskId + '','' + (val||'').replace(/'/g,'') + '','' + (c.recommendedAction||'').replace(/'/g,'') + '')">' +
+        '<div class="ea-action-icon">&#9993;</div>' +
+        '<span class="ea-action-label">Draft Email</span>' +
+        '<div class="ea-action-desc">AI writes the reply for you</div>' +
+        '</button>' +
+        '<button class="ea-action-btn" onclick="eaGenerateDoc('' + taskId + '','' + (val||'').replace(/'/g,'') + '','' + (c.recommendedAction||'').replace(/'/g,'') + '')">' +
+        '<div class="ea-action-icon">&#128196;</div>' +
+        '<span class="ea-action-label">Generate Document</span>' +
+        '<div class="ea-action-desc">AI creates the document</div>' +
+        '</button>' +
+        '<button class="ea-action-btn" onclick="eaAddToTaskList('' + taskId + '','' + (val||'').replace(/'/g,'') + '','' + (c.recommendedAction||'').replace(/'/g,'') + '')">' +
+        '<div class="ea-action-icon">&#9989;</div>' +
+        '<span class="ea-action-label">Add to EA Task List</span>' +
+        '<div class="ea-action-desc">Queue for later handling</div>' +
+        '</button>' +
+        '<button class="ea-action-btn" onclick="eaSuggestSchedule('' + taskId + '','' + (val||'').replace(/'/g,'') + '')">' +
+        '<div class="ea-action-icon">&#128197;</div>' +
+        '<span class="ea-action-label">Suggest Schedule</span>' +
+        '<div class="ea-action-desc">Find the right time block</div>' +
+        '</button>' +
+        '</div>' +
+        '<div class="ea-result" id="ea-result-' + taskId + '">' +
+        '<div class="ea-result-label" id="ea-result-label-' + taskId + '">EA Output</div>' +
+        '<div class="ea-result-content" id="ea-result-content-' + taskId + '"></div>' +
+        '<div class="ea-result-actions">' +
+        '<button class="ea-copy-btn" onclick="copyEAResult('' + taskId + '')">Copy to Clipboard</button>' +
+        '<button class="ea-clear-btn" onclick="clearEAResult('' + taskId + '')">Clear</button>' +
+        '</div>' +
+        '</div>' +
+        '</div>';
+      const triageText = (ic ? 'Crystal Ball. Only you can do this. ' : 'Bouncy Ball. Your EA owns this. ') + (c.reason||'') + ' Recommended action: ' + (c.recommendedAction||'');
+      const triageId = 'triage_' + Date.now();
+      res.innerHTML = '<div class="t-result-box"><div class="tr-hd"><div class="tr-em">' + em + '</div><div class="tr-ti">' + (ic ? 'Crystal Ball - Only You Can Do This' : 'Bouncy Ball - Your EA Owns This') + '</div></div><div class="tr-meta"><span><strong>Urgency:</strong> ' + (c.urgency||'') + '</span><span><strong>Confidence:</strong> ' + (c.confidence ? (c.confidence*100).toFixed(0)+'%' : '') + '</span></div><div class="tr-body"><strong>Why:</strong> ' + (c.reason||'') + '</div><div class="tr-body"><strong>Action:</strong> ' + (c.recommendedAction||'') + '</div><div class="tr-act">' + actLabel + '</div><button class="play-btn" id="pb-'+triageId+'" onclick="playEAVoice(this,'+JSON.stringify(triageText).replace(/</g,'\u003c')+')"><svg viewBox=\"0 0 10 10\"><polygon points=\"0,0 10,5 0,10\"/></svg>Listen</button>' + eaButtons + '</div>';
       inp.value = '';
       loadStats();
     } else {
@@ -836,7 +1105,8 @@ async function generateWeek() {
     const r = await fetch('https://essential-ea-app-production.up.railway.app/api/generate-week', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({goals,revenue,timeblocks}) });
     const d = await r.json();
     if(d.success) {
-      res.innerHTML = '<div class="week-card"><div class="week-head"><div><div class="week-title">Your Priority Week</div><div class="week-meta">Built on the Essential EA Priority Week Framework - Saved to your database</div></div></div><div style="padding:18px"><div class="pw-note" style="border-top:none;margin-bottom:12px"><strong>Your plan is ready.</strong> Crystal Ball tasks are in your peak hours. Bouncy Balls are delegated. CEO Protection Protocol is enforced.</div><pre style="white-space:pre-wrap;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);line-height:1.85">' + d.plan + '</pre></div></div>';
+      const weekId = 'week_' + Date.now();
+      res.innerHTML = '<div class="week-card"><div class="week-head"><div><div class="week-title">Your Priority Week</div><div class="week-meta">Built on the Essential EA Priority Week Framework</div></div><button class="play-btn" id="pb-'+weekId+'" onclick="playEAVoice(this,' + JSON.stringify(d.plan.substring(0,1500)).replace(/</g,'\u003c') + ')"><svg viewBox=\"0 0 10 10\"><polygon points=\"0,0 10,5 0,10\"/></svg>Listen to Plan</button></div><div style="padding:18px"><div class="pw-note" style="border-top:none;margin-bottom:12px"><strong>Your plan is ready.</strong> Crystal Ball tasks are in your peak hours. Bouncy Balls are delegated. CEO Protection Protocol is enforced.</div><pre style="white-space:pre-wrap;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);line-height:1.85">' + d.plan + '</pre></div></div>';
       $('week-preview').style.display = 'none';
     } else {
       res.innerHTML = '<div class="alert alert-err">Error: ' + d.error + '</div>';
@@ -862,7 +1132,8 @@ async function generateBrief() {
     const r = await fetch('https://essential-ea-app-production.up.railway.app/api/daily-brief', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name,role,priorities,timeblocks:blocks,date:new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}) });
     const d = await r.json();
     if(d.success) {
-      res.innerHTML = '<div class="brief-box"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div class="ai-lbl" style="margin-bottom:0">Your EA Daily Brief</div><button class="play-btn" onclick="playEAVoice(this,' + JSON.stringify(d.brief) + ')"><svg width=\"10\" height=\"10\" viewBox=\"0 0 10 10\" fill=\"currentColor\"><polygon points=\"0,0 10,5 0,10\"/></svg>Listen to Brief</button></div><pre>' + d.brief + '</pre></div>';
+      const briefId = 'brief_' + Date.now();
+      res.innerHTML = '<div class="brief-box"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div class="ai-lbl" style="margin-bottom:0">Your EA Daily Brief</div><button class="play-btn" id="pb-'+briefId+'" onclick="playEAVoice(this,' + JSON.stringify(d.brief).replace(/</g,'\u003c') + ')"><svg viewBox=\"0 0 10 10\"><polygon points=\"0,0 10,5 0,10\"/></svg>Listen to Brief</button></div><pre>' + d.brief + '</pre></div>';
     } else {
       res.innerHTML = '<div class="alert alert-err">Error: ' + (d.error||'Failed to generate brief') + '</div>';
     }
@@ -932,25 +1203,6 @@ async function submitFB() {
   }
 }
 loadStats();
-
-// PWA splash screen
-window.addEventListener('load', function() {
-  const splash = document.getElementById('splash-screen');
-  const bar = document.getElementById('splash-bar');
-  if(!splash) return;
-  setTimeout(function() { if(bar) bar.style.width = '100%'; }, 100);
-  setTimeout(function() {
-    splash.style.opacity = '0';
-    setTimeout(function() { splash.style.display = 'none'; }, 500);
-  }, 1500);
-});
-
-// PWA install prompt
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', function(e) {
-  e.preventDefault();
-  deferredPrompt = e;
-});
 </script>
 </body>
 </html>
