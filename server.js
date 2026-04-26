@@ -836,7 +836,7 @@ async function loadAudit() {
         '<div class="audit-cta">' +
           '<div class="audit-cta-title">Ready to go deeper?</div>' +
           '<div class="audit-cta-sub">Your Operational Audit score reveals where your business is leaking time and revenue. A Blueprint Partnership engagement builds the systems to fix it permanently.</div>' +
-          '<button class="audit-cta-btn" onclick="window.open('mailto:kristina@operationalconsultinggroup.com?subject=Operational Audit Consultation','_blank')">Book a Consultation</button>' +
+          '<button class=\"audit-cta-btn\" onclick=\"bookConsult()\">Book a Consultation</button>' +
         '</div>';
     } else {
       el.innerHTML = '<div class="alert alert-err">Error loading audit: ' + (d.error||'Unknown error') + '</div>';
@@ -1290,6 +1290,10 @@ async function submitFB() {
     st.innerHTML='<div class="alert alert-err">Error: ' + e.message + '</div>';
   }
 }
+function bookConsult() {
+  window.location.href = 'mailto:kristina@operationalconsultinggroup.com';
+}
+
 loadStats();
 </script>
 </body>
