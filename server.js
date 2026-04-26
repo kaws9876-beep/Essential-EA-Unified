@@ -5,6 +5,8 @@ import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import Anthropic from '@anthropic-ai/sdk';
+import { Pinecone } from '@pinecone-database/pinecone';
+import OpenAI from 'openai';
 import dotenv from 'dotenv';
 import postgres from 'postgres';
 
@@ -14,10 +16,45 @@ const sql = postgres(process.env.DATABASE_URL, { ssl: 'require' });
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+async function getBookContext(query) {
+  if(!pineconeIndex) return '';
+  try {
+    const embRes = await openaiClient.embeddings.create({
+      model: 'text-embedding-3-small',
+      input: query,
+      dimensions: 1024
+    });
+    const queryVec = embRes.data[0].embedding;
+    const results = await pineconeIndex.query({
+      vector: queryVec,
+      topK: 3,
+      includeMetadata: true
+    });
+    if(!results.matches || results.matches.length === 0) return '';
+    const context = results.matches
+      .filter(m => m.score > 0.5)
+      .map(m => m.metadata.text)
+      .join('\n\n');
+    return context ? '\n\nRelevant context from The Essential EA by Kristina Spencer:\n' + context : '';
+  } catch(e) {
+    console.log('RAG query failed:', e.message);
+    return '';
+  }
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let pineconeIndex = null;
+if(process.env.PINECONE_API_KEY && process.env.PINECONE_INDEX) {
+  const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
+  pineconeIndex = pc.index(process.env.PINECONE_INDEX).namespace('');
+  console.log('Pinecone RAG: Connected to', process.env.PINECONE_INDEX);
+} else {
+  console.log('Pinecone RAG: Not configured - running without book context');
+}
 const openai_key = process.env.OPENAI_API_KEY; // kept for Whisper transcription only
 
 
@@ -1266,6 +1303,7 @@ app.post('/api/classify', async (req, res) => {
     const { taskDescription } = req.body;
     if (!taskDescription) return res.status(400).json({ error: 'Task description required', success: false });
 
+    const bookContext = await getBookContext(task);
     const prompt = 'You are the Essential EA - an AI-powered executive assistant built on the methodology from the book The Essential EA by Kristina Spencer.\n\nClassify this task using the Crystal Ball and Bouncy Ball Framework.\n\nCrystal Ball tasks: ONLY the executive can do these. Irreplaceable - if dropped, shatters permanently. Includes: client relationships, negotiations, strategy, approvals, legal, financial decisions.\n\nBouncy Ball tasks: CAN and SHOULD be delegated. Bounces back even if dropped. Includes: scheduling, admin, data entry, routine communication, follow-ups, coordination, vendor management.\n\nCEO Protection Protocol: Every minute on a Bouncy Ball task is stolen from a Crystal Ball task.\n\nTask: "' + taskDescription + '"\n\nRespond ONLY with valid JSON:\n{"classification":"crystal or bouncy","emoji":"crystal or bouncy","urgency":"urgent or today or defer or ea_owned","reason":"2-3 sentences explaining why using Essential EA methodology","recommendedAction":"Specific next step - if crystal what to do and when, if bouncy who handles it and how","confidence":0.95}';
 
     const response = await anthropic.messages.create({
@@ -1273,7 +1311,7 @@ app.post('/api/classify', async (req, res) => {
       max_tokens: 400,
       system: [
         { type: 'text', text: 'You are the Essential EA AI - an operational intelligence platform built on the methodology from The Essential EA by Kristina Spencer. You serve real estate agents, financial advisors, insurance agents, coaches, consultants, and executives. Your tone is professional but conversational. You speak as a trusted EA advisor who protects the executive time fiercely. You always use Crystal Ball and Bouncy Ball Framework language naturally. Crystal Ball tasks are irreplaceable activities only the executive can do - if dropped they shatter permanently. Bouncy Ball tasks can and should be delegated - they bounce back. CEO Protection Protocol means the executive prime hours are sacred. Priority Week Framework means Crystal Ball tasks go in peak hours 9am to 12pm and Bouncy Balls never touch those hours.', cache_control: { type: 'ephemeral' } },
-        { type: 'text', text: 'For classification tasks respond with valid JSON only. No markdown. No extra text. Use the word crystal or bouncy for the emoji field.' }
+        { type: 'text', text: 'For classification tasks respond with valid JSON only. No markdown. No extra text. Use the word crystal or bouncy for the emoji field.' + bookContext }
       ],
       messages: [{ role: 'user', content: prompt }]
     });
