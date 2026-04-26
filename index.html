@@ -1193,6 +1193,26 @@ async function playEAVoice(btn, text) {
   }
 }
 
+async function loadStats() {
+  try {
+    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/stats');
+    const d = await r.json();
+    if(!d) return;
+    const cb = document.getElementById('stat-crystal');
+    const bb = document.getElementById('stat-bouncy');
+    const ta = document.getElementById('stat-tasks');
+    const sc = document.getElementById('stat-score');
+    if(cb) cb.textContent = d.crystalBall || 0;
+    if(bb) bb.textContent = d.bouncyBall || 0;
+    if(ta) ta.textContent = d.totalTasks || 0;
+    if(sc) sc.textContent = (d.auditScore || 0) + '%';
+    const triage_count = document.getElementById('nav-triage-count');
+    if(triage_count && d.totalTasks) triage_count.textContent = d.totalTasks;
+  } catch(e) {
+    console.log('Stats unavailable:', e.message);
+  }
+}
+
 loadStats();
 </script>
 </body>
