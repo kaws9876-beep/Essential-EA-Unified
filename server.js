@@ -17,7 +17,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 async function getBookContext(query) {
-  if(!pineconeIndex) return '';
+  if(!pineconeIndex) { console.log('RAG: no pinecone index'); return ''; }
   try {
     const embRes = await openaiClient.embeddings.create({
       model: 'text-embedding-3-small',
@@ -30,11 +30,17 @@ async function getBookContext(query) {
       topK: 3,
       includeMetadata: true
     });
+    console.log('RAG results:', results.matches ? results.matches.length : 0, 'matches');
+    if(results.matches && results.matches.length > 0) {
+      console.log('RAG top score:', results.matches[0].score);
+      console.log('RAG top text:', results.matches[0].metadata.text.substring(0, 100));
+    }
     if(!results.matches || results.matches.length === 0) return '';
     const context = results.matches
-      .filter(m => m.score > 0.5)
+      .filter(m => m.score > 0.3)
       .map(m => m.metadata.text)
       .join('\n\n');
+    console.log('RAG context length:', context.length);
     return context ? '\n\nRelevant context from The Essential EA by Kristina Spencer:\n' + context : '';
   } catch(e) {
     console.log('RAG query failed:', e.message);
