@@ -1062,7 +1062,9 @@ async function doClassify() {
         '</div>';
       window._eaTask = val || '';
       window._eaAction = c.recommendedAction || '';
-      res.innerHTML = '<div class="t-result-box"><div class="tr-hd"><div class="tr-em">' + em + '</div><div class="tr-ti">' + (ic ? 'Crystal Ball - Only You Can Do This' : 'Bouncy Ball - Your EA Owns This') + '</div></div><div class="tr-meta"><span><strong>Urgency:</strong> ' + (c.urgency||'') + '</span><span><strong>Confidence:</strong> ' + (c.confidence ? (c.confidence*100).toFixed(0)+'%' : '') + '</span></div><div class="tr-body"><strong>Why:</strong> ' + (c.reason||'') + '</div><div class="tr-body"><strong>Action:</strong> ' + (c.recommendedAction||'') + '</div><div class="tr-act">' + actLabel + '</div><button class="play-btn" id="pb-'+triageId+'" onclick="playEAVoice(this,'+JSON.stringify(triageText).replace(/</g,'\u003c')+')"><svg viewBox=\"0 0 10 10\"><polygon points=\"0,0 10,5 0,10\"/></svg>Listen</button>' + eaButtons + '</div>';
+      const triageId = 'triage_' + Date.now();
+      const triageText = window._lastEAText || '';
+      res.innerHTML = '<div class="t-result-box"><div class="tr-hd"><div class="tr-em">' + em + '</div><div class="tr-ti">' + (ic ? 'Crystal Ball - Only You Can Do This' : 'Bouncy Ball - Your EA Owns This') + '</div></div><div class="tr-meta"><span><strong>Urgency:</strong> ' + (c.urgency||'') + '</span><span><strong>Confidence:</strong> ' + (c.confidence ? (c.confidence*100).toFixed(0)+'%' : '') + '</span></div><div class="tr-body"><strong>Why:</strong> ' + (c.reason||'') + '</div><div class="tr-body"><strong>Action:</strong> ' + (c.recommendedAction||'') + '</div><div class="tr-act">' + actLabel + '</div><button class=\"play-btn\" onclick=\"playEAVoice(this,window._lastEAText)\">Listen</button>' + eaButtons + '</div>';
       inp.value = '';
       loadStats();
     } else {
@@ -1090,6 +1092,7 @@ async function generateWeek() {
     const d = await r.json();
     if(d.success) {
       const weekId = 'week_' + Date.now();
+      window._lastWeekText = d.plan;
       res.innerHTML = '<div class="week-card"><div class="week-head"><div><div class="week-title">Your Priority Week</div><div class="week-meta">Built on the Essential EA Priority Week Framework</div></div><button class="play-btn" id="pb-'+weekId+'" onclick="playEAVoice(this,' + JSON.stringify(d.plan.substring(0,1500)).replace(/</g,'\u003c') + ')"><svg viewBox=\"0 0 10 10\"><polygon points=\"0,0 10,5 0,10\"/></svg>Listen to Plan</button></div><div style="padding:18px"><div class="pw-note" style="border-top:none;margin-bottom:12px"><strong>Your plan is ready.</strong> Crystal Ball tasks are in your peak hours. Bouncy Balls are delegated. CEO Protection Protocol is enforced.</div><pre style="white-space:pre-wrap;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);line-height:1.85">' + d.plan + '</pre></div></div>';
       $('week-preview').style.display = 'none';
     } else {
