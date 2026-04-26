@@ -1636,15 +1636,15 @@ app.post('/api/speak', async (req, res) => {
       },
       body: JSON.stringify({
         text: clean,
-        model_id: 'eleven_flash_v2_5',
+        model_id: 'eleven_monolingual_v1',
         voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true }
       })
     });
 
     if(!response.ok) {
       const err = await response.text();
-      console.error('ElevenLabs error:', err);
-      return res.status(502).json({ error: 'Voice service error' });
+      console.error('ElevenLabs error status:', response.status, 'body:', err);
+      return res.status(502).json({ error: 'Voice service error: ' + response.status + ' ' + err.substring(0,100) });
     }
 
     const audioBuffer = await response.arrayBuffer();
