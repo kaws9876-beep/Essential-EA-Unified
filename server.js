@@ -871,7 +871,7 @@ const eaTaskListData = [];
 
 async function eaDraftEmail(taskId, task, action) {
   showEAResult(taskId, 'Drafting email...');
-  document.getElementById('ea-result-label-' + taskId).textContent = 'Drafted Email - Ready to Send';
+  var _lbl=document.getElementById('ea-result-label');if(_lbl)_lbl.textContent='Drafted Email - Ready to Send';
   try {
     const r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-draft', {
       method: 'POST', headers: {'Content-Type':'application/json'},
@@ -885,7 +885,7 @@ async function eaDraftEmail(taskId, task, action) {
 
 async function eaGenerateDoc(taskId, task, action) {
   showEAResult(taskId, 'Generating document...');
-  document.getElementById('ea-result-label-' + taskId).textContent = 'Generated Document';
+  var _lbl=document.getElementById('ea-result-label');if(_lbl)_lbl.textContent='Generated Document';
   try {
     const r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-draft', {
       method: 'POST', headers: {'Content-Type':'application/json'},
@@ -899,7 +899,7 @@ async function eaGenerateDoc(taskId, task, action) {
 
 async function eaSuggestSchedule(taskId, task) {
   showEAResult(taskId, 'Finding the best time block...');
-  document.getElementById('ea-result-label-' + taskId).textContent = 'Suggested Schedule';
+  var _lbl=document.getElementById('ea-result-label');if(_lbl)_lbl.textContent='Suggested Schedule';
   try {
     const r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-draft', {
       method: 'POST', headers: {'Content-Type':'application/json'},
@@ -915,7 +915,7 @@ function eaAddToTaskList(taskId, task, action) {
   eaTaskListData.push({ id: taskId, task, action, done: false, addedAt: new Date().toLocaleString() });
   document.getElementById('tl-badge').textContent = eaTaskListData.length;
   showEAResult(taskId, 'Added to EA Task List. Your EA will handle: ' + action, true);
-  document.getElementById('ea-result-label-' + taskId).textContent = 'Added to EA Task List';
+  var _lbl=document.getElementById('ea-result-label');if(_lbl)_lbl.textContent='Added to EA Task List';
 }
 
 function showEAResult(taskId, text, show) {
@@ -1134,39 +1134,20 @@ async function doClassify() {
         '<div class="ea-actions">' +
         '<div class="ea-actions-title">EA Execution Mode - Your EA Will Handle This</div>' +
         '<div class="ea-action-grid">' +
-        '<button class="ea-action-btn" onclick="eaDraftEmail('' + taskId + '','' + (val||'').replace(/'/g,'') + '','' + (c.recommendedAction||'').replace(/'/g,'') + '')">' +
-        '<div class="ea-action-icon">&#9993;</div>' +
-        '<span class="ea-action-label">Draft Email</span>' +
-        '<div class="ea-action-desc">AI writes the reply for you</div>' +
-        '</button>' +
-        '<button class="ea-action-btn" onclick="eaGenerateDoc('' + taskId + '','' + (val||'').replace(/'/g,'') + '','' + (c.recommendedAction||'').replace(/'/g,'') + '')">' +
-        '<div class="ea-action-icon">&#128196;</div>' +
-        '<span class="ea-action-label">Generate Document</span>' +
-        '<div class="ea-action-desc">AI creates the document</div>' +
-        '</button>' +
-        '<button class="ea-action-btn" onclick="eaAddToTaskList('' + taskId + '','' + (val||'').replace(/'/g,'') + '','' + (c.recommendedAction||'').replace(/'/g,'') + '')">' +
-        '<div class="ea-action-icon">&#9989;</div>' +
-        '<span class="ea-action-label">Add to EA Task List</span>' +
-        '<div class="ea-action-desc">Queue for later handling</div>' +
-        '</button>' +
-        '<button class="ea-action-btn" onclick="eaSuggestSchedule('' + taskId + '','' + (val||'').replace(/'/g,'') + '')">' +
-        '<div class="ea-action-icon">&#128197;</div>' +
-        '<span class="ea-action-label">Suggest Schedule</span>' +
-        '<div class="ea-action-desc">Find the right time block</div>' +
-        '</button>' +
+        '<button class="ea-action-btn" onclick="eaDraftEmail()"><div class="ea-action-icon">&#9993;</div><span class="ea-action-label">Draft Email</span><div class="ea-action-desc">AI writes the reply for you</div></button>' +
+        '<button class="ea-action-btn" onclick="eaGenerateDoc()"><div class="ea-action-icon">&#128196;</div><span class="ea-action-label">Generate Document</span><div class="ea-action-desc">AI creates the document</div></button>' +
+        '<button class="ea-action-btn" onclick="eaAddToTaskList()"><div class="ea-action-icon">&#9989;</div><span class="ea-action-label">Add to EA Task List</span><div class="ea-action-desc">Queue for later handling</div></button>' +
+        '<button class="ea-action-btn" onclick="eaSuggestSchedule()"><div class="ea-action-icon">&#128197;</div><span class="ea-action-label">Suggest Schedule</span><div class="ea-action-desc">Find the right time block</div></button>' +
         '</div>' +
-        '<div class="ea-result" id="ea-result-' + taskId + '">' +
-        '<div class="ea-result-label" id="ea-result-label-' + taskId + '">EA Output</div>' +
-        '<div class="ea-result-content" id="ea-result-content-' + taskId + '"></div>' +
-        '<div class="ea-result-actions">' +
-        '<button class="ea-copy-btn" onclick="copyEAResult('' + taskId + '')">Copy to Clipboard</button>' +
-        '<button class="ea-clear-btn" onclick="clearEAResult('' + taskId + '')">Clear</button>' +
-        '</div>' +
+        '<div id="ea-result-box" style="display:none;margin-top:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:14px">' +
+        '<div style="font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#C49A8A;margin-bottom:8px" id="ea-result-label">EA Output</div>' +
+        '<div style="font-size:12.5px;color:rgba(245,240,232,.7);line-height:1.75;white-space:pre-wrap" id="ea-result-content"></div>' +
+        '<button style="font-size:9.5px;font-weight:700;padding:7px 14px;border-radius:3px;border:none;cursor:pointer;background:#C49A8A;color:#1A1A18;margin-top:10px" onclick="copyEAResult()">Copy</button>' +
         '</div>' +
         '</div>';
-      const triageText = (ic ? 'Crystal Ball. Only you can do this. ' : 'Bouncy Ball. Your EA owns this. ') + (c.reason||'') + ' Recommended action: ' + (c.recommendedAction||'');
-      const triageId = 'triage_' + Date.now();
-      res.innerHTML = '<div class="t-result-box"><div class="tr-hd"><div class="tr-em">' + em + '</div><div class="tr-ti">' + (ic ? 'Crystal Ball - Only You Can Do This' : 'Bouncy Ball - Your EA Owns This') + '</div></div><div class="tr-meta"><span><strong>Urgency:</strong> ' + (c.urgency||'') + '</span><span><strong>Confidence:</strong> ' + (c.confidence ? (c.confidence*100).toFixed(0)+'%' : '') + '</span></div><div class="tr-body"><strong>Why:</strong> ' + (c.reason||'') + '</div><div class="tr-body"><strong>Action:</strong> ' + (c.recommendedAction||'') + '</div><div class="tr-act">' + actLabel + '</div><button class="play-btn" id="pb-'+triageId+'" onclick="playEAVoice(this,'+JSON.stringify(triageText).replace(/</g,'\u003c')+')"><svg viewBox=\"0 0 10 10\"><polygon points=\"0,0 10,5 0,10\"/></svg>Listen</button>' + eaButtons + '</div>';
+      window._eaTask = val || '';
+      window._eaAction = c.recommendedAction || '';
+            res.innerHTML = '<div class="t-result-box"><div class="tr-hd"><div class="tr-em">' + em + '</div><div class="tr-ti">' + (ic ? 'Crystal Ball - Only You Can Do This' : 'Bouncy Ball - Your EA Owns This') + '</div></div><div class="tr-meta"><span><strong>Urgency:</strong> ' + (c.urgency||'') + '</span><span><strong>Confidence:</strong> ' + (c.confidence ? (c.confidence*100).toFixed(0)+'%' : '') + '</span></div><div class="tr-body"><strong>Why:</strong> ' + (c.reason||'') + '</div><div class="tr-body"><strong>Action:</strong> ' + (c.recommendedAction||'') + '</div><div class="tr-act">' + actLabel + '</div><button class="play-btn" id="pb-'+triageId+'" onclick="playEAVoice(this,'+JSON.stringify(triageText).replace(/</g,'\u003c')+')"><svg viewBox=\"0 0 10 10\"><polygon points=\"0,0 10,5 0,10\"/></svg>Listen</button>' + eaButtons + '</div>';
       inp.value = '';
       loadStats();
     } else {
