@@ -1584,20 +1584,9 @@ app.post('/api/ea-read-doc', async (req, res) => {
       ];
     } else {
       const contentPreview = content.length > 3000 ? content.substring(0, 3000) + '...[truncated]' : content;
+      const docPrompt = 'Analyze this document: ' + filename + '. Content: ' + contentPreview + '. Provide: 1. DOCUMENT SUMMARY - what this document is and its key points in 2-3 sentences. 2. CRYSTAL BALL ACTION ITEMS - things only the executive can handle personally. List each one. 3. BOUNCY BALL ACTION ITEMS - things that can be delegated to an EA or team member. List each one. 4. DEADLINES AND DATES - any time-sensitive items found in the document. 5. EA RECOMMENDATION - the single most important next action the executive should take today. Use Essential EA methodology language. Be specific to this document.';
       messages = [
-        { role: 'user', content: 'Analyze this document: ' + filename + '
-
-Content:
-' + contentPreview + '
-
-Provide:
-1. DOCUMENT SUMMARY - what this document is and its key points in 2-3 sentences.
-2. CRYSTAL BALL ACTION ITEMS - things only the executive can handle personally. List each one.
-3. BOUNCY BALL ACTION ITEMS - things that can be delegated to an EA or team member. List each one.
-4. DEADLINES AND DATES - any time-sensitive items found in the document.
-5. EA RECOMMENDATION - the single most important next action the executive should take today.
-
-Use Essential EA methodology language. Be specific to this document.' }
+        { role: 'user', content: docPrompt }
       ];
     }
 
