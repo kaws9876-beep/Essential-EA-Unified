@@ -347,6 +347,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 .play-btn-light{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--tan);border-radius:3px;padding:5px 10px;cursor:pointer;font-family:"DM Sans",sans-serif;font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mid);transition:all .15s;margin-top:8px}
 .play-btn-light:hover{border-color:var(--gold);color:var(--gold2)}
 .play-btn-light.playing{border-color:var(--gold);color:var(--gold2);background:rgba(196,154,138,.05)}
+.play-btn{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:3px;padding:5px 10px;cursor:pointer;font-family:"DM Sans",sans-serif;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(245,240,232,.4);transition:all .15s;margin-top:8px}.play-btn:hover{border-color:#C49A8A;color:#C49A8A}.play-btn.playing{border-color:#C49A8A;color:#C49A8A}
 @media(max-width:1024px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.dg{grid-template-columns:1fr 1fr}.cw{grid-column:span 2}.pw-layout{grid-template-columns:1fr}.s-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:768px){
   .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:300}
@@ -682,7 +683,6 @@ const today = new Date();
 const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 $('tbd').textContent = days[today.getDay()] + ', ' + months[today.getMonth()] + ' ' + today.getDate() + ', ' + today.getFullYear();
-function bookConsult(){window.location.href="mailto:kristina@operationalconsultinggroup.com?subject=Operational Audit Consultation";}
 function openSB(){ $('sidebar').classList.add('open'); $('overlay').classList.add('open'); }
 function closeSB(){ $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); }
 const titles = { dashboard:'Good morning, <em>Kristina.</em>', brief:'EA Daily Brief', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', history:'Task History', audit:'Operational Efficiency Audit', docreader:'Document Reader', eatasklist:'EA Task List', operations:'Operations', settings:'Settings' };
@@ -748,7 +748,7 @@ async function loadAudit() {
         '<div class="audit-cta">' +
           '<div class="audit-cta-title">Ready to go deeper?</div>' +
           '<div class="audit-cta-sub">Your Operational Audit score reveals where your business is leaking time and revenue. A Blueprint Partnership engagement builds the systems to fix it permanently.</div>' +
-          '<button class=\"audit-cta-btn\" onclick=\"bookConsult()\">Book a Consultation</button>' +
+          '<button class="audit-cta-btn" onclick="bookConsult()">Book a Consultation</button>' +
         '</div>';
     } else {
       el.innerHTML = '<div class="alert alert-err">Error loading audit: ' + (d.error||'Unknown error') + '</div>';
@@ -782,6 +782,7 @@ async function generateAuditInsights() {
 const eaTaskListData = [];
 
 async function eaDraftEmail(taskId, task, action) {
+  if(!task) { taskId='ea_'+Date.now(); task=window._eaTask||''; action=window._eaAction||''; }
   showEAResult(taskId, 'Drafting email...');
   document.getElementById('ea-result-label-' + taskId).textContent = 'Drafted Email - Ready to Send';
   try {
@@ -796,6 +797,7 @@ async function eaDraftEmail(taskId, task, action) {
 }
 
 async function eaGenerateDoc(taskId, task, action) {
+  if(!task) { taskId='ea_'+Date.now(); task=window._eaTask||''; action=window._eaAction||''; }
   showEAResult(taskId, 'Generating document...');
   document.getElementById('ea-result-label-' + taskId).textContent = 'Generated Document';
   try {
@@ -810,6 +812,7 @@ async function eaGenerateDoc(taskId, task, action) {
 }
 
 async function eaSuggestSchedule(taskId, task) {
+  if(!task) { taskId='ea_'+Date.now(); task=window._eaTask||''; }
   showEAResult(taskId, 'Finding the best time block...');
   document.getElementById('ea-result-label-' + taskId).textContent = 'Suggested Schedule';
   try {
@@ -824,6 +827,7 @@ async function eaSuggestSchedule(taskId, task) {
 }
 
 function eaAddToTaskList(taskId, task, action) {
+  if(!task) { taskId='ea_'+Date.now(); task=window._eaTask||''; action=window._eaAction||''; }
   eaTaskListData.push({ id: taskId, task, action, done: false, addedAt: new Date().toLocaleString() });
   document.getElementById('tl-badge').textContent = eaTaskListData.length;
   showEAResult(taskId, 'Added to EA Task List. Your EA will handle: ' + action, true);
@@ -831,10 +835,10 @@ function eaAddToTaskList(taskId, task, action) {
 }
 
 function showEAResult(taskId, text, show) {
-  const el = document.getElementById('ea-result-' + taskId);
-  const content = document.getElementById('ea-result-content-' + taskId);
-  if(el) el.classList.add('show');
-  if(content) content.textContent = text;
+  const el = document.getElementById('ea-result-box');
+  const cnt = document.getElementById('ea-result-content');
+  if(el) el.style.display = 'block';
+  if(cnt) cnt.textContent = text;
 }
 
 function clearEAResult(taskId) {
@@ -843,13 +847,8 @@ function clearEAResult(taskId) {
 }
 
 function copyEAResult(taskId) {
-  const content = document.getElementById('ea-result-content-' + taskId);
-  if(content) {
-    navigator.clipboard.writeText(content.textContent).then(() => {
-      const btn = content.parentElement.querySelector('.ea-copy-btn');
-      if(btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy to Clipboard', 2000); }
-    });
-  }
+  const cnt = document.getElementById('ea-result-content');
+  if(cnt) navigator.clipboard.writeText(cnt.textContent).catch(()=>{});
 }
 
 function handleDocDrop(e) {
@@ -1039,6 +1038,7 @@ async function doClassify() {
     if(d.success) {
       const c = d.classification;
       const ic = c.classification === 'crystal';
+      window._lastEAText = (ic ? 'Crystal Ball. Only you can do this. ' : 'Bouncy Ball. Your EA owns this. ') + (c.reason||'') + ' ' + (c.recommendedAction||'');
       const em = ic ? '&#128302;' : '&#127934;';
       const taskId = 'task_' + Date.now();
       const actLabel = ic ? 'Keep - Schedule - Protect this time' : 'Delegate - Remove from your calendar';
@@ -1046,38 +1046,22 @@ async function doClassify() {
         '<div class="ea-actions">' +
         '<div class="ea-actions-title">EA Execution Mode - Your EA Will Handle This</div>' +
         '<div class="ea-action-grid">' +
-        '<button class="ea-action-btn" onclick="eaDraftEmail('' + taskId + '','' + (val||'').replace(/'/g,'') + '','' + (c.recommendedAction||'').replace(/'/g,'') + '')">' +
-        '<div class="ea-action-icon">&#9993;</div>' +
-        '<span class="ea-action-label">Draft Email</span>' +
-        '<div class="ea-action-desc">AI writes the reply for you</div>' +
-        '</button>' +
-        '<button class="ea-action-btn" onclick="eaGenerateDoc('' + taskId + '','' + (val||'').replace(/'/g,'') + '','' + (c.recommendedAction||'').replace(/'/g,'') + '')">' +
-        '<div class="ea-action-icon">&#128196;</div>' +
-        '<span class="ea-action-label">Generate Document</span>' +
-        '<div class="ea-action-desc">AI creates the document</div>' +
-        '</button>' +
-        '<button class="ea-action-btn" onclick="eaAddToTaskList('' + taskId + '','' + (val||'').replace(/'/g,'') + '','' + (c.recommendedAction||'').replace(/'/g,'') + '')">' +
-        '<div class="ea-action-icon">&#9989;</div>' +
-        '<span class="ea-action-label">Add to EA Task List</span>' +
-        '<div class="ea-action-desc">Queue for later handling</div>' +
-        '</button>' +
-        '<button class="ea-action-btn" onclick="eaSuggestSchedule('' + taskId + '','' + (val||'').replace(/'/g,'') + '')">' +
-        '<div class="ea-action-icon">&#128197;</div>' +
-        '<span class="ea-action-label">Suggest Schedule</span>' +
-        '<div class="ea-action-desc">Find the right time block</div>' +
-        '</button>' +
+        '<button class="ea-action-btn" onclick="eaDraftEmail()"><div class="ea-action-icon">&#9993;</div><span class="ea-action-label">Draft Email</span><div class="ea-action-desc">AI writes the reply for you</div></button>' +
+        '<button class="ea-action-btn" onclick="eaGenerateDoc()"><div class="ea-action-icon">&#128196;</div><span class="ea-action-label">Generate Document</span><div class="ea-action-desc">AI creates the document</div></button>' +
+        '<button class="ea-action-btn" onclick="eaAddToTaskList()"><div class="ea-action-icon">&#9989;</div><span class="ea-action-label">Add to EA Task List</span><div class="ea-action-desc">Queue for later handling</div></button>' +
+        '<button class="ea-action-btn" onclick="eaSuggestSchedule()"><div class="ea-action-icon">&#128197;</div><span class="ea-action-label">Suggest Schedule</span><div class="ea-action-desc">Find the right time block</div></button>' +
         '</div>' +
-        '<div class="ea-result" id="ea-result-' + taskId + '">' +
-        '<div class="ea-result-label" id="ea-result-label-' + taskId + '">EA Output</div>' +
-        '<div class="ea-result-content" id="ea-result-content-' + taskId + '"></div>' +
-        '<div class="ea-result-actions">' +
-        '<button class="ea-copy-btn" onclick="copyEAResult('' + taskId + '')">Copy to Clipboard</button>' +
-        '<button class="ea-clear-btn" onclick="clearEAResult('' + taskId + '')">Clear</button>' +
+        '<div class="ea-result" id="ea-result-box" style="display:none;margin-top:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:14px">' +
+        '<div class="ea-result-label" style="font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#C49A8A;margin-bottom:8px" id="ea-result-label">EA Output</div>' +
+        '<div style="font-size:12.5px;color:rgba(245,240,232,.7);line-height:1.75;white-space:pre-wrap" id="ea-result-content"></div>' +
+        '<div style="display:flex;gap:8px;margin-top:10px">' +
+        '<button style="font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:7px 14px;border-radius:3px;border:none;cursor:pointer;background:#C49A8A;color:#1A1A18" onclick="copyEAResult()">Copy</button>' +
+        '<button style="font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:7px 14px;border-radius:3px;border:1px solid rgba(255,255,255,.15);cursor:pointer;background:transparent;color:rgba(245,240,232,.5)" onclick="document.getElementById(&apos;ea-result-box&apos;).style.display=&apos;none&apos;">Clear</button>' +
         '</div>' +
         '</div>' +
         '</div>';
-      const triageText = (ic ? 'Crystal Ball. Only you can do this. ' : 'Bouncy Ball. Your EA owns this. ') + (c.reason||'') + ' Recommended action: ' + (c.recommendedAction||'');
-      const triageId = 'triage_' + Date.now();
+      window._eaTask = val || '';
+      window._eaAction = c.recommendedAction || '';
       res.innerHTML = '<div class="t-result-box"><div class="tr-hd"><div class="tr-em">' + em + '</div><div class="tr-ti">' + (ic ? 'Crystal Ball - Only You Can Do This' : 'Bouncy Ball - Your EA Owns This') + '</div></div><div class="tr-meta"><span><strong>Urgency:</strong> ' + (c.urgency||'') + '</span><span><strong>Confidence:</strong> ' + (c.confidence ? (c.confidence*100).toFixed(0)+'%' : '') + '</span></div><div class="tr-body"><strong>Why:</strong> ' + (c.reason||'') + '</div><div class="tr-body"><strong>Action:</strong> ' + (c.recommendedAction||'') + '</div><div class="tr-act">' + actLabel + '</div><button class="play-btn" id="pb-'+triageId+'" onclick="playEAVoice(this,'+JSON.stringify(triageText).replace(/</g,'\u003c')+')"><svg viewBox=\"0 0 10 10\"><polygon points=\"0,0 10,5 0,10\"/></svg>Listen</button>' + eaButtons + '</div>';
       inp.value = '';
       loadStats();
@@ -1202,6 +1186,48 @@ async function submitFB() {
     st.innerHTML='<div class="alert alert-err">Error: ' + e.message + '</div>';
   }
 }
+
+function bookConsult() {
+  window.location.href = 'mailto:kristina@operationalconsultinggroup.com?subject=Operational Audit Consultation';
+}
+
+async function playEAVoice(btn, text) {
+  if(!text) text = window._lastEAText || '';
+  if(btn.classList.contains('playing')) {
+    window._eaAudio && window._eaAudio.pause();
+    btn.classList.remove('playing');
+    btn.textContent = 'Listen';
+    return;
+  }
+  document.querySelectorAll('.play-btn.playing').forEach(b => {
+    b.classList.remove('playing');
+    b.textContent = 'Listen';
+  });
+  window._eaAudio && window._eaAudio.pause();
+  btn.classList.add('playing');
+  btn.textContent = 'Playing...';
+  try {
+    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/speak', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ text: text.substring(0, 2500) })
+    });
+    if(!r.ok) throw new Error('unavailable');
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    window._eaAudio = new Audio(url);
+    window._eaAudio.play();
+    window._eaAudio.onended = () => {
+      btn.classList.remove('playing');
+      btn.textContent = 'Listen';
+      URL.revokeObjectURL(url);
+    };
+  } catch(e) {
+    btn.classList.remove('playing');
+    btn.textContent = 'Listen';
+  }
+}
+
 loadStats();
 </script>
 </body>
