@@ -940,29 +940,38 @@ async function playEAVoice(btn, text) {
   window._eaAudio && window._eaAudio.pause();
   btn.classList.add('playing');
   btn.textContent = 'Loading...';
+  const cleanText = (typeof text === 'string' ? text : '').substring(0, 1000);
   try {
-    const cleanText = (typeof text === 'string' ? text : '').substring(0, 2500);
-    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/speak', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ text: cleanText })
-    });
-    if(!r.ok) throw new Error('Voice unavailable - ' + r.status);
-    const blob = await r.blob();
-    const url = URL.createObjectURL(blob);
-    window._eaAudio = new Audio(url);
-    window._eaAudio.play().then(() => {
-      btn.textContent = 'Playing...';
-    }).catch(err => {
-      btn.classList.remove('playing');
-      btn.textContent = 'Listen';
-      console.error('Play error:', err);
-    });
-    window._eaAudio.onended = () => {
-      btn.classList.remove('playing');
-      btn.textContent = 'Listen';
-      URL.revokeObjectURL(url);
-    };
+    const isSafari = /iP(hone|od|ad)/i.test(navigator.userAgent) || (/Safari/i.test(navigator.userAgent) && !/Chrome/i.test(navigator.userAgent));
+    if(isSafari) {
+      const audio = new Audio();
+      audio.crossOrigin = 'anonymous';
+      audio.preload = 'auto';
+      const p = audio.play();
+      audio.src = 'https://essential-ea-app-production.up.railway.app/api/speak?text=' + encodeURIComponent(cleanText);
+      window._eaAudio = audio;
+      if(p !== undefined) {
+        p.catch(() => {
+          audio.src = 'https://essential-ea-app-production.up.railway.app/api/speak?text=' + encodeURIComponent(cleanText);
+          audio.play().catch(e => console.error('Safari play failed:', e));
+        });
+      }
+      audio.oncanplay = () => { btn.textContent = 'Playing...'; };
+      audio.onended = () => { btn.classList.remove('playing'); btn.textContent = 'Listen'; };
+      audio.onerror = () => { btn.classList.remove('playing'); btn.textContent = 'Listen'; };
+    } else {
+      const r = await fetch('https://essential-ea-app-production.up.railway.app/api/speak', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ text: cleanText })
+      });
+      if(!r.ok) throw new Error('Voice unavailable - ' + r.status);
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      window._eaAudio = new Audio(url);
+      window._eaAudio.play().then(() => { btn.textContent = 'Playing...'; }).catch(e => { btn.classList.remove('playing'); btn.textContent = 'Listen'; });
+      window._eaAudio.onended = () => { btn.classList.remove('playing'); btn.textContent = 'Listen'; URL.revokeObjectURL(url); };
+    }
   } catch(e) {
     btn.classList.remove('playing');
     btn.textContent = 'Listen';
@@ -970,61 +979,6 @@ async function playEAVoice(btn, text) {
   }
 }
 
-async function loadStats() {
-  try {
-    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/stats');
-    const d = await r.json();
-    if(d.success) {
-      const s = d.stats;
-      $('k1').textContent = s.totalTasks;
-      $('k2').textContent = s.crystal;
-      $('k3').textContent = s.bouncy;
-      $('k4').textContent = s.avgAccuracy + '%';
-      $('tc').textContent = s.totalTasks || '0';
-      const total = s.totalTasks || 1;
-      const cp = Math.round((s.crystal/total)*100);
-      const bp = Math.round((s.bouncy/total)*100);
-      $('sc1').textContent = s.crystal; $('sb1').style.width = cp + '%';
-      $('sc2').textContent = s.bouncy;  $('sb2').style.width = bp + '%';
-      $('sc3').textContent = s.totalTasks; $('sb3').style.width = Math.min(100,s.totalTasks*5) + '%';
-      $('sc4').textContent = s.avgAccuracy + '%'; $('sb4').style.width = s.avgAccuracy + '%';
-    }
-    loadHistory();
-  } catch(e) { console.error(e); }
-}
-async function loadHistory() {
-  try {
-    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/history?limit=20');
-    const d = await r.json();
-    if(d.success) {
-      const cr = d.tasks.filter(t => t.classification === 'crystal');
-      const bo = d.tasks.filter(t => t.classification === 'bouncy');
-      $('c-badge').textContent = cr.length;
-      $('b-badge').textContent = bo.length;
-      $('c-list').innerHTML = cr.length ? cr.map(t => tCard(t)).join('') : '<div class="empty">No crystal ball tasks yet.</div>';
-      $('b-list').innerHTML = bo.length ? bo.map(t => tCard(t)).join('') : '<div class="empty">No bouncy ball tasks yet.</div>';
-    }
-  } catch(e) { console.error(e); }
-}
-async function loadFullHistory() {
-  const el = $('history-list');
-  el.innerHTML = '<div class="spin-wrap"><div class="spinner"></div> Loading your history...</div>';
-  try {
-    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/history?limit=100');
-    const d = await r.json();
-    if(d.success && d.tasks.length > 0) {
-      el.innerHTML = d.tasks.map(t => {
-        const ic = t.classification === 'crystal';
-        const dt = new Date(t.created_at || t.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
-        return '<div class="history-item"><div class="history-date">' + (ic ? 'Crystal Ball' : 'Bouncy Ball') + ' - ' + dt + '</div><div class="history-text">' + (t.description||'') + '</div><div style="font-size:11px;color:var(--mid);margin-top:6px">' + (t.reason||'') + '</div></div>';
-      }).join('');
-    } else {
-      el.innerHTML = '<div class="empty">No task history yet. Go to Crystal Ball Triage to classify your first task.</div>';
-    }
-  } catch(e) {
-    el.innerHTML = '<div class="alert alert-err">Error loading history: ' + e.message + '</div>';
-  }
-}
 function tCard(t) {
   const bc = t.urgency==='urgent'||t.urgency==='today' ? 'badge-u' : t.urgency==='defer' ? 'badge-f' : 'badge-e';
   const bt = t.urgency==='ea_owned' ? 'EA Owned' : (t.urgency||'classified');
