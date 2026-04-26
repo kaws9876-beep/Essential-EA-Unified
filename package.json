@@ -14,9 +14,10 @@
     "express": "^4.21.2",
     "cors": "^2.8.6",
     "dotenv": "^17.4.1",
-    "openai": "^6.34.0",
+    "openai": "^4.0.0",
     "postgres": "^3.4.4",
-    "@anthropic-ai/sdk": "^0.39.0"
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@pinecone-database/pinecone": "^3.0.3"
   },
   "devDependencies": {},
   "engines": {
