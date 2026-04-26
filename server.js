@@ -1287,6 +1287,9 @@ function bookConsult() {
 }
 
 loadStats();
+setTimeout(loadStats, 1500);
+setTimeout(loadStats, 4000);
+window.addEventListener('focus', loadStats);
 </script>
 </body>
 </html>`;
