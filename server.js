@@ -72,22 +72,11 @@ async function initDB() {
     await sql`CREATE TABLE IF NOT EXISTS tasks (id SERIAL PRIMARY KEY, description TEXT NOT NULL, classification VARCHAR(20), urgency VARCHAR(20), reason TEXT, recommended_action TEXT, confidence FLOAT, created_at TIMESTAMP DEFAULT NOW())`;
     await sql`CREATE TABLE IF NOT EXISTS weekly_plans (id SERIAL PRIMARY KEY, goals TEXT, revenue TEXT, timeblocks TEXT, plan TEXT, created_at TIMESTAMP DEFAULT NOW())`;
     await sql`CREATE TABLE IF NOT EXISTS daily_briefs (id SERIAL PRIMARY KEY, name TEXT, role TEXT, brief TEXT, created_at TIMESTAMP DEFAULT NOW())`;
-    await sql`CREATE TABLE IF NOT EXISTS google_tokens (
-    id SERIAL PRIMARY KEY,
-    user_id VARCHAR(255) DEFAULT 'default' UNIQUE,
-    access_token TEXT,
-    refresh_token TEXT,
-    expiry_date BIGINT,
-    email VARCHAR(255),
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-  )`;
-  // Add unique constraint if table already exists without it
-  await sql`ALTER TABLE google_tokens ADD COLUMN IF NOT EXISTS user_id_check VARCHAR(1)`.catch(() => {});
-  await sql`ALTER TABLE google_tokens DROP COLUMN IF EXISTS user_id_check`.catch(() => {});
-  try { await sql`ALTER TABLE google_tokens ADD CONSTRAINT google_tokens_user_id_unique UNIQUE (user_id)`; } catch(e) {}
-
-  await sql`CREATE TABLE IF NOT EXISTS feedback (id SERIAL PRIMARY KEY, name TEXT, email TEXT, rating INTEGER, message TEXT, created_at TIMESTAMP DEFAULT NOW())`;
+    await sql`CREATE TABLE IF NOT EXISTS feedback (id SERIAL PRIMARY KEY, name TEXT, email TEXT, rating INTEGER, message TEXT, created_at TIMESTAMP DEFAULT NOW())`;
+    await sql`CREATE TABLE IF NOT EXISTS google_tokens (id SERIAL PRIMARY KEY, user_id VARCHAR(255) DEFAULT 'default' UNIQUE, access_token TEXT, refresh_token TEXT, expiry_date BIGINT, email VARCHAR(255), created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW())`;
+    await sql`CREATE TABLE IF NOT EXISTS microsoft_tokens (id SERIAL PRIMARY KEY, user_id VARCHAR(255) DEFAULT 'default' UNIQUE, access_token TEXT, refresh_token TEXT, expiry_date BIGINT, email VARCHAR(255), created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW())`;
+    try { await sql`ALTER TABLE google_tokens ADD CONSTRAINT google_tokens_user_id_unique UNIQUE (user_id)`; } catch(e) {}
+    try { await sql`ALTER TABLE microsoft_tokens ADD CONSTRAINT microsoft_tokens_user_id_unique UNIQUE (user_id)`; } catch(e) {}
     console.log('Database tables ready');
   } catch (err) {
     console.error('Database init error:', err.message);
@@ -2477,16 +2466,6 @@ app.get('/auth/microsoft/callback', async (req, res) => {
 
     // Store tokens
     const expiry = tokens.expires_in ? Date.now() + (tokens.expires_in * 1000) : null;
-    await sql`CREATE TABLE IF NOT EXISTS microsoft_tokens (
-      id SERIAL PRIMARY KEY,
-      user_id VARCHAR(255) DEFAULT 'default' UNIQUE,
-      access_token TEXT,
-      refresh_token TEXT,
-      expiry_date BIGINT,
-      email VARCHAR(255),
-      created_at TIMESTAMP DEFAULT NOW(),
-      updated_at TIMESTAMP DEFAULT NOW()
-    )`;
     await sql`DELETE FROM microsoft_tokens WHERE user_id = 'default'`;
     await sql`INSERT INTO microsoft_tokens (user_id, access_token, refresh_token, expiry_date, email)
       VALUES ('default', ${tokens.access_token}, ${tokens.refresh_token || null}, ${expiry}, ${email})`;
@@ -2501,7 +2480,6 @@ app.get('/auth/microsoft/callback', async (req, res) => {
 
 app.get('/api/microsoft/status', async (req, res) => {
   try {
-    await sql`CREATE TABLE IF NOT EXISTS microsoft_tokens (id SERIAL PRIMARY KEY, user_id VARCHAR(255) DEFAULT 'default' UNIQUE, access_token TEXT, refresh_token TEXT, expiry_date BIGINT, email VARCHAR(255), created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW())`;
     const [token] = await sql`SELECT email, updated_at FROM microsoft_tokens WHERE user_id = 'default' LIMIT 1`;
     if(token) res.json({ connected: true, email: token.email });
     else res.json({ connected: false });
