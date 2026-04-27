@@ -606,6 +606,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
           <span style="font-size:12px;color:var(--mid)">Outlook connected: <strong id="microsoft-email-display"></strong></span>
         </div>
         <div style="display:flex;gap:6px">
+          <button onclick="runEAInboxOutlook()" style="font-size:10px;font-weight:700;padding:5px 14px;border-radius:3px;border:none;cursor:pointer;background:#0072EF;color:white;white-space:nowrap">&#9889; EA Run Outlook</button>
           <button onclick="loadOutlookMessages()" style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:3px;border:1px solid rgba(0,114,239,0.3);cursor:pointer;background:transparent;color:#0072EF">Refresh</button>
           <button onclick="disconnectMicrosoft()" style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:3px;border:1px solid rgba(138,56,48,0.3);cursor:pointer;background:transparent;color:#8A3A30">Disconnect</button>
         </div>
@@ -1730,7 +1731,9 @@ async function checkMicrosoftStatus() {
       var emailEl = document.getElementById('microsoft-email-display');
       if(emailEl) emailEl.textContent = d.email || '';
       var outTab = document.getElementById('outlook-tab');
-      if(outTab) outTab.style.display = 'inline-flex';
+      if(outTab) { outTab.style.display = 'inline-flex'; }
+      // Auto-load Outlook messages
+      loadOutlookMessages();
     } else {
       document.getElementById('microsoft-connect-banner').style.display = 'flex';
     }
@@ -1876,6 +1879,82 @@ async function sendReply() {
       if(route) route.innerHTML = '<span style="color:#2D6A35">&#9989; Reply sent</span>';
       return;
     }
+  }
+}
+
+async function runEAInboxOutlook() {
+  // Switch to outlook view first
+  var outTab = document.getElementById('outlook-tab');
+  if(outTab) switchToOutlook(outTab);
+  // Then run the same EA inbox logic but for Outlook
+  var btn = document.querySelector('#microsoft-connected-banner button');
+  var panel = document.getElementById('ea-results-panel');
+  var summaryText = document.getElementById('ea-summary-text');
+  var resultsList = document.getElementById('ea-results-list');
+  if(panel) panel.style.display = 'block';
+  if(summaryText) summaryText.textContent = 'EA is analyzing your Outlook inbox...';
+  if(resultsList) resultsList.innerHTML = '<div style="padding:10px;text-align:center"><div class="spinner"></div></div>';
+  try {
+    // Fetch Outlook messages
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/outlook/messages?folder=inbox');
+    var d = await r.json();
+    if(!d.success || !d.messages.length) {
+      if(summaryText) summaryText.textContent = 'No unread Outlook messages to process.';
+      if(resultsList) resultsList.innerHTML = '';
+      return;
+    }
+    // Process each message with AI
+    var results = [];
+    var handled = 0;
+    var needsApproval = 0;
+    for(var i = 0; i < Math.min(d.messages.length, 10); i++) {
+      var msg = d.messages[i];
+      if(!msg.isUnread) continue;
+      try {
+        var cr = await fetch('https://essential-ea-app-production.up.railway.app/api/classify', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ taskDescription: msg.subject + ' ' + msg.snippet })
+        });
+        var cd = await cr.json();
+        var ic = cd.success && cd.classification.classification === 'crystal';
+        var isNewsletter = /newsletter|noreply|no-reply|marketing|promo|unsubscribe/i.test(msg.from + ' ' + msg.subject);
+        var action = isNewsletter ? 'archive' : (ic ? 'flag' : 'draft_approval');
+        var result = { id: msg.id, subject: msg.subject, from: msg.from, action: action, classification: ic ? 'crystal' : 'bouncy', reason: cd.success ? cd.classification.reason : 'Classified', reply: '', executed: false, executedLabel: action === 'archive' ? 'Archived' : action === 'flag' ? 'Flagged for Review' : 'Draft Ready', source: 'outlook' };
+        if(action === 'archive') {
+          await fetch('https://essential-ea-app-production.up.railway.app/api/outlook/archive', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ messageId: msg.id })
+          });
+          result.executed = true;
+          handled++;
+        } else {
+          needsApproval++;
+        }
+        results.push(result);
+        await new Promise(function(r){ setTimeout(r, 150); });
+      } catch(e) {
+        results.push({ id: msg.id, subject: msg.subject, from: msg.from, action: 'flag', reason: 'Processing error', executedLabel: 'Flagged', executed: false, source: 'outlook' });
+        needsApproval++;
+      }
+    }
+    if(summaryText) summaryText.textContent = 'Outlook: processed ' + results.length + ' emails. ' + handled + ' handled. ' + needsApproval + ' need review.';
+    if(resultsList) {
+      resultsList.innerHTML = results.map(function(r) {
+        var actionColor = r.executed ? '#2D6A35' : (r.action === 'flag' ? '#C49A8A' : '#0072EF');
+        return '<div style="margin-bottom:10px;padding:12px 14px;background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.06);border-left:3px solid ' + actionColor + ';border-radius:6px">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">' +
+          '<div style="font-size:12px;font-weight:600">' + r.subject + '</div>' +
+          '<span style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:2px;background:' + actionColor + ';color:white">' + r.executedLabel + '</span>' +
+          '</div>' +
+          '<div style="font-size:11px;color:var(--mid)">' + (r.from||'') + '</div>' +
+          '<div style="font-size:11px;color:var(--mid);margin-top:2px">' + (r.reason||'') + '</div>' +
+          (!r.executed ? '<div style="display:flex;gap:6px;margin-top:8px"><button onclick="archiveFromReport(' + JSON.stringify({id:r.id}) + ',this)" style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:3px;border:1px solid rgba(26,26,24,0.15);cursor:pointer;background:transparent;color:var(--mid)">Archive</button><button onclick="trashFromReport(' + JSON.stringify({id:r.id}) + ',this)" style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:3px;border:1px solid rgba(138,56,48,0.3);cursor:pointer;background:transparent;color:#8A3A30">Delete</button></div>' : '') +
+          '</div>';
+      }).join('');
+    }
+    setTimeout(loadOutlookMessages, 1000);
+  } catch(e) {
+    if(summaryText) summaryText.textContent = 'Error: ' + e.message;
   }
 }
 
