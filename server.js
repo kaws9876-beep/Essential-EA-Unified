@@ -2560,9 +2560,49 @@ app.get('/api/outlook/messages', async (req, res) => {
     console.log('Outlook response status:', r.status);
     console.log('Outlook response preview:', responseText.substring(0, 200));
     
-    // Handle 401 - token expired, clear it so user reconnects
+    // Handle 401 - try to refresh token first
     if(r.status === 401) {
-      await sql`DELETE FROM microsoft_tokens WHERE user_id = 'default'`.catch(() => {});
+      console.log('Outlook 401 - attempting token refresh...');
+      try {
+        const [token] = await sql\`SELECT * FROM microsoft_tokens WHERE user_id = 'default' LIMIT 1\`;
+        if(token && token.refresh_token) {
+          const tenantId = process.env.MICROSOFT_TENANT_ID || 'common';
+          const refreshRes = await fetch('https://login.microsoftonline.com/' + tenantId + '/oauth2/v2.0/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+              client_id: process.env.MICROSOFT_CLIENT_ID,
+              client_secret: process.env.MICROSOFT_CLIENT_SECRET,
+              refresh_token: token.refresh_token,
+              grant_type: 'refresh_token',
+              scope: 'Mail.Read Mail.ReadWrite Mail.Send Calendars.Read Calendars.ReadWrite offline_access'
+            })
+          });
+          const newTokens = await refreshRes.json();
+          console.log('Refresh result:', newTokens.access_token ? 'SUCCESS' : 'FAILED', newTokens.error || '');
+          if(newTokens.access_token) {
+            const newExpiry = Date.now() + ((newTokens.expires_in || 3600) * 1000);
+            await sql\`UPDATE microsoft_tokens SET access_token = \${newTokens.access_token}, expiry_date = \${newExpiry}, updated_at = NOW() WHERE user_id = 'default'\`;
+            // Retry with new token
+            const r2 = await fetch(url, { headers: { Authorization: 'Bearer ' + newTokens.access_token } });
+            const rt2 = await r2.text();
+            if(r2.status === 200 && rt2) {
+              const d2 = JSON.parse(rt2);
+              const messages = (d2.value || []).map(msg => ({
+                id: msg.id, subject: msg.subject || '(no subject)',
+                from: msg.from?.emailAddress?.address || '',
+                fromName: msg.from?.emailAddress?.name || '',
+                date: msg.receivedDateTime, snippet: msg.bodyPreview || '',
+                isUnread: !msg.isRead, isStarred: msg.flag?.flagStatus === 'flagged',
+                hasAttachments: msg.hasAttachments
+              }));
+              return res.json({ success: true, messages });
+            }
+          }
+        }
+      } catch(refreshErr) { console.error('Refresh error:', refreshErr.message); }
+      // If refresh failed, prompt reconnect
+      await sql\`DELETE FROM microsoft_tokens WHERE user_id = 'default'\`.catch(() => {});
       return res.json({ success: false, error: 'Outlook session expired - please reconnect', needsReconnect: true, messages: [] });
     }
     
