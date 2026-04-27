@@ -1547,7 +1547,19 @@ async function loadGmailMessages(search) {
     if(_nextPageToken) url += '&pageToken=' + _nextPageToken;
     var r = await fetch(url);
     var d = await r.json();
-    if(!d.success) { if(list) list.innerHTML = '<div style="padding:16px;color:#8A3A30;font-size:12px">Error: ' + (d.error||'Failed') + '</div>'; return; }
+    if(!d.success) {
+      if(d.needsReconnect) {
+        // Clear connected state and show reconnect banner
+        var cb = document.getElementById('microsoft-connected-banner');
+        var connectBanner = document.getElementById('microsoft-connect-banner');
+        if(cb) cb.style.display = 'none';
+        if(connectBanner) connectBanner.style.display = 'flex';
+        if(list) list.innerHTML = '<div style="padding:16px;text-align:center"><div style="font-size:13px;color:#C49A8A;font-weight:600;margin-bottom:8px">Outlook session expired</div><div style="font-size:12px;color:var(--mid);margin-bottom:12px">Please reconnect your Outlook account</div><button onclick="connectMicrosoft()" style="font-size:11px;font-weight:700;padding:8px 18px;border-radius:4px;border:none;cursor:pointer;background:#0072EF;color:white">Reconnect Outlook</button></div>';
+      } else {
+        if(list) list.innerHTML = '<div style="padding:16px;color:#8A3A30;font-size:12px">Error: ' + (d.error||'Failed') + '</div>';
+      }
+      return;
+    }
     
     _nextPageToken = d.nextPageToken;
     var loadMore = document.getElementById('load-more-btn');
