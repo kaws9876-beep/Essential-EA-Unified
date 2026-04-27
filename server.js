@@ -69,7 +69,18 @@ async function initDB() {
     await sql`CREATE TABLE IF NOT EXISTS tasks (id SERIAL PRIMARY KEY, description TEXT NOT NULL, classification VARCHAR(20), urgency VARCHAR(20), reason TEXT, recommended_action TEXT, confidence FLOAT, created_at TIMESTAMP DEFAULT NOW())`;
     await sql`CREATE TABLE IF NOT EXISTS weekly_plans (id SERIAL PRIMARY KEY, goals TEXT, revenue TEXT, timeblocks TEXT, plan TEXT, created_at TIMESTAMP DEFAULT NOW())`;
     await sql`CREATE TABLE IF NOT EXISTS daily_briefs (id SERIAL PRIMARY KEY, name TEXT, role TEXT, brief TEXT, created_at TIMESTAMP DEFAULT NOW())`;
-    await sql`CREATE TABLE IF NOT EXISTS feedback (id SERIAL PRIMARY KEY, name TEXT, email TEXT, rating INTEGER, message TEXT, created_at TIMESTAMP DEFAULT NOW())`;
+    await sql`CREATE TABLE IF NOT EXISTS google_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR(255) DEFAULT 'default',
+    access_token TEXT,
+    refresh_token TEXT,
+    expiry_date BIGINT,
+    email VARCHAR(255),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+  )`;
+
+  await sql`CREATE TABLE IF NOT EXISTS feedback (id SERIAL PRIMARY KEY, name TEXT, email TEXT, rating INTEGER, message TEXT, created_at TIMESTAMP DEFAULT NOW())`;
     console.log('Database tables ready');
   } catch (err) {
     console.error('Database init error:', err.message);
@@ -1744,6 +1755,206 @@ app.post('/api/ea-execute', async (req, res) => {
     res.json({ success: true, output });
   } catch(error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============ GOOGLE OAUTH ============
+
+app.get('/auth/google', (req, res) => {
+  const params = new URLSearchParams({
+    client_id: process.env.GOOGLE_CLIENT_ID,
+    redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+    response_type: 'code',
+    scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events email profile',
+    access_type: 'offline',
+    prompt: 'consent'
+  });
+  res.redirect('https://accounts.google.com/o/oauth2/v2/auth?' + params.toString());
+});
+
+app.get('/auth/google/callback', async (req, res) => {
+  const { code, error } = req.query;
+  if(error) return res.redirect('/?google_error=' + error);
+  if(!code) return res.redirect('/?google_error=no_code');
+  try {
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+        grant_type: 'authorization_code'
+      })
+    });
+    const tokens = await tokenRes.json();
+    if(tokens.error) throw new Error(tokens.error_description || tokens.error);
+
+    // Get user email
+    const profileRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: 'Bearer ' + tokens.access_token }
+    });
+    const profile = await profileRes.json();
+
+    // Store tokens
+    const expiry = tokens.expires_in ? Date.now() + (tokens.expires_in * 1000) : null;
+    await sql`INSERT INTO google_tokens (user_id, access_token, refresh_token, expiry_date, email, updated_at)
+      VALUES ('default', ${tokens.access_token}, ${tokens.refresh_token || null}, ${expiry}, ${profile.email}, NOW())
+      ON CONFLICT (user_id) DO UPDATE SET
+        access_token = EXCLUDED.access_token,
+        refresh_token = COALESCE(EXCLUDED.refresh_token, google_tokens.refresh_token),
+        expiry_date = EXCLUDED.expiry_date,
+        email = EXCLUDED.email,
+        updated_at = NOW()`;
+
+    console.log('Google OAuth success for:', profile.email);
+    res.redirect('/?google_connected=true&email=' + encodeURIComponent(profile.email));
+  } catch(e) {
+    console.error('Google OAuth error:', e.message);
+    res.redirect('/?google_error=' + encodeURIComponent(e.message));
+  }
+});
+
+app.get('/api/google/status', async (req, res) => {
+  try {
+    const [token] = await sql`SELECT email, updated_at FROM google_tokens WHERE user_id = 'default' LIMIT 1`;
+    if(token) {
+      res.json({ connected: true, email: token.email, connectedAt: token.updated_at });
+    } else {
+      res.json({ connected: false });
+    }
+  } catch(e) {
+    res.json({ connected: false, error: e.message });
+  }
+});
+
+app.get('/api/google/disconnect', async (req, res) => {
+  try {
+    await sql`DELETE FROM google_tokens WHERE user_id = 'default'`;
+    res.json({ success: true });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+async function getGoogleAccessToken() {
+  try {
+    const [token] = await sql`SELECT * FROM google_tokens WHERE user_id = 'default' LIMIT 1`;
+    if(!token) return null;
+    // Check if token needs refresh
+    if(token.expiry_date && Date.now() > token.expiry_date - 60000) {
+      if(!token.refresh_token) return null;
+      const refreshRes = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: process.env.GOOGLE_CLIENT_ID,
+          client_secret: process.env.GOOGLE_CLIENT_SECRET,
+          refresh_token: token.refresh_token,
+          grant_type: 'refresh_token'
+        })
+      });
+      const newTokens = await refreshRes.json();
+      if(newTokens.access_token) {
+        const newExpiry = Date.now() + ((newTokens.expires_in || 3600) * 1000);
+        await sql`UPDATE google_tokens SET access_token = ${newTokens.access_token}, expiry_date = ${newExpiry}, updated_at = NOW() WHERE user_id = 'default'`;
+        return newTokens.access_token;
+      }
+      return null;
+    }
+    return token.access_token;
+  } catch(e) {
+    console.error('getGoogleAccessToken error:', e.message);
+    return null;
+  }
+}
+
+app.get('/api/gmail/messages', async (req, res) => {
+  try {
+    const accessToken = await getGoogleAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Google not connected', messages: [] });
+
+    const listRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=20&q=is:inbox', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    const listData = await listRes.json();
+    if(!listData.messages) return res.json({ success: true, messages: [] });
+
+    // Fetch first 10 message details
+    const messages = await Promise.all(
+      listData.messages.slice(0, 10).map(async (msg) => {
+        const msgRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + msg.id + '?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date', {
+          headers: { Authorization: 'Bearer ' + accessToken }
+        });
+        const msgData = await msgRes.json();
+        const headers = msgData.payload?.headers || [];
+        const getHeader = (name) => headers.find(h => h.name === name)?.value || '';
+        return {
+          id: msg.id,
+          subject: getHeader('Subject') || '(no subject)',
+          from: getHeader('From'),
+          date: getHeader('Date'),
+          snippet: msgData.snippet || '',
+          labelIds: msgData.labelIds || []
+        };
+      })
+    );
+
+    res.json({ success: true, messages });
+  } catch(e) {
+    console.error('Gmail error:', e.message);
+    res.status(500).json({ success: false, error: e.message, messages: [] });
+  }
+});
+
+app.post('/api/gmail/send', async (req, res) => {
+  try {
+    const { to, subject, body } = req.body;
+    const accessToken = await getGoogleAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Google not connected' });
+
+    const email = ['To: ' + to, 'Subject: ' + subject, 'Content-Type: text/plain; charset=utf-8', '', body].join('\n');
+    const encoded = Buffer.from(email).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+    const sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw: encoded })
+    });
+    const sendData = await sendRes.json();
+    if(sendData.id) {
+      res.json({ success: true, messageId: sendData.id });
+    } else {
+      res.json({ success: false, error: sendData.error?.message || 'Send failed' });
+    }
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.get('/api/calendar/events', async (req, res) => {
+  try {
+    const accessToken = await getGoogleAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Google not connected', events: [] });
+
+    const now = new Date().toISOString();
+    const weekLater = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const calRes = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=' + now + '&timeMax=' + weekLater + '&singleEvents=true&orderBy=startTime&maxResults=20', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    const calData = await calRes.json();
+    const events = (calData.items || []).map(e => ({
+      id: e.id,
+      summary: e.summary || '(no title)',
+      start: e.start?.dateTime || e.start?.date,
+      end: e.end?.dateTime || e.end?.date,
+      location: e.location || '',
+      description: e.description || ''
+    }));
+    res.json({ success: true, events });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message, events: [] });
   }
 });
 
