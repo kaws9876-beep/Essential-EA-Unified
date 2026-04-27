@@ -2530,21 +2530,48 @@ app.get('/api/outlook/messages', async (req, res) => {
     if(!accessToken) return res.json({ success: false, error: 'Outlook not connected', messages: [] });
     const folder = req.query.folder || 'inbox';
     const search = req.query.search || '';
-    const folderMap = { inbox: 'Inbox', sent: 'SentItems', drafts: 'Drafts', trash: 'DeletedItems', starred: 'Inbox' };
-    const msFolder = folderMap[folder] || 'Inbox';
-    let starFilter = folder === 'starred' ? '&$filter=flag/flagStatus eq \'flagged\'' : '';
-    let url = 'https://graph.microsoft.com/v1.0/me/mailFolders/' + msFolder + '/messages?$top=25&$orderby=receivedDateTime desc&$select=id,subject,from,receivedDateTime,bodyPreview,isRead,flag,hasAttachments' + starFilter;
-    if(search) url = 'https://graph.microsoft.com/v1.0/me/messages?$search="' + search + '"&$top=25&$select=id,subject,from,receivedDateTime,bodyPreview,isRead';
+    // Build folder filter
+    let folderFilter = '';
+    if(folder === 'inbox') folderFilter = "parentFolderId eq 'inbox'";
+    else if(folder === 'sent') folderFilter = "parentFolderId eq 'sentitems'";
+    else if(folder === 'drafts') folderFilter = "parentFolderId eq 'drafts'";
+    else if(folder === 'trash') folderFilter = "parentFolderId eq 'deleteditems'";
+    else if(folder === 'starred') folderFilter = "flag/flagStatus eq 'flagged'";
+
+    let url;
+    if(search) {
+      url = 'https://graph.microsoft.com/v1.0/me/messages?$search="' + search + '"&$top=25&$select=id,subject,from,receivedDateTime,bodyPreview,isRead,flag,hasAttachments';
+    } else if(folder === 'inbox') {
+      url = 'https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$top=25&$orderby=receivedDateTime desc&$select=id,subject,from,receivedDateTime,bodyPreview,isRead,flag,hasAttachments';
+    } else if(folder === 'sent') {
+      url = 'https://graph.microsoft.com/v1.0/me/mailFolders/sentitems/messages?$top=25&$orderby=receivedDateTime desc&$select=id,subject,from,receivedDateTime,bodyPreview,isRead,flag,hasAttachments';
+    } else if(folder === 'drafts') {
+      url = 'https://graph.microsoft.com/v1.0/me/mailFolders/drafts/messages?$top=25&$orderby=receivedDateTime desc&$select=id,subject,from,receivedDateTime,bodyPreview,isRead,flag,hasAttachments';
+    } else if(folder === 'trash') {
+      url = 'https://graph.microsoft.com/v1.0/me/mailFolders/deleteditems/messages?$top=25&$orderby=receivedDateTime desc&$select=id,subject,from,receivedDateTime,bodyPreview,isRead,flag,hasAttachments';
+    } else if(folder === 'starred') {
+      url = 'https://graph.microsoft.com/v1.0/me/messages?$filter=flag/flagStatus eq \'flagged\'&$top=25&$orderby=receivedDateTime desc&$select=id,subject,from,receivedDateTime,bodyPreview,isRead,flag,hasAttachments';
+    } else {
+      url = 'https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$top=25&$orderby=receivedDateTime desc&$select=id,subject,from,receivedDateTime,bodyPreview,isRead,flag,hasAttachments';
+    }
+    console.log('Outlook URL:', url);
     const r = await fetch(url, { headers: { Authorization: 'Bearer ' + accessToken } });
     const responseText = await r.text();
     console.log('Outlook response status:', r.status);
     console.log('Outlook response preview:', responseText.substring(0, 200));
+    
+    // Handle 401 - token expired, clear it so user reconnects
+    if(r.status === 401) {
+      await sql`DELETE FROM microsoft_tokens WHERE user_id = 'default'`.catch(() => {});
+      return res.json({ success: false, error: 'Outlook session expired - please reconnect', needsReconnect: true, messages: [] });
+    }
+    
     if(!responseText || responseText.trim() === '') {
       return res.json({ success: false, error: 'Empty response from Outlook', messages: [] });
     }
     let d;
     try { d = JSON.parse(responseText); } catch(parseErr) {
-      console.error('Outlook JSON parse error:', parseErr.message, 'Response:', responseText.substring(0,200));
+      console.error('Outlook JSON parse error:', parseErr.message);
       return res.json({ success: false, error: 'Invalid response from Outlook', messages: [] });
     }
     if(!d || d.error) {
