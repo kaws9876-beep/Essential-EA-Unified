@@ -1397,14 +1397,21 @@ async function classifyEmailWithAI(text, el) {
 }
 
 // Check Google connection on load and after OAuth redirect
-(function() {
+window.addEventListener('DOMContentLoaded', function() {
   var params = new URLSearchParams(window.location.search);
   if(params.get('google_connected')) {
     history.replaceState({}, '', '/');
-    nav('inbox', document.querySelector('[onclick*=inbox]'));
-    setTimeout(checkGoogleStatus, 500);
+    setTimeout(function() {
+      var inboxLink = document.querySelector('[onclick*=inbox]');
+      nav('inbox', inboxLink);
+      checkGoogleStatus();
+    }, 300);
   }
-})();
+  if(params.get('google_error')) {
+    history.replaceState({}, '', '/');
+    console.log('Google OAuth error:', params.get('google_error'));
+  }
+});
 
 loadStats();
 setTimeout(loadStats, 1000);
