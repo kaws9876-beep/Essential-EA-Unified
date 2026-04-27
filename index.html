@@ -573,7 +573,18 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
     <div class="screen" id="screen-inbox" style="padding:0">
       <div class="inbox-wrap" id="inbox-wrap">
         <div class="inbox-list">
-          <div class="inbox-head"><span class="inbox-head-title">Communication Hub</span><span class="inbox-count">4 need you</span></div>
+          <div id="google-connect-banner" style="padding:12px 16px;background:rgba(196,154,138,0.08);border-bottom:1px solid rgba(196,154,138,0.2);display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:12px;color:rgba(26,26,24,0.7)"><strong style="color:#C49A8A">Connect Gmail</strong> to see your real emails here</div>
+            <button onclick="connectGoogle()" style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:6px 14px;border-radius:3px;border:none;cursor:pointer;background:#C49A8A;color:#1A1A18">Connect Gmail</button>
+          </div>
+          <div id="google-connected-banner" style="display:none;padding:12px 16px;background:rgba(45,106,53,0.1);border-bottom:1px solid rgba(45,106,53,0.2);display:none;align-items:center;justify-content:space-between">
+            <div style="font-size:12px;color:rgba(26,26,24,0.7)">&#9989;&nbsp;<strong style="color:#2D6A35">Gmail Connected</strong> &#9989; <span id="google-email-display"></span></div>
+            <div style="display:flex;gap:8px">
+              <button onclick="loadGmailMessages()" style="font-size:10px;font-weight:700;padding:6px 14px;border-radius:3px;border:1px solid rgba(45,106,53,0.4);cursor:pointer;background:transparent;color:#2D6A35">Refresh</button>
+              <button onclick="disconnectGoogle()" style="font-size:10px;font-weight:700;padding:6px 14px;border-radius:3px;border:1px solid rgba(138,56,48,0.4);cursor:pointer;background:transparent;color:#8A3A30">Disconnect</button>
+            </div>
+          </div>
+          <div class="inbox-head"><span class="inbox-head-title">Communication Hub</span><span class="inbox-count" id="inbox-count-badge">4 need you</span></div>
           <div class="filter-row">
             <button class="fpill active" onclick="filterMsgs('all',this)">All</button>
             <button class="fpill" onclick="filterMsgs('you',this)">Needs You</button>
@@ -1301,6 +1312,99 @@ async function loadStats() {
     if(tc) tc.textContent = s.totalTasks || 0;
   } catch(e) {}
 }
+
+
+function connectGoogle() {
+  window.location.href = 'https://essential-ea-app-production.up.railway.app/auth/google';
+}
+
+async function disconnectGoogle() {
+  await fetch('https://essential-ea-app-production.up.railway.app/api/google/disconnect');
+  document.getElementById('google-connect-banner').style.display = 'flex';
+  document.getElementById('google-connected-banner').style.display = 'none';
+  document.getElementById('msg-list').innerHTML = '';
+}
+
+async function checkGoogleStatus() {
+  try {
+    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/google/status');
+    const d = await r.json();
+    if(d.connected) {
+      document.getElementById('google-connect-banner').style.display = 'none';
+      var cb = document.getElementById('google-connected-banner');
+      cb.style.display = 'flex';
+      var emailEl = document.getElementById('google-email-display');
+      if(emailEl) emailEl.textContent = d.email || '';
+      loadGmailMessages();
+    }
+  } catch(e) {}
+}
+
+async function loadGmailMessages() {
+  try {
+    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/gmail/messages');
+    const d = await r.json();
+    if(!d.success || !d.messages.length) return;
+    const list = document.getElementById('msg-list');
+    if(!list) return;
+    // Clear sample messages and show real ones
+    list.innerHTML = d.messages.map(function(msg, i) {
+      var isUnread = msg.labelIds && msg.labelIds.includes('UNREAD');
+      return '<div class="msg" data-tag="all" onclick="openGmailMsg(' + i + ',this)" style="' + (isUnread ? 'font-weight:600' : '') + '">' +
+        '<div class="msg-from">' + (msg.from || '').split('<')[0].trim() + '</div>' +
+        '<div class="msg-sub">' + msg.subject + '</div>' +
+        '<div class="msg-prev">' + (msg.snippet || '').substring(0, 80) + '</div>' +
+        '</div>';
+    }).join('');
+    window._gmailMessages = d.messages;
+  } catch(e) {
+    console.log('Gmail load error:', e.message);
+  }
+}
+
+function openGmailMsg(idx, el) {
+  var msgs = window._gmailMessages || [];
+  var m = msgs[idx];
+  if(!m) return;
+  document.querySelectorAll('.msg').forEach(function(msg){ msg.classList.remove('active'); });
+  if(el) el.classList.add('active');
+  var subEl = document.getElementById('d-sub');
+  var metaEl = document.getElementById('d-meta');
+  var bodyEl = document.getElementById('d-body');
+  var routeEl = document.getElementById('d-route');
+  if(subEl) subEl.textContent = m.subject;
+  if(metaEl) metaEl.innerHTML = 'From <strong>' + m.from + '</strong>';
+  if(bodyEl) bodyEl.innerHTML = '<p>' + m.snippet + '</p>';
+  if(routeEl) routeEl.innerHTML = '<strong>EA is classifying this message...</strong>';
+  // Auto-classify the email subject with Crystal Ball AI
+  classifyEmailWithAI(m.subject + ' ' + m.snippet, routeEl);
+}
+
+async function classifyEmailWithAI(text, el) {
+  try {
+    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/classify', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ taskDescription: text.substring(0, 500) })
+    });
+    const d = await r.json();
+    if(d.success && el) {
+      var c = d.classification;
+      var ic = c.classification === 'crystal';
+      el.innerHTML = '<strong>' + (ic ? '&#128302; Crystal Ball - Needs You.' : '&#127934; Bouncy Ball - EA Owned.') + '</strong> ' + (c.reason || '');
+    }
+  } catch(e) {}
+}
+
+// Check Google connection on load and after OAuth redirect
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  if(params.get('google_connected')) {
+    history.replaceState({}, '', '/');
+    nav('inbox', document.querySelector('[onclick*=inbox]'));
+    setTimeout(checkGoogleStatus, 500);
+  }
+})();
 
 loadStats();
 setTimeout(loadStats, 1000);
