@@ -2433,8 +2433,8 @@ app.get('/auth/microsoft', (req, res) => {
     response_mode: 'query',
     prompt: 'select_account'
   });
-  const tenantId = process.env.MICROSOFT_TENANT_ID || 'common';
-  res.redirect('https://login.microsoftonline.com/' + tenantId + '/oauth2/v2.0/authorize?' + params.toString());
+  // Use 'common' to support both personal and work accounts
+  res.redirect('https://login.microsoftonline.com/common/oauth2/v2.0/authorize?' + params.toString());
 });
 
 app.get('/auth/microsoft/callback', async (req, res) => {
@@ -2442,8 +2442,7 @@ app.get('/auth/microsoft/callback', async (req, res) => {
   if(error) return res.redirect(VERCEL + '/?microsoft_error=' + error);
   if(!code) return res.redirect(VERCEL + '/?microsoft_error=no_code');
   try {
-    const tenantId = process.env.MICROSOFT_TENANT_ID || 'common';
-    const tokenRes = await fetch('https://login.microsoftonline.com/' + tenantId + '/oauth2/v2.0/token', {
+    const tokenRes = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -2500,8 +2499,7 @@ async function getMicrosoftAccessToken() {
     if(!token) return null;
     if(token.expiry_date && Date.now() > token.expiry_date - 60000) {
       if(!token.refresh_token) return null;
-      const tenantId = process.env.MICROSOFT_TENANT_ID || 'common';
-      const refreshRes = await fetch('https://login.microsoftonline.com/' + tenantId + '/oauth2/v2.0/token', {
+      const refreshRes = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
@@ -2566,8 +2564,7 @@ app.get('/api/outlook/messages', async (req, res) => {
       try {
         const [token] = await sql`SELECT * FROM microsoft_tokens WHERE user_id = 'default' LIMIT 1`;
         if(token && token.refresh_token) {
-          const tenantId = process.env.MICROSOFT_TENANT_ID || 'common';
-          const refreshRes = await fetch('https://login.microsoftonline.com/' + tenantId + '/oauth2/v2.0/token', {
+          const refreshRes = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
@@ -2753,6 +2750,26 @@ app.get('/api/outlook/calendar', async (req, res) => {
     }));
     res.json({ success: true, events });
   } catch(e) { res.status(500).json({ success: false, error: e.message, events: [] }); }
+});
+
+app.get('/api/microsoft/debug', async (req, res) => {
+  try {
+    const [token] = await sql`SELECT user_id, email, expiry_date, updated_at, 
+      CASE WHEN refresh_token IS NOT NULL THEN 'yes' ELSE 'no' END as has_refresh,
+      CASE WHEN access_token IS NOT NULL THEN 'yes' ELSE 'no' END as has_access
+      FROM microsoft_tokens WHERE user_id = 'default' LIMIT 1`;
+    if(!token) return res.json({ stored: false });
+    const now = Date.now();
+    res.json({
+      stored: true,
+      email: token.email,
+      hasAccess: token.has_access === 'yes',
+      hasRefresh: token.has_refresh === 'yes',
+      expiryDate: token.expiry_date,
+      expired: token.expiry_date ? now > token.expiry_date : 'unknown',
+      updatedAt: token.updated_at
+    });
+  } catch(e) { res.json({ error: e.message }); }
 });
 
 app.use((req, res) => {
