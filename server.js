@@ -2564,7 +2564,7 @@ app.get('/api/outlook/messages', async (req, res) => {
     if(r.status === 401) {
       console.log('Outlook 401 - attempting token refresh...');
       try {
-        const [token] = await sql\`SELECT * FROM microsoft_tokens WHERE user_id = 'default' LIMIT 1\`;
+        const [token] = await sql`SELECT * FROM microsoft_tokens WHERE user_id = 'default' LIMIT 1`;
         if(token && token.refresh_token) {
           const tenantId = process.env.MICROSOFT_TENANT_ID || 'common';
           const refreshRes = await fetch('https://login.microsoftonline.com/' + tenantId + '/oauth2/v2.0/token', {
@@ -2582,7 +2582,7 @@ app.get('/api/outlook/messages', async (req, res) => {
           console.log('Refresh result:', newTokens.access_token ? 'SUCCESS' : 'FAILED', newTokens.error || '');
           if(newTokens.access_token) {
             const newExpiry = Date.now() + ((newTokens.expires_in || 3600) * 1000);
-            await sql\`UPDATE microsoft_tokens SET access_token = \${newTokens.access_token}, expiry_date = \${newExpiry}, updated_at = NOW() WHERE user_id = 'default'\`;
+            await sql`UPDATE microsoft_tokens SET access_token = \${newTokens.access_token}, expiry_date = \${newExpiry}, updated_at = NOW() WHERE user_id = 'default'`;
             // Retry with new token
             const r2 = await fetch(url, { headers: { Authorization: 'Bearer ' + newTokens.access_token } });
             const rt2 = await r2.text();
@@ -2602,7 +2602,7 @@ app.get('/api/outlook/messages', async (req, res) => {
         }
       } catch(refreshErr) { console.error('Refresh error:', refreshErr.message); }
       // If refresh failed, prompt reconnect
-      await sql\`DELETE FROM microsoft_tokens WHERE user_id = 'default'\`.catch(() => {});
+      await sql`DELETE FROM microsoft_tokens WHERE user_id = 'default'`.catch(() => {});
       return res.json({ success: false, error: 'Outlook session expired - please reconnect', needsReconnect: true, messages: [] });
     }
     
