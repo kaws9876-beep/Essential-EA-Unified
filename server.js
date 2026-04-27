@@ -1355,7 +1355,7 @@ app.post('/api/classify', async (req, res) => {
     });
 
     let content = response.content[0].text.trim();
-    if (content.includes('`')) { content = content.replace(/`{3}json\n?/g, '').replace(/`{3}\n?/g, '').trim(); }
+    content = content.trim();
     const result = JSON.parse(content);
 
     await sql`INSERT INTO tasks (description, classification, urgency, reason, recommended_action, confidence) VALUES (${taskDescription}, ${result.classification}, ${result.urgency}, ${result.reason}, ${result.recommendedAction}, ${result.confidence})`;
