@@ -1778,8 +1778,8 @@ app.get('/auth/google', (req, res) => {
 
 app.get('/auth/google/callback', async (req, res) => {
   const { code, error } = req.query;
-  if(error) return res.redirect('/?google_error=' + error);
-  if(!code) return res.redirect('/?google_error=no_code');
+  if(error) return res.redirect('https://essential-ea-unified.vercel.app/?google_error=' + error);
+  if(!code) return res.redirect('https://essential-ea-unified.vercel.app/?google_error=no_code');
   try {
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -1809,10 +1809,10 @@ app.get('/auth/google/callback', async (req, res) => {
       VALUES ('default', ${tokens.access_token}, ${tokens.refresh_token || null}, ${expiry}, ${profile.email})`;
 
     console.log('Google OAuth success for:', profile.email);
-    res.redirect('/?google_connected=true&email=' + encodeURIComponent(profile.email));
+    res.redirect('https://essential-ea-unified.vercel.app/?google_connected=true&email=' + encodeURIComponent(profile.email));
   } catch(e) {
     console.error('Google OAuth error:', e.message);
-    res.redirect('/?google_error=' + encodeURIComponent(e.message));
+    res.redirect('https://essential-ea-unified.vercel.app/?google_error=' + encodeURIComponent(e.message));
   }
 });
 
