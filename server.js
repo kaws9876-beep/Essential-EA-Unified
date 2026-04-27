@@ -37,7 +37,7 @@ async function getBookContext(query) {
     }
     if(!results.matches || results.matches.length === 0) return '';
     const context = results.matches
-      .filter(m => m.score > 0.3)
+      .filter(m => m.score > 0.2)
       .map(m => m.metadata.text)
       .join('\n\n');
     console.log('RAG context length:', context.length);
