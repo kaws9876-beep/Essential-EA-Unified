@@ -571,46 +571,111 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
     </div>
 
     <div class="screen" id="screen-inbox" style="padding:0">
+      <!-- Google Connect Banner -->
+      <div id="google-connect-banner" style="padding:14px 20px;background:rgba(196,154,138,0.08);border-bottom:1px solid rgba(196,154,138,0.2);display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#C49A8A;margin-bottom:2px">Connect Gmail to activate your EA inbox</div>
+          <div style="font-size:12px;color:var(--mid)">Your EA will classify every email as Crystal Ball or Bouncy Ball before you see it</div>
+        </div>
+        <button onclick="connectGoogle()" style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:8px 18px;border-radius:4px;border:none;cursor:pointer;background:#C49A8A;color:#1A1A18;white-space:nowrap">Connect Gmail</button>
+      </div>
+      <!-- Connected Banner -->
+      <div id="google-connected-banner" style="display:none;padding:10px 20px;background:rgba(45,106,53,0.08);border-bottom:1px solid rgba(45,106,53,0.15);align-items:center;justify-content:space-between;gap:12px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:#2D6A35;font-size:13px">&#9989;</span>
+          <span style="font-size:12px;color:var(--mid)">Gmail connected: <strong id="google-email-display"></strong></span>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button onclick="loadGmailMessages()" style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:3px;border:1px solid rgba(45,106,53,0.4);cursor:pointer;background:transparent;color:#2D6A35">Refresh</button>
+          <button onclick="disconnectGoogle()" style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:3px;border:1px solid rgba(138,56,48,0.3);cursor:pointer;background:transparent;color:#8A3A30">Disconnect</button>
+        </div>
+      </div>
       <div class="inbox-wrap" id="inbox-wrap">
+        <!-- Left panel: message list -->
         <div class="inbox-list">
-          <div id="google-connect-banner" style="padding:12px 16px;background:rgba(196,154,138,0.08);border-bottom:1px solid rgba(196,154,138,0.2);display:flex;align-items:center;justify-content:space-between">
-            <div style="font-size:12px;color:rgba(26,26,24,0.7)"><strong style="color:#C49A8A">Connect Gmail</strong> to see your real emails here</div>
-            <button onclick="connectGoogle()" style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:6px 14px;border-radius:3px;border:none;cursor:pointer;background:#C49A8A;color:#1A1A18">Connect Gmail</button>
+          <div class="inbox-head">
+            <span class="inbox-head-title">Communication Hub</span>
+            <span class="inbox-count" id="inbox-count-badge">Loading...</span>
           </div>
-          <div id="google-connected-banner" style="display:none;padding:12px 16px;background:rgba(45,106,53,0.1);border-bottom:1px solid rgba(45,106,53,0.2);display:none;align-items:center;justify-content:space-between">
-            <div style="font-size:12px;color:rgba(26,26,24,0.7)">&#9989;&nbsp;<strong style="color:#2D6A35">Gmail Connected</strong> &#9989; <span id="google-email-display"></span></div>
-            <div style="display:flex;gap:8px">
-              <button onclick="loadGmailMessages()" style="font-size:10px;font-weight:700;padding:6px 14px;border-radius:3px;border:1px solid rgba(45,106,53,0.4);cursor:pointer;background:transparent;color:#2D6A35">Refresh</button>
-              <button onclick="disconnectGoogle()" style="font-size:10px;font-weight:700;padding:6px 14px;border-radius:3px;border:1px solid rgba(138,56,48,0.4);cursor:pointer;background:transparent;color:#8A3A30">Disconnect</button>
-            </div>
+          <!-- Folder tabs -->
+          <div style="display:flex;gap:2px;padding:8px 12px;border-bottom:1px solid var(--tan);overflow-x:auto">
+            <button class="folder-tab active" onclick="switchFolder('inbox',this)" data-folder="inbox" style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:5px 10px;border-radius:3px;border:none;cursor:pointer;background:#C49A8A;color:#1A1A18;white-space:nowrap">Inbox</button>
+            <button class="folder-tab" onclick="switchFolder('sent',this)" data-folder="sent" style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:5px 10px;border-radius:3px;border:1px solid rgba(26,26,24,0.12);cursor:pointer;background:transparent;color:var(--mid);white-space:nowrap">Sent</button>
+            <button class="folder-tab" onclick="switchFolder('starred',this)" data-folder="starred" style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:5px 10px;border-radius:3px;border:1px solid rgba(26,26,24,0.12);cursor:pointer;background:transparent;color:var(--mid);white-space:nowrap">Starred</button>
+            <button class="folder-tab" onclick="switchFolder('drafts',this)" data-folder="drafts" style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:5px 10px;border-radius:3px;border:1px solid rgba(26,26,24,0.12);cursor:pointer;background:transparent;color:var(--mid);white-space:nowrap">Drafts</button>
+            <button class="folder-tab" onclick="switchFolder('trash',this)" data-folder="trash" style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:5px 10px;border-radius:3px;border:1px solid rgba(26,26,24,0.12);cursor:pointer;background:transparent;color:var(--mid);white-space:nowrap">Trash</button>
+            <button onclick="showCompose()" style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:5px 10px;border-radius:3px;border:none;cursor:pointer;background:#2C2C2A;color:#FAF8F4;white-space:nowrap;margin-left:auto">+ Compose</button>
           </div>
-          <div class="inbox-head"><span class="inbox-head-title">Communication Hub</span><span class="inbox-count" id="inbox-count-badge">4 need you</span></div>
-          <div class="filter-row">
-            <button class="fpill active" onclick="filterMsgs('all',this)">All</button>
-            <button class="fpill" onclick="filterMsgs('you',this)">Needs You</button>
-            <button class="fpill" onclick="filterMsgs('ea',this)">EA Owned</button>
-            <button class="fpill" onclick="filterMsgs('defer',this)">Deferred</button>
+          <!-- Search -->
+          <div style="padding:8px 12px;border-bottom:1px solid var(--tan)">
+            <input id="gmail-search" type="text" placeholder="Search emails..." onkeydown="if(event.key==='Enter')searchGmail()" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--blk);background:var(--warm);outline:none">
           </div>
-          <div id="msg-list">
-            <div class="msg unread active" data-tag="you" onclick="openMsg(0,this)"><div class="msg-header"><span class="msg-from"><span class="udot"></span>Marcus Chen</span><span class="msg-when">9:14 AM</span></div><div class="msg-sub">Counter offer - 2847 Elmwood Dr</div><div class="msg-prev">Reviewed the sellers position - think we can move...</div><div class="msg-tags"><span class="mtag mt-you">Needs You</span><span class="mtag mt-urgent">Urgent</span></div></div>
-            <div class="msg unread" data-tag="ea" onclick="openMsg(1,this)"><div class="msg-header"><span class="msg-from"><span class="udot"></span>Sarah Kim - Lender</span><span class="msg-when">8:52 AM</span></div><div class="msg-sub">Referral partner meeting request</div><div class="msg-prev">Would love 20 minutes to explore a referral partnership...</div><div class="msg-tags"><span class="mtag mt-ea">EA Triaging</span></div></div>
-            <div class="msg" data-tag="ea" onclick="openMsg(2,this)"><div class="msg-header"><span class="msg-from">Rodriguez Closing</span><span class="msg-when">Tue</span></div><div class="msg-sub">Closing confirmed - gift needed by Friday</div><div class="msg-prev">Title confirmed Thursday 2pm. Per your gift protocol...</div><div class="msg-tags"><span class="mtag mt-ea">EA Owned</span></div></div>
-            <div class="msg unread" data-tag="you" onclick="openMsg(3,this)"><div class="msg-header"><span class="msg-from"><span class="udot"></span>Team Standup Bot</span><span class="msg-when">Mon</span></div><div class="msg-sub">Weekly scorecard - Action required</div><div class="msg-prev">2 team members missed their weekly task completion...</div><div class="msg-tags"><span class="mtag mt-you">Needs You</span></div></div>
-            <div class="msg flagged" data-tag="defer" onclick="openMsg(4,this)"><div class="msg-header"><span class="msg-from">Office Supplies Vendor</span><span class="msg-when">Mon</span></div><div class="msg-sub">Quote renewal - Q2 supplies</div><div class="msg-prev">Updated pricing for Q2 as discussed...</div><div class="msg-tags"><span class="mtag mt-ea">EA Replied</span><span class="mtag mt-none">No Action</span></div></div>
+          <!-- Bulk actions -->
+          <div id="bulk-actions" style="display:none;padding:6px 12px;background:rgba(196,154,138,0.08);border-bottom:1px solid rgba(196,154,138,0.2);align-items:center;gap:8px">
+            <span id="bulk-count" style="font-size:11px;color:var(--mid)">0 selected</span>
+            <button onclick="bulkAction('archive')" style="font-size:10px;font-weight:700;padding:4px 10px;border-radius:3px;border:1px solid rgba(26,26,24,0.15);cursor:pointer;background:transparent;color:var(--mid)">Archive All</button>
+            <button onclick="bulkAction('trash')" style="font-size:10px;font-weight:700;padding:4px 10px;border-radius:3px;border:1px solid rgba(138,56,48,0.3);cursor:pointer;background:transparent;color:#8A3A30">Delete All</button>
+            <button onclick="bulkAction('read')" style="font-size:10px;font-weight:700;padding:4px 10px;border-radius:3px;border:1px solid rgba(196,154,138,0.3);cursor:pointer;background:transparent;color:#C49A8A">Mark Read</button>
+            <button onclick="clearBulkSelection()" style="font-size:10px;padding:4px 10px;border-radius:3px;border:none;cursor:pointer;background:transparent;color:var(--mid);margin-left:auto">Clear</button>
+          </div>
+          <!-- Message list -->
+          <div id="msg-list" style="overflow-y:auto;flex:1">
+            <div style="padding:20px;text-align:center;color:var(--mid);font-size:12px">Connect Gmail above to see your emails</div>
+          </div>
+          <!-- Load more -->
+          <div id="load-more-btn" style="display:none;padding:10px;text-align:center;border-top:1px solid var(--tan)">
+            <button onclick="loadMoreMessages()" style="font-size:11px;font-weight:600;padding:6px 16px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Load More</button>
           </div>
         </div>
-        <div class="msg-detail" id="msg-detail">
+        <!-- Right panel: message detail -->
+        <div class="detail-pane" id="detail-pane">
+          <button id="back-btn" style="display:none" onclick="closeDetail()">&#8592; Back</button>
           <div class="detail-head">
-            <div style="flex:1;min-width:0"><div class="detail-subject" id="d-sub">Counter offer - 2847 Elmwood Dr</div><div class="detail-meta" id="d-meta">From <strong>Marcus Chen</strong> - Today 9:14 AM</div></div>
-            <div class="detail-acts">
-              <button class="d-btn d-ghost" id="back-btn" onclick="closeDetail()" style="display:none">Back</button>
-              <button class="d-btn d-ghost">Forward to EA</button>
-              <button class="d-btn d-primary">Reply</button>
+            <div class="detail-sub" id="d-sub">Select a message</div>
+            <div class="detail-meta" id="d-meta"></div>
+            <div class="detail-route" id="d-route"></div>
+          </div>
+          <!-- Email action bar -->
+          <div id="email-actions" style="display:none;padding:8px 16px;border-bottom:1px solid var(--tan);display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <button id="btn-reply" onclick="showReplyPanel()" style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:6px 12px;border-radius:3px;border:none;cursor:pointer;background:#C49A8A;color:#1A1A18">Reply</button>
+            <button onclick="forwardEmail()" style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:6px 12px;border-radius:3px;border:1px solid rgba(26,26,24,0.15);cursor:pointer;background:transparent;color:var(--mid)">Forward</button>
+            <button id="btn-star" onclick="toggleStar()" style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:6px 12px;border-radius:3px;border:1px solid rgba(26,26,24,0.15);cursor:pointer;background:transparent;color:var(--mid)">&#9733; Star</button>
+            <button onclick="archiveEmail()" style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:6px 12px;border-radius:3px;border:1px solid rgba(26,26,24,0.15);cursor:pointer;background:transparent;color:var(--mid)">Archive</button>
+            <button onclick="trashEmail()" style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:6px 12px;border-radius:3px;border:1px solid rgba(138,56,48,0.3);cursor:pointer;background:transparent;color:#8A3A30">Delete</button>
+            <button onclick="markReadEmail(false)" style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:6px 12px;border-radius:3px;border:1px solid rgba(26,26,24,0.15);cursor:pointer;background:transparent;color:var(--mid)">Mark Unread</button>
+            <button id="btn-calendar-add" style="display:none;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:6px 12px;border-radius:3px;border:none;cursor:pointer;background:#2D6A35;color:white" onclick="addSuggestedEvent()">+ Add to Calendar</button>
+            <button onclick="classifyAndDraft()" style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:6px 12px;border-radius:3px;border:none;cursor:pointer;background:#2C2C2A;color:#FAF8F4;margin-left:auto">EA Draft Reply</button>
+          </div>
+          <!-- Calendar suggestion banner -->
+          <div id="calendar-suggestion" style="display:none;padding:10px 16px;background:rgba(45,106,53,0.08);border-bottom:1px solid rgba(45,106,53,0.15);font-size:12px;color:var(--mid)"></div>
+          <!-- Email body -->
+          <div class="detail-body" id="d-body" style="padding:16px;overflow-y:auto;flex:1;white-space:pre-wrap;font-size:13px;line-height:1.7;color:var(--blk)"><p style="color:var(--mid)">Select a message from the list to read it here.</p></div>
+          <!-- Reply panel -->
+          <div id="reply-panel" style="display:none;border-top:1px solid var(--tan);padding:12px 16px;background:var(--warm)">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#C49A8A;margin-bottom:8px">Reply to <span id="reply-to-addr"></span></div>
+            <textarea id="reply-in" rows="4" placeholder="Type your reply or click EA Draft Reply above to let your EA write it..." style="width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none;resize:vertical;min-height:80px"></textarea>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button onclick="sendReply()" style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:8px 20px;border-radius:4px;border:none;cursor:pointer;background:#2C2C2A;color:#FAF8F4">Send</button>
+              <button onclick="document.getElementById('reply-panel').style.display='none'" style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:8px 16px;border-radius:4px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Cancel</button>
             </div>
           </div>
-          <div class="ai-routing"><div class="ar-icon">&#128302;</div><div><div class="ar-text" id="d-route"><strong>Crystal Ball - Needs You.</strong> Counter offer on active listing requires your direct judgment.</div><div class="ar-pills"><div class="ar-pill arp-h">Handle personally</div><div class="ar-pill arp-f">Schedule callback</div></div></div></div>
-          <div class="detail-body" id="d-body"><p>Select a message from the list to read it here.</p></div>
-          <div class="detail-reply"><textarea class="reply-input" id="reply-in" rows="2" placeholder="Type your reply..."></textarea><button class="reply-send" onclick="sendReply()">Send</button></div>
+        </div>
+      </div>
+      <!-- Compose Modal -->
+      <div id="compose-modal" style="display:none;position:fixed;bottom:20px;right:20px;width:480px;max-width:95vw;background:white;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.15);z-index:9999;border:1px solid var(--tan)">
+        <div style="padding:12px 16px;background:#2C2C2A;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#FAF8F4">New Email</span>
+          <button onclick="hideCompose()" style="background:transparent;border:none;cursor:pointer;color:rgba(250,248,244,0.5);font-size:16px">&#10005;</button>
+        </div>
+        <div style="padding:12px 16px">
+          <input id="compose-to" type="email" placeholder="To" style="width:100%;box-sizing:border-box;padding:8px 0;border:none;border-bottom:1px solid var(--tan);font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);outline:none;margin-bottom:8px">
+          <input id="compose-subject" type="text" placeholder="Subject" style="width:100%;box-sizing:border-box;padding:8px 0;border:none;border-bottom:1px solid var(--tan);font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);outline:none;margin-bottom:8px">
+          <textarea id="compose-body" rows="6" placeholder="Write your email..." style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);outline:none;resize:vertical"></textarea>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button onclick="sendCompose()" style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:8px 20px;border-radius:4px;border:none;cursor:pointer;background:#C49A8A;color:#1A1A18">Send</button>
+            <button onclick="aiDraftCompose()" style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:8px 16px;border-radius:4px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">EA Draft</button>
+            <button onclick="hideCompose()" style="font-size:11px;font-weight:700;padding:8px 16px;border-radius:4px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid);margin-left:auto">Discard</button>
+          </div>
         </div>
       </div>
     </div>
@@ -715,6 +780,7 @@ function nav(name, el) {
   if(name === 'history') loadFullHistory();
   if(name === 'audit') loadAudit();
   if(name === 'eatasklist') renderEATaskList();
+  if(name === 'inbox') checkGoogleStatus();
 }
 async function loadAudit() {
   const el = document.getElementById('audit-content');
@@ -1223,10 +1289,77 @@ function closeDetail() { $('inbox-wrap').classList.remove('detail-open'); $('bac
 function setReply(t) { $('reply-in').value = t; $('reply-in').focus(); }
 function sendReply() {
   if(!$('reply-in').value.trim()) return;
+  const replyText = $('reply-in').value.trim();
+  // If Gmail connected, send via API
+  if(window._currentGmailMsg) {
+    const msg = window._currentGmailMsg;
+    fetch('https://essential-ea-app-production.up.railway.app/api/gmail/send', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ to: msg.from, subject: 'Re: ' + msg.subject, body: replyText })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      var btn = document.querySelector('.reply-send');
+      btn.textContent = d.success ? 'Sent!' : 'Error';
+      btn.style.background = d.success ? '#4A7A50' : '#8A3A30';
+      setTimeout(function(){ btn.textContent='Send'; btn.style.background=''; }, 2000);
+    });
+  }
   $('reply-in').value = '';
-  const btn = document.querySelector('.reply-send');
+  var btn = document.querySelector('.reply-send');
   btn.textContent='Sent'; btn.style.background='#4A7A50';
-  setTimeout(()=>{ btn.textContent='Send'; btn.style.background=''; }, 2000);
+  setTimeout(function(){ btn.textContent='Send'; btn.style.background=''; }, 2000);
+}
+
+async function archiveEmail() {
+  if(!window._currentGmailMsg) return;
+  const r = await fetch('https://essential-ea-app-production.up.railway.app/api/gmail/archive', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ messageId: window._currentGmailMsg.id })
+  });
+  const d = await r.json();
+  if(d.success) { removeCurrentEmail(); loadGmailMessages(); }
+}
+
+async function trashEmail() {
+  if(!window._currentGmailMsg) return;
+  const r = await fetch('https://essential-ea-app-production.up.railway.app/api/gmail/trash', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ messageId: window._currentGmailMsg.id })
+  });
+  const d = await r.json();
+  if(d.success) { removeCurrentEmail(); loadGmailMessages(); }
+}
+
+async function markReadEmail() {
+  if(!window._currentGmailMsg) return;
+  await fetch('https://essential-ea-app-production.up.railway.app/api/gmail/markread', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ messageId: window._currentGmailMsg.id })
+  });
+  loadGmailMessages();
+}
+
+function removeCurrentEmail() {
+  var el = document.querySelector('.msg.active');
+  if(el) el.remove();
+  $('d-body').innerHTML = '<p>Select a message from the list to read it here.</p>';
+  $('d-sub').textContent = '';
+  document.getElementById('email-actions').style.display = 'none';
+  window._currentGmailMsg = null;
+}
+
+async function classifyAndDraft() {
+  if(!window._currentGmailMsg) return;
+  var msg = window._currentGmailMsg;
+  var replyIn = $('reply-in');
+  replyIn.value = 'Drafting reply...';
+  const r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-draft', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ type: 'email', task: msg.subject + ': ' + msg.snippet, action: 'Draft a professional reply' })
+  });
+  const d = await r.json();
+  if(d.success) replyIn.value = d.output;
+  else replyIn.value = '';
 }
 function filterMsgs(tag, btn) {
   document.querySelectorAll('.fpill').forEach(p => p.classList.remove('active'));
@@ -1314,6 +1447,12 @@ async function loadStats() {
 }
 
 
+
+// ============ GMAIL FULL MANAGEMENT ============
+var _currentFolder = 'inbox';
+var _nextPageToken = null;
+var _selectedEmails = new Set();
+
 function connectGoogle() {
   window.location.href = 'https://essential-ea-app-production.up.railway.app/auth/google';
 }
@@ -1321,82 +1460,443 @@ function connectGoogle() {
 async function disconnectGoogle() {
   await fetch('https://essential-ea-app-production.up.railway.app/api/google/disconnect');
   document.getElementById('google-connect-banner').style.display = 'flex';
-  document.getElementById('google-connected-banner').style.display = 'none';
-  document.getElementById('msg-list').innerHTML = '';
+  var cb = document.getElementById('google-connected-banner');
+  cb.style.display = 'none';
+  document.getElementById('msg-list').innerHTML = '<div style="padding:20px;text-align:center;color:var(--mid);font-size:12px">Connect Gmail above to see your emails</div>';
+  _selectedEmails.clear();
 }
 
 async function checkGoogleStatus() {
   try {
-    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/google/status');
-    const d = await r.json();
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/google/status');
+    var d = await r.json();
+    var connectBanner = document.getElementById('google-connect-banner');
+    var connectedBanner = document.getElementById('google-connected-banner');
     if(d.connected) {
-      document.getElementById('google-connect-banner').style.display = 'none';
-      var cb = document.getElementById('google-connected-banner');
-      cb.style.display = 'flex';
+      if(connectBanner) connectBanner.style.display = 'none';
+      if(connectedBanner) { connectedBanner.style.display = 'flex'; }
       var emailEl = document.getElementById('google-email-display');
       if(emailEl) emailEl.textContent = d.email || '';
       loadGmailMessages();
+    } else {
+      if(connectBanner) connectBanner.style.display = 'flex';
+      if(connectedBanner) connectedBanner.style.display = 'none';
     }
   } catch(e) {}
 }
 
-async function loadGmailMessages() {
+function switchFolder(folder, btn) {
+  _currentFolder = folder;
+  _nextPageToken = null;
+  document.querySelectorAll('.folder-tab').forEach(function(b) {
+    b.style.background = 'transparent';
+    b.style.color = 'var(--mid)';
+    b.style.border = '1px solid rgba(26,26,24,0.12)';
+  });
+  if(btn) { btn.style.background = '#C49A8A'; btn.style.color = '#1A1A18'; btn.style.border = 'none'; }
+  loadGmailMessages();
+}
+
+function searchGmail() {
+  var q = document.getElementById('gmail-search').value.trim();
+  loadGmailMessages(q);
+}
+
+async function loadGmailMessages(search) {
+  var list = document.getElementById('msg-list');
+  var badge = document.getElementById('inbox-count-badge');
+  if(list) list.innerHTML = '<div style="padding:20px;text-align:center"><div class="spinner"></div></div>';
   try {
-    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/gmail/messages');
-    const d = await r.json();
-    if(!d.success || !d.messages.length) return;
-    const list = document.getElementById('msg-list');
-    if(!list) return;
-    // Clear sample messages and show real ones
-    list.innerHTML = d.messages.map(function(msg, i) {
-      var isUnread = msg.labelIds && msg.labelIds.includes('UNREAD');
-      return '<div class="msg" data-tag="all" onclick="openGmailMsg(' + i + ',this)" style="' + (isUnread ? 'font-weight:600' : '') + '">' +
-        '<div class="msg-from">' + (msg.from || '').split('<')[0].trim() + '</div>' +
-        '<div class="msg-sub">' + msg.subject + '</div>' +
-        '<div class="msg-prev">' + (msg.snippet || '').substring(0, 80) + '</div>' +
-        '</div>';
-    }).join('');
-    window._gmailMessages = d.messages;
+    var url = 'https://essential-ea-app-production.up.railway.app/api/gmail/messages?folder=' + _currentFolder;
+    if(search) url += '&search=' + encodeURIComponent(search);
+    if(_nextPageToken) url += '&pageToken=' + _nextPageToken;
+    var r = await fetch(url);
+    var d = await r.json();
+    if(!d.success) { if(list) list.innerHTML = '<div style="padding:16px;color:#8A3A30;font-size:12px">Error: ' + (d.error||'Failed') + '</div>'; return; }
+    
+    _nextPageToken = d.nextPageToken;
+    var loadMore = document.getElementById('load-more-btn');
+    if(loadMore) loadMore.style.display = d.nextPageToken ? 'block' : 'none';
+    
+    if(badge) badge.textContent = d.messages.length + (d.nextPageToken ? '+' : '') + ' messages';
+    
+    if(!d.messages.length) {
+      if(list) list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--mid);font-size:12px">No messages in ' + _currentFolder + '</div>';
+      return;
+    }
+    
+    if(list) {
+      list.innerHTML = d.messages.map(function(msg, i) {
+        var unread = msg.isUnread;
+        var starred = msg.isStarred;
+        var fromName = (msg.from || '').replace(/<[^>]+>/g, '').trim();
+        var date = new Date(msg.date).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+        return '<div class="msg" data-id="' + msg.id + '" data-idx="' + i + '" style="' + (unread ? 'font-weight:600;background:rgba(196,154,138,0.04)' : '') + ';cursor:pointer">' +
+          '<div style="display:flex;gap:8px;align-items:flex-start">' +
+          '<input type="checkbox" class="msg-check" onclick="event.stopPropagation();toggleMsgSelect(chr39' + msg.id + 'chr39,this)" style="margin-top:3px;cursor:pointer">' +
+          '<div style="flex:1;min-width:0" onclick="openGmailMsgByIdx(' + i + ',this.parentElement.parentElement)">' +
+          '<div class="msg-from" style="' + (unread ? 'font-weight:700' : '') + '">' + (starred ? '&#9733; ' : '') + fromName + '<span style="float:right;font-size:10px;color:var(--mid);font-weight:400">' + date + '</span></div>' +
+          '<div class="msg-sub">' + msg.subject + '</div>' +
+          '<div class="msg-prev">' + (msg.snippet || '').substring(0,80) + '</div>' +
+          '</div></div></div>';
+      }).join('');
+      window._gmailMessages = d.messages;
+    }
+    // Auto-classify visible messages
+    setTimeout(function() { autoClassifyInbox(d.messages); }, 500);
   } catch(e) {
-    console.log('Gmail load error:', e.message);
+    if(list) list.innerHTML = '<div style="padding:16px;color:#8A3A30;font-size:12px">Error loading emails: ' + e.message + '</div>';
   }
 }
 
-function openGmailMsg(idx, el) {
+async function loadMoreMessages() {
+  if(!_nextPageToken) return;
+  var r = await fetch('https://essential-ea-app-production.up.railway.app/api/gmail/messages?folder=' + _currentFolder + '&pageToken=' + _nextPageToken);
+  var d = await r.json();
+  if(!d.success) return;
+  _nextPageToken = d.nextPageToken;
+  var loadMore = document.getElementById('load-more-btn');
+  if(loadMore) loadMore.style.display = d.nextPageToken ? 'block' : 'none';
+  window._gmailMessages = (window._gmailMessages || []).concat(d.messages);
+  var list = document.getElementById('msg-list');
+  var startIdx = (window._gmailMessages.length - d.messages.length);
+  d.messages.forEach(function(msg, i) {
+    var idx = startIdx + i;
+    var div = document.createElement('div');
+    div.className = 'msg';
+    div.setAttribute('data-id', msg.id);
+    div.innerHTML = '<div style="display:flex;gap:8px"><input type="checkbox" class="msg-check" onclick="event.stopPropagation();toggleMsgSelect(chr39' + msg.id + 'chr39,this)" style="margin-top:3px"><div style="flex:1" onclick="openGmailMsgByIdx(' + idx + ',this.parentElement.parentElement)"><div class="msg-from">' + (msg.from||'').replace(/<[^>]+>/g,'').trim() + '</div><div class="msg-sub">' + msg.subject + '</div><div class="msg-prev">' + (msg.snippet||'').substring(0,80) + '</div></div></div>';
+    div.innerHTML = div.innerHTML.replace(/chr39/g, "'");
+    if(list) list.appendChild(div);
+  });
+}
+
+async function autoClassifyInbox(messages) {
+  // Classify first 5 unread messages in background
+  var unread = messages.filter(function(m) { return m.isUnread; }).slice(0, 5);
+  for(var i = 0; i < unread.length; i++) {
+    var msg = unread[i];
+    try {
+      var r = await fetch('https://essential-ea-app-production.up.railway.app/api/classify', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ taskDescription: msg.subject + ' ' + msg.snippet })
+      });
+      var d = await r.json();
+      if(d.success) {
+        var ic = d.classification.classification === 'crystal';
+        var el = document.querySelector('[data-id="' + msg.id + '"] .msg-prev');
+        if(el) {
+          var badge = document.createElement('span');
+          badge.style.cssText = 'font-size:9px;font-weight:700;letter-spacing:0.08em;padding:2px 6px;border-radius:2px;margin-right:6px;background:' + (ic ? 'rgba(196,154,138,0.15)' : 'rgba(106,154,112,0.15)') + ';color:' + (ic ? '#C49A8A' : '#2D6A35');
+          badge.textContent = ic ? 'CRYSTAL BALL' : 'EA OWNED';
+          el.parentNode.insertBefore(badge, el);
+        }
+      }
+    } catch(e) {}
+    await new Promise(function(r){ setTimeout(r, 200); });
+  }
+}
+
+async function openGmailMsgByIdx(idx, el) {
   var msgs = window._gmailMessages || [];
-  var m = msgs[idx];
-  if(!m) return;
-  document.querySelectorAll('.msg').forEach(function(msg){ msg.classList.remove('active'); });
+  var msg = msgs[idx];
+  if(!msg) return;
+  window._currentGmailMsg = msg;
+  
+  document.querySelectorAll('.msg').forEach(function(m){ m.classList.remove('active'); });
   if(el) el.classList.add('active');
+  
   var subEl = document.getElementById('d-sub');
   var metaEl = document.getElementById('d-meta');
   var bodyEl = document.getElementById('d-body');
   var routeEl = document.getElementById('d-route');
-  if(subEl) subEl.textContent = m.subject;
-  if(metaEl) metaEl.innerHTML = 'From <strong>' + m.from + '</strong>';
-  if(bodyEl) bodyEl.innerHTML = '<p>' + m.snippet + '</p>';
-  if(routeEl) routeEl.innerHTML = '<strong>EA is classifying this message...</strong>';
-  // Auto-classify the email subject with Crystal Ball AI
-  classifyEmailWithAI(m.subject + ' ' + m.snippet, routeEl);
+  var actEl = document.getElementById('email-actions');
+  var replyAddr = document.getElementById('reply-to-addr');
+  
+  if(subEl) subEl.textContent = msg.subject || '(no subject)';
+  if(metaEl) metaEl.innerHTML = 'From <strong>' + (msg.from||'') + '</strong> &middot; ' + new Date(msg.date).toLocaleString();
+  if(bodyEl) bodyEl.innerHTML = '<div class="spin-wrap"><div class="spinner"></div></div>';
+  if(routeEl) routeEl.innerHTML = '<span style="color:var(--mid)">EA is classifying...</span>';
+  if(actEl) actEl.style.display = 'flex';
+  if(replyAddr) replyAddr.textContent = msg.from || '';
+  
+  // Update star button
+  var starBtn = document.getElementById('btn-star');
+  if(starBtn) starBtn.innerHTML = (msg.isStarred ? '&#9733; Unstar' : '&#9733; Star');
+  
+  // Fetch full message body
+  try {
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/gmail/message/' + msg.id);
+    var d = await r.json();
+    if(d.success && bodyEl) {
+      var bodyHtml = d.body || msg.snippet || '';
+      if(bodyHtml.includes('<html') || bodyHtml.includes('<div')) {
+        bodyEl.innerHTML = '<iframe srcdoc="' + bodyHtml.replace(/"/g, '&quot;') + '" style="width:100%;border:none;min-height:400px"></iframe>';
+      } else {
+        bodyEl.innerHTML = '<pre style="white-space:pre-wrap;font-family:DM Sans,sans-serif;font-size:13px;line-height:1.7;color:var(--blk)">' + bodyHtml + '</pre>';
+      }
+    }
+  } catch(e) {
+    if(bodyEl) bodyEl.innerHTML = '<p>' + msg.snippet + '</p>';
+  }
+  
+  // Classify and suggest calendar
+  classifyEmailWithAI(msg.subject + ' ' + msg.snippet, routeEl);
+  checkCalendarSuggestion(msg.subject + ' ' + (msg.snippet||''));
+  
+  // Mark as read
+  if(msg.isUnread) {
+    fetch('https://essential-ea-app-production.up.railway.app/api/gmail/markread', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ messageId: msg.id, unread: false })
+    }).then(function(){ msg.isUnread = false; });
+  }
+  
+  if(window.innerWidth <= 768) {
+    var wrap = document.getElementById('inbox-wrap');
+    if(wrap) wrap.classList.add('detail-open');
+    var back = document.getElementById('back-btn');
+    if(back) back.style.display = 'block';
+  }
 }
 
 async function classifyEmailWithAI(text, el) {
   try {
-    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/classify', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/classify', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ taskDescription: text.substring(0, 500) })
     });
-    const d = await r.json();
+    var d = await r.json();
     if(d.success && el) {
       var c = d.classification;
       var ic = c.classification === 'crystal';
-      el.innerHTML = '<strong>' + (ic ? '&#128302; Crystal Ball - Needs You.' : '&#127934; Bouncy Ball - EA Owned.') + '</strong> ' + (c.reason || '');
+      el.innerHTML = '<strong style="color:' + (ic ? '#C49A8A' : '#2D6A35') + '">' + (ic ? '&#128302; Crystal Ball - Needs Your Attention.' : '&#127934; Bouncy Ball - EA Can Handle This.') + '</strong> ' + (c.reason || '');
     }
   } catch(e) {}
 }
 
-// Check Google connection on load and after OAuth redirect
+async function checkCalendarSuggestion(emailText) {
+  try {
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/calendar/suggest', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ emailText: emailText })
+    });
+    var d = await r.json();
+    if(d.success && d.suggestion && d.suggestion.shouldAdd) {
+      var sug = d.suggestion;
+      window._calendarSuggestion = sug;
+      var banner = document.getElementById('calendar-suggestion');
+      var btn = document.getElementById('btn-calendar-add');
+      if(banner) {
+        banner.style.display = 'block';
+        banner.innerHTML = '&#128197; <strong>EA suggests:</strong> Add "' + sug.summary + '" to your calendar on ' + (sug.suggestedDate || 'the suggested date');
+      }
+      if(btn) btn.style.display = 'inline-flex';
+    }
+  } catch(e) {}
+}
+
+async function addSuggestedEvent() {
+  var sug = window._calendarSuggestion;
+  if(!sug) return;
+  var startDate = sug.suggestedDate + 'T' + (sug.suggestedTime || '09:00') + ':00';
+  var endDate = sug.suggestedDate + 'T' + (sug.suggestedTime || '09:00').replace(/(\d+):/, function(m, h){ return (parseInt(h) + Math.floor((sug.duration||60)/60)) + ':'; }) + ':00';
+  var r = await fetch('https://essential-ea-app-production.up.railway.app/api/calendar/create', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ summary: sug.summary, start: startDate, end: endDate, description: sug.notes || '' })
+  });
+  var d = await r.json();
+  var banner = document.getElementById('calendar-suggestion');
+  var btn = document.getElementById('btn-calendar-add');
+  if(d.success) {
+    if(banner) banner.innerHTML = '&#9989; Added to your Google Calendar!';
+    if(btn) btn.style.display = 'none';
+    setTimeout(function(){ if(banner) banner.style.display = 'none'; }, 3000);
+  }
+}
+
+async function toggleStar() {
+  if(!window._currentGmailMsg) return;
+  var msg = window._currentGmailMsg;
+  var starred = !msg.isStarred;
+  msg.isStarred = starred;
+  var btn = document.getElementById('btn-star');
+  if(btn) btn.innerHTML = starred ? '&#9733; Unstar' : '&#9733; Star';
+  await fetch('https://essential-ea-app-production.up.railway.app/api/gmail/star', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ messageId: msg.id, starred: starred })
+  });
+}
+
+async function archiveEmail() {
+  if(!window._currentGmailMsg) return;
+  var r = await fetch('https://essential-ea-app-production.up.railway.app/api/gmail/archive', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ messageId: window._currentGmailMsg.id })
+  });
+  var d = await r.json();
+  if(d.success) { removeCurrentEmail(); loadGmailMessages(); }
+}
+
+async function trashEmail() {
+  if(!window._currentGmailMsg) return;
+  var r = await fetch('https://essential-ea-app-production.up.railway.app/api/gmail/trash', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ messageId: window._currentGmailMsg.id })
+  });
+  var d = await r.json();
+  if(d.success) { removeCurrentEmail(); loadGmailMessages(); }
+}
+
+async function markReadEmail(unread) {
+  if(!window._currentGmailMsg) return;
+  await fetch('https://essential-ea-app-production.up.railway.app/api/gmail/markread', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ messageId: window._currentGmailMsg.id, unread: unread !== false })
+  });
+  loadGmailMessages();
+}
+
+async function forwardEmail() {
+  if(!window._currentGmailMsg) return;
+  showCompose();
+  var subj = document.getElementById('compose-subject');
+  var body = document.getElementById('compose-body');
+  if(subj) subj.value = 'Fwd: ' + window._currentGmailMsg.subject;
+  if(body) body.value = '\n\n--- Forwarded message ---\nFrom: ' + (window._currentGmailMsg.from||'') + '\n\n' + (window._currentGmailMsg.snippet||'');
+}
+
+function removeCurrentEmail() {
+  var el = document.querySelector('.msg.active');
+  if(el) el.remove();
+  document.getElementById('d-body').innerHTML = '<p style="color:var(--mid)">Select a message from the list to read it here.</p>';
+  document.getElementById('d-sub').textContent = 'Select a message';
+  document.getElementById('d-meta').innerHTML = '';
+  document.getElementById('d-route').innerHTML = '';
+  document.getElementById('email-actions').style.display = 'none';
+  var rp = document.getElementById('reply-panel');
+  if(rp) rp.style.display = 'none';
+  var cs = document.getElementById('calendar-suggestion');
+  if(cs) cs.style.display = 'none';
+  window._currentGmailMsg = null;
+}
+
+function showReplyPanel() {
+  var panel = document.getElementById('reply-panel');
+  if(panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+async function sendReply() {
+  var replyText = document.getElementById('reply-in').value.trim();
+  if(!replyText) return;
+  if(window._currentGmailMsg) {
+    var msg = window._currentGmailMsg;
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/gmail/send', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ to: msg.from, subject: 'Re: ' + msg.subject, body: replyText, threadId: msg.threadId })
+    });
+    var d = await r.json();
+    var btn = document.querySelector('.reply-send') || document.querySelector('[onclick="sendReply()"]');
+    if(d.success) {
+      document.getElementById('reply-in').value = '';
+      document.getElementById('reply-panel').style.display = 'none';
+      var route = document.getElementById('d-route');
+      if(route) route.innerHTML = '<span style="color:#2D6A35">&#9989; Reply sent successfully</span>';
+    }
+  }
+}
+
+async function classifyAndDraft() {
+  if(!window._currentGmailMsg) return;
+  var msg = window._currentGmailMsg;
+  showReplyPanel();
+  var replyIn = document.getElementById('reply-in');
+  if(replyIn) replyIn.value = 'Your EA is drafting a reply...';
+  var r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-draft', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ type: 'email', task: msg.subject + ': ' + msg.snippet, action: 'Draft a professional reply on behalf of Kristina Spencer' })
+  });
+  var d = await r.json();
+  if(d.success && replyIn) replyIn.value = d.output;
+  else if(replyIn) replyIn.value = '';
+}
+
+function showCompose() {
+  var modal = document.getElementById('compose-modal');
+  if(modal) modal.style.display = 'block';
+}
+
+function hideCompose() {
+  var modal = document.getElementById('compose-modal');
+  if(modal) modal.style.display = 'none';
+  document.getElementById('compose-to').value = '';
+  document.getElementById('compose-subject').value = '';
+  document.getElementById('compose-body').value = '';
+}
+
+async function sendCompose() {
+  var to = document.getElementById('compose-to').value.trim();
+  var subject = document.getElementById('compose-subject').value.trim();
+  var body = document.getElementById('compose-body').value.trim();
+  if(!to || !subject || !body) { alert('Please fill in all fields.'); return; }
+  var r = await fetch('https://essential-ea-app-production.up.railway.app/api/gmail/send', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ to: to, subject: subject, body: body })
+  });
+  var d = await r.json();
+  if(d.success) { hideCompose(); alert('Email sent!'); }
+  else alert('Send failed: ' + (d.error||'Unknown error'));
+}
+
+async function aiDraftCompose() {
+  var subject = document.getElementById('compose-subject').value.trim();
+  var to = document.getElementById('compose-to').value.trim();
+  if(!subject) { alert('Enter a subject first so your EA knows what to write.'); return; }
+  var bodyEl = document.getElementById('compose-body');
+  if(bodyEl) bodyEl.value = 'Your EA is drafting...';
+  var r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-draft', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ type: 'email', task: 'Email to ' + to + ' about: ' + subject, action: 'Write a complete professional email' })
+  });
+  var d = await r.json();
+  if(d.success && bodyEl) bodyEl.value = d.output;
+  else if(bodyEl) bodyEl.value = '';
+}
+
+function toggleMsgSelect(msgId, checkbox) {
+  if(checkbox.checked) _selectedEmails.add(msgId);
+  else _selectedEmails.delete(msgId);
+  var bulkActions = document.getElementById('bulk-actions');
+  var bulkCount = document.getElementById('bulk-count');
+  if(bulkActions) bulkActions.style.display = _selectedEmails.size > 0 ? 'flex' : 'none';
+  if(bulkCount) bulkCount.textContent = _selectedEmails.size + ' selected';
+}
+
+async function bulkAction(action) {
+  if(!_selectedEmails.size) return;
+  var ids = Array.from(_selectedEmails);
+  var r = await fetch('https://essential-ea-app-production.up.railway.app/api/gmail/bulk', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ messageIds: ids, action: action })
+  });
+  var d = await r.json();
+  if(d.success) { clearBulkSelection(); loadGmailMessages(); }
+}
+
+function clearBulkSelection() {
+  _selectedEmails.clear();
+  document.querySelectorAll('.msg-check').forEach(function(cb){ cb.checked = false; });
+  var ba = document.getElementById('bulk-actions');
+  if(ba) ba.style.display = 'none';
+}
+
+function closeDetail() {
+  var wrap = document.getElementById('inbox-wrap');
+  if(wrap) wrap.classList.remove('detail-open');
+  var back = document.getElementById('back-btn');
+  if(back) back.style.display = 'none';
+}
+
 window.addEventListener('DOMContentLoaded', function() {
   var params = new URLSearchParams(window.location.search);
   if(params.get('google_connected')) {
