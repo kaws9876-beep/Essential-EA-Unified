@@ -82,7 +82,7 @@ async function initDB() {
   // Add unique constraint if table already exists without it
   await sql`ALTER TABLE google_tokens ADD COLUMN IF NOT EXISTS user_id_check VARCHAR(1)`.catch(() => {});
   await sql`ALTER TABLE google_tokens DROP COLUMN IF EXISTS user_id_check`.catch(() => {});
-  try { await sql\`ALTER TABLE google_tokens ADD CONSTRAINT google_tokens_user_id_unique UNIQUE (user_id)\`; } catch(e) {}
+  try { await sql`ALTER TABLE google_tokens ADD CONSTRAINT google_tokens_user_id_unique UNIQUE (user_id)`; } catch(e) {}
 
   await sql`CREATE TABLE IF NOT EXISTS feedback (id SERIAL PRIMARY KEY, name TEXT, email TEXT, rating INTEGER, message TEXT, created_at TIMESTAMP DEFAULT NOW())`;
     console.log('Database tables ready');
