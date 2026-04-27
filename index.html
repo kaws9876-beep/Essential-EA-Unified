@@ -591,6 +591,25 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
           <button onclick="disconnectGoogle()" style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:3px;border:1px solid rgba(138,56,48,0.3);cursor:pointer;background:transparent;color:#8A3A30">Disconnect</button>
         </div>
       </div>
+      <!-- Microsoft Connect Banner -->
+      <div id="microsoft-connect-banner" style="display:none;padding:12px 20px;background:rgba(0,114,239,0.05);border-bottom:1px solid rgba(0,114,239,0.15);align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#0072EF;margin-bottom:2px">Connect Outlook</div>
+          <div style="font-size:12px;color:var(--mid)">Add your Microsoft inbox alongside Gmail</div>
+        </div>
+        <button onclick="connectMicrosoft()" style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:8px 18px;border-radius:4px;border:none;cursor:pointer;background:#0072EF;color:white;white-space:nowrap">Connect Outlook</button>
+      </div>
+      <!-- Microsoft Connected Banner -->
+      <div id="microsoft-connected-banner" style="display:none;padding:10px 20px;background:rgba(0,114,239,0.05);border-bottom:1px solid rgba(0,114,239,0.1);align-items:center;justify-content:space-between;gap:12px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:#0072EF;font-size:13px">&#9989;</span>
+          <span style="font-size:12px;color:var(--mid)">Outlook connected: <strong id="microsoft-email-display"></strong></span>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button onclick="loadOutlookMessages()" style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:3px;border:1px solid rgba(0,114,239,0.3);cursor:pointer;background:transparent;color:#0072EF">Refresh</button>
+          <button onclick="disconnectMicrosoft()" style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:3px;border:1px solid rgba(138,56,48,0.3);cursor:pointer;background:transparent;color:#8A3A30">Disconnect</button>
+        </div>
+      </div>
       <!-- EA Run Results Panel -->
       <div id="ea-results-panel" style="display:none;background:var(--warm);border-bottom:2px solid #C49A8A;padding:16px 20px;max-height:60vh;overflow-y:auto">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -616,6 +635,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
             <button class="folder-tab" onclick="switchFolder('starred',this)" data-folder="starred" style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:5px 10px;border-radius:3px;border:1px solid rgba(26,26,24,0.12);cursor:pointer;background:transparent;color:var(--mid);white-space:nowrap">Starred</button>
             <button class="folder-tab" onclick="switchFolder('drafts',this)" data-folder="drafts" style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:5px 10px;border-radius:3px;border:1px solid rgba(26,26,24,0.12);cursor:pointer;background:transparent;color:var(--mid);white-space:nowrap">Drafts</button>
             <button class="folder-tab" onclick="switchFolder('trash',this)" data-folder="trash" style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:5px 10px;border-radius:3px;border:1px solid rgba(26,26,24,0.12);cursor:pointer;background:transparent;color:var(--mid);white-space:nowrap">Trash</button>
+            <button class="folder-tab" onclick="switchToOutlook(this)" id="outlook-tab" style="display:none;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:5px 10px;border-radius:3px;border:1px solid rgba(0,114,239,0.3);cursor:pointer;background:transparent;color:#0072EF;white-space:nowrap">Outlook</button>
             <button onclick="showCompose()" style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:5px 10px;border-radius:3px;border:none;cursor:pointer;background:#2C2C2A;color:#FAF8F4;white-space:nowrap;margin-left:auto">+ Compose</button>
           </div>
           <!-- Search -->
@@ -1494,6 +1514,8 @@ async function checkGoogleStatus() {
       if(connectBanner) connectBanner.style.display = 'flex';
       if(connectedBanner) connectedBanner.style.display = 'none';
     }
+    // Also check Microsoft
+    checkMicrosoftStatus();
   } catch(e) {}
 }
 
@@ -1682,6 +1704,179 @@ function editReply(btn) {
 function skipReply(btn) {
   var card = btn.closest('[style*="border-left"]');
   if(card) card.style.opacity = '0.4';
+}
+
+function connectMicrosoft() {
+  window.location.href = 'https://essential-ea-app-production.up.railway.app/auth/microsoft';
+}
+
+async function disconnectMicrosoft() {
+  await fetch('https://essential-ea-app-production.up.railway.app/api/microsoft/disconnect');
+  document.getElementById('microsoft-connect-banner').style.display = 'flex';
+  document.getElementById('microsoft-connected-banner').style.display = 'none';
+  var outTab = document.getElementById('outlook-tab');
+  if(outTab) outTab.style.display = 'none';
+  window._currentProvider = 'gmail';
+}
+
+async function checkMicrosoftStatus() {
+  try {
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/microsoft/status');
+    var d = await r.json();
+    if(d.connected) {
+      document.getElementById('microsoft-connect-banner').style.display = 'none';
+      var cb = document.getElementById('microsoft-connected-banner');
+      cb.style.display = 'flex';
+      var emailEl = document.getElementById('microsoft-email-display');
+      if(emailEl) emailEl.textContent = d.email || '';
+      var outTab = document.getElementById('outlook-tab');
+      if(outTab) outTab.style.display = 'inline-flex';
+    } else {
+      document.getElementById('microsoft-connect-banner').style.display = 'flex';
+    }
+  } catch(e) {}
+}
+
+var _currentProvider = 'gmail';
+
+function switchToOutlook(btn) {
+  _currentProvider = 'outlook';
+  document.querySelectorAll('.folder-tab').forEach(function(b) {
+    b.style.background = 'transparent';
+    b.style.color = 'var(--mid)';
+    b.style.border = '1px solid rgba(26,26,24,0.12)';
+  });
+  btn.style.background = '#0072EF';
+  btn.style.color = 'white';
+  btn.style.border = 'none';
+  loadOutlookMessages();
+}
+
+async function loadOutlookMessages(search) {
+  var list = document.getElementById('msg-list');
+  var badge = document.getElementById('inbox-count-badge');
+  if(list) list.innerHTML = '<div style="padding:20px;text-align:center"><div class="spinner"></div></div>';
+  try {
+    var url = 'https://essential-ea-app-production.up.railway.app/api/outlook/messages?folder=inbox';
+    if(search) url += '&search=' + encodeURIComponent(search);
+    var r = await fetch(url);
+    var d = await r.json();
+    if(!d.success) { if(list) list.innerHTML = '<div style="padding:16px;color:#8A3A30;font-size:12px">Error: ' + (d.error||'Failed') + '</div>'; return; }
+    if(badge) badge.textContent = d.messages.length + ' Outlook messages';
+    if(!d.messages.length) { if(list) list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--mid);font-size:12px">No Outlook messages</div>'; return; }
+    window._outlookMessages = d.messages;
+    window._currentMsgSource = 'outlook';
+    if(list) {
+      list.innerHTML = d.messages.map(function(msg, i) {
+        var fromDisplay = msg.fromName || msg.from || '';
+        var date = new Date(msg.date).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+        return '<div class="msg" data-id="' + msg.id + '" onclick="openOutlookMsg(' + i + ',this)" style="' + (msg.isUnread ? 'font-weight:600;background:rgba(0,114,239,0.03)' : '') + ';cursor:pointer">' +
+          '<div class="msg-from">' + (msg.isStarred ? '&#9733; ' : '') + fromDisplay + '<span style="float:right;font-size:10px;color:var(--mid);font-weight:400">' + date + '</span></div>' +
+          '<div class="msg-sub">' + msg.subject + '</div>' +
+          '<div class="msg-prev">' + (msg.snippet||'').substring(0,80) + '</div>' +
+          '</div>';
+      }).join('');
+    }
+    setTimeout(function() { autoClassifyInbox(d.messages); }, 500);
+  } catch(e) {
+    if(list) list.innerHTML = '<div style="padding:16px;color:#8A3A30;font-size:12px">Error: ' + e.message + '</div>';
+  }
+}
+
+async function openOutlookMsg(idx, el) {
+  var msgs = window._outlookMessages || [];
+  var msg = msgs[idx];
+  if(!msg) return;
+  window._currentGmailMsg = { id: msg.id, from: msg.from, subject: msg.subject, snippet: msg.snippet, isStarred: msg.isStarred, source: 'outlook' };
+  document.querySelectorAll('.msg').forEach(function(m){ m.classList.remove('active'); });
+  if(el) el.classList.add('active');
+  var subEl = document.getElementById('d-sub');
+  var metaEl = document.getElementById('d-meta');
+  var bodyEl = document.getElementById('d-body');
+  var routeEl = document.getElementById('d-route');
+  var actEl = document.getElementById('email-actions');
+  if(subEl) subEl.textContent = msg.subject || '(no subject)';
+  if(metaEl) metaEl.innerHTML = 'From <strong>' + (msg.fromName||msg.from||'') + '</strong>';
+  if(bodyEl) bodyEl.innerHTML = '<div class="spin-wrap"><div class="spinner"></div></div>';
+  if(routeEl) routeEl.innerHTML = '<span style="color:var(--mid)">EA is classifying...</span>';
+  if(actEl) actEl.style.display = 'flex';
+  try {
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/outlook/message/' + msg.id);
+    var d = await r.json();
+    if(d.success && bodyEl) {
+      if(d.bodyType === 'html') {
+        bodyEl.innerHTML = '<iframe srcdoc="' + d.body.replace(/"/g, '&quot;') + '" style="width:100%;border:none;min-height:400px"></iframe>';
+      } else {
+        bodyEl.innerHTML = '<pre style="white-space:pre-wrap;font-family:DM Sans,sans-serif;font-size:13px;line-height:1.7">' + d.body + '</pre>';
+      }
+    }
+  } catch(e) { if(bodyEl) bodyEl.innerHTML = '<p>' + msg.snippet + '</p>'; }
+  classifyEmailWithAI(msg.subject + ' ' + msg.snippet, routeEl);
+  if(msg.isUnread) {
+    fetch('https://essential-ea-app-production.up.railway.app/api/outlook/markread', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ messageId: msg.id, unread: false })
+    }).catch(function(){});
+  }
+}
+
+async function archiveEmail() {
+  if(!window._currentGmailMsg) return;
+  var msg = window._currentGmailMsg;
+  var endpoint = msg.source === 'outlook' ? '/api/outlook/archive' : '/api/gmail/archive';
+  var r = await fetch('https://essential-ea-app-production.up.railway.app' + endpoint, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ messageId: msg.id })
+  });
+  var d = await r.json();
+  if(d.success) { removeCurrentEmail(); msg.source === 'outlook' ? loadOutlookMessages() : loadGmailMessages(); }
+}
+
+async function trashEmail() {
+  if(!window._currentGmailMsg) return;
+  var msg = window._currentGmailMsg;
+  var endpoint = msg.source === 'outlook' ? '/api/outlook/trash' : '/api/gmail/trash';
+  var r = await fetch('https://essential-ea-app-production.up.railway.app' + endpoint, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ messageId: msg.id })
+  });
+  var d = await r.json();
+  if(d.success) { removeCurrentEmail(); msg.source === 'outlook' ? loadOutlookMessages() : loadGmailMessages(); }
+}
+
+async function toggleStar() {
+  if(!window._currentGmailMsg) return;
+  var msg = window._currentGmailMsg;
+  var starred = !msg.isStarred;
+  msg.isStarred = starred;
+  var btn = document.getElementById('btn-star');
+  if(btn) btn.innerHTML = starred ? '&#9733; Unstar' : '&#9733; Star';
+  var endpoint = msg.source === 'outlook' ? '/api/outlook/star' : '/api/gmail/star';
+  await fetch('https://essential-ea-app-production.up.railway.app' + endpoint, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ messageId: msg.id, starred: starred })
+  });
+}
+
+async function sendReply() {
+  var replyText = document.getElementById('reply-in').value.trim();
+  if(!replyText) return;
+  if(window._currentGmailMsg) {
+    var msg = window._currentGmailMsg;
+    var endpoint = msg.source === 'outlook' ? '/api/outlook/send' : '/api/gmail/send';
+    var r = await fetch('https://essential-ea-app-production.up.railway.app' + endpoint, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ to: msg.from, subject: 'Re: ' + msg.subject, body: replyText, threadId: msg.threadId })
+    });
+    var d = await r.json();
+    if(d.success) {
+      document.getElementById('reply-in').value = '';
+      document.getElementById('reply-panel').style.display = 'none';
+      var route = document.getElementById('d-route');
+      if(route) route.innerHTML = '<span style="color:#2D6A35">&#9989; Reply sent</span>';
+      return;
+    }
+  }
 }
 
 async function archiveFromReport(data, btn) {
@@ -2080,6 +2275,19 @@ function closeDetail() {
 
 window.addEventListener('DOMContentLoaded', function() {
   var params = new URLSearchParams(window.location.search);
+  if(params.get('microsoft_connected')) {
+    history.replaceState({}, '', '/');
+    setTimeout(function() {
+      var inboxLink = document.querySelector('[onclick*=inbox]');
+      nav('inbox', inboxLink);
+      checkMicrosoftStatus();
+      checkGoogleStatus();
+    }, 300);
+  }
+  if(params.get('microsoft_error')) {
+    history.replaceState({}, '', '/');
+    console.log('Microsoft OAuth error:', params.get('microsoft_error'));
+  }
   if(params.get('google_connected')) {
     history.replaceState({}, '', '/');
     setTimeout(function() {
