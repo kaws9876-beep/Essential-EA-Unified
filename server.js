@@ -1335,11 +1335,7 @@ app.post('/api/classify', async (req, res) => {
     try {
       const [prof] = await sql`SELECT * FROM user_profiles WHERE user_id = 'default' LIMIT 1\`;
       if(prof && prof.name) {
-        profileContext = '\n\nUser context: ' + prof.name + ' is a ' + (prof.role||'executive') + 
-          (prof.industry ? ' in ' + prof.industry : '') + 
-          (prof.company ? ' at ' + prof.company : '') +
-          (prof.priorities ? '. Top priorities: ' + prof.priorities : '') +
-          (prof.peak_hours ? '. Peak hours: ' + prof.peak_hours : '');
+        profileContext = '\n\nUser context: ' + prof.name + ' is a ' + (prof.role||'executive') + (prof.industry ? ' in ' + prof.industry : '') + (prof.company ? ' at ' + prof.company : '') + (prof.priorities ? '. Top priorities: ' + prof.priorities : '') + (prof.peak_hours ? '. Peak hours: ' + prof.peak_hours : '');
       }
     } catch(e) {}
     const prompt = 'You are the Essential EA - an AI-powered executive assistant built on the methodology from the book The Essential EA by Kristina Spencer.\n\nClassify this task using the Crystal Ball and Bouncy Ball Framework.\n\nCrystal Ball tasks: ONLY the executive can do these. Irreplaceable - if dropped, shatters permanently. Includes: client relationships, negotiations, strategy, approvals, legal, financial decisions.\n\nBouncy Ball tasks: CAN and SHOULD be delegated. Bounces back even if dropped. Includes: scheduling, admin, data entry, routine communication, follow-ups, coordination, vendor management.\n\nCEO Protection Protocol: Every minute on a Bouncy Ball task is stolen from a Crystal Ball task.\n\nTask: "' + taskDescription + '"' + (bookContext ? '\\n\\nFrom The Essential EA by Kristina Spencer:\\n' + bookContext : '') + '\\n\\nRespond ONLYJSON:\n{"classification":"crystal or bouncy","emoji":"crystal or bouncy","urgency":"urgent or today or defer or ea_owned","reason":"2-3 sentences explaining why using Essential EA methodology. MUST reference The Essential EA book if context provided.","bookQuote":"If book context provided copy the most relevant sentence verbatim. Otherwise empty string.","recommendedAction":"Specific next step - if crystal what to do and when, if bouncy who handles it and how","confidence":0.95}';
