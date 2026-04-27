@@ -71,7 +71,7 @@ async function initDB() {
     await sql`CREATE TABLE IF NOT EXISTS daily_briefs (id SERIAL PRIMARY KEY, name TEXT, role TEXT, brief TEXT, created_at TIMESTAMP DEFAULT NOW())`;
     await sql`CREATE TABLE IF NOT EXISTS google_tokens (
     id SERIAL PRIMARY KEY,
-    user_id VARCHAR(255) DEFAULT 'default',
+    user_id VARCHAR(255) DEFAULT 'default' UNIQUE,
     access_token TEXT,
     refresh_token TEXT,
     expiry_date BIGINT,
@@ -79,6 +79,10 @@ async function initDB() {
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
   )`;
+  // Add unique constraint if table already exists without it
+  await sql`ALTER TABLE google_tokens ADD COLUMN IF NOT EXISTS user_id_check VARCHAR(1)`.catch(() => {});
+  await sql`ALTER TABLE google_tokens DROP COLUMN IF EXISTS user_id_check`.catch(() => {});
+  try { await sql\`ALTER TABLE google_tokens ADD CONSTRAINT google_tokens_user_id_unique UNIQUE (user_id)\`; } catch(e) {}
 
   await sql`CREATE TABLE IF NOT EXISTS feedback (id SERIAL PRIMARY KEY, name TEXT, email TEXT, rating INTEGER, message TEXT, created_at TIMESTAMP DEFAULT NOW())`;
     console.log('Database tables ready');
@@ -1799,14 +1803,10 @@ app.get('/auth/google/callback', async (req, res) => {
 
     // Store tokens
     const expiry = tokens.expires_in ? Date.now() + (tokens.expires_in * 1000) : null;
-    await sql`INSERT INTO google_tokens (user_id, access_token, refresh_token, expiry_date, email, updated_at)
-      VALUES ('default', ${tokens.access_token}, ${tokens.refresh_token || null}, ${expiry}, ${profile.email}, NOW())
-      ON CONFLICT (user_id) DO UPDATE SET
-        access_token = EXCLUDED.access_token,
-        refresh_token = COALESCE(EXCLUDED.refresh_token, google_tokens.refresh_token),
-        expiry_date = EXCLUDED.expiry_date,
-        email = EXCLUDED.email,
-        updated_at = NOW()`;
+    // Delete existing and insert fresh
+    await sql`DELETE FROM google_tokens WHERE user_id = 'default'`;
+    await sql`INSERT INTO google_tokens (user_id, access_token, refresh_token, expiry_date, email)
+      VALUES ('default', ${tokens.access_token}, ${tokens.refresh_token || null}, ${expiry}, ${profile.email})`;
 
     console.log('Google OAuth success for:', profile.email);
     res.redirect('/?google_connected=true&email=' + encodeURIComponent(profile.email));
