@@ -401,6 +401,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
     <div class="sb-item" onclick="nav('inbox',this)"><span class="sb-icon">&#9993;</span>Communication<span class="sb-badge">4</span></div>
     <div class="sb-item" onclick="nav('history',this)"><span class="sb-icon">&#128336;</span>History</div>
     <div class="sb-item" onclick="nav('docreader',this)"><span class="sb-icon">&#128196;</span>Document Reader</div>
+    <div class="sb-item" onclick="nav('meetings',this)"><span class="sb-icon">&#127908;</span>Meeting Recordings</div>
     <div class="sb-item" onclick="nav('eatasklist',this)"><span class="sb-icon">&#9989;</span>EA Task List<span class="sb-badge" id="tl-badge">0</span></div>
     <div class="sb-item" onclick="nav('audit',this)"><span class="sb-icon">&#128202;</span>Operational Audit</div>
     <div class="sb-sec">Operations</div>
@@ -694,7 +695,193 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
         </div>
       </div>
       <!-- Compose Modal -->
-      <div id="compose-modal" style="display:none;position:fixed;bottom:20px;right:20px;width:480px;max-width:95vw;background:white;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.15);z-index:9999;border:1px solid var(--tan)">
+      
+    <div class="screen" id="screen-profile">
+      <div class="pg-h">Your EA Profile</div>
+      <div class="pg-s">Your EA uses this to personalize every response. The more detail you give, the smarter your EA gets.</div>
+      <div style="max-width:680px">
+        <div class="panel" style="padding:24px;margin-bottom:16px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">About You</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Your Name</label>
+              <input id="prof-name" type="text" placeholder="Kristina Spencer" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Your Role</label>
+              <input id="prof-role" type="text" placeholder="Broker - Team Lead" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Industry</label>
+              <select id="prof-industry" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
+                <option value="">Select your industry</option>
+                <option value="Real Estate">Real Estate</option>
+                <option value="Financial Advisory">Financial Advisory</option>
+                <option value="Insurance">Insurance</option>
+                <option value="Coaching/Consulting">Coaching/Consulting</option>
+                <option value="Mortgage">Mortgage</option>
+                <option value="Legal">Legal</option>
+                <option value="Healthcare">Healthcare</option>
+                <option value="Technology">Technology</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Company</label>
+              <input id="prof-company" type="text" placeholder="Operational Consulting Group" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" style="padding:24px;margin-bottom:16px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">Your Business</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Revenue Target</label>
+              <input id="prof-revenue" type="text" placeholder="e.g. $500K GCI, $1M ARR" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Team Size</label>
+              <select id="prof-team" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
+                <option value="Solo">Solo</option>
+                <option value="2-5">2-5 people</option>
+                <option value="6-15">6-15 people</option>
+                <option value="16-50">16-50 people</option>
+                <option value="50+">50+ people</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-bottom:16px">
+            <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Top Priorities Right Now</label>
+            <textarea id="prof-priorities" rows="3" placeholder="e.g. Close 3 new listings, build referral pipeline, hire transaction coordinator..." style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none;resize:vertical"></textarea>
+          </div>
+        </div>
+
+        <div class="panel" style="padding:24px;margin-bottom:16px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">Your Schedule</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Peak Hours</label>
+              <input id="prof-peak" type="text" placeholder="e.g. 9am-12pm" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Working Hours</label>
+              <input id="prof-hours" type="text" placeholder="e.g. 8am-6pm" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
+            </div>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Non-Negotiable Time Blocks</label>
+            <input id="prof-blocks" type="text" placeholder="e.g. No meetings before 9am, lunch 12-1pm, hard stop 5:30pm" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
+          </div>
+        </div>
+
+        <div class="panel" style="padding:24px;margin-bottom:24px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">EA Preferences</div>
+          <div>
+            <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">AI Communication Tone</label>
+            <div style="display:flex;gap:8px">
+              <button class="tone-btn active" onclick="setTone(this,'professional')" style="font-size:11px;font-weight:600;padding:7px 16px;border-radius:3px;border:1px solid #C49A8A;cursor:pointer;background:#C49A8A;color:#1A1A18">Professional</button>
+              <button class="tone-btn" onclick="setTone(this,'direct')" style="font-size:11px;font-weight:600;padding:7px 16px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Direct</button>
+              <button class="tone-btn" onclick="setTone(this,'warm')" style="font-size:11px;font-weight:600;padding:7px 16px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Warm</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="profile-save-status" style="display:none;margin-bottom:12px"></div>
+        <button onclick="saveProfile()" style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:12px 32px;border-radius:4px;border:none;cursor:pointer;background:#C49A8A;color:#1A1A18">Save Profile</button>
+        <div style="font-size:11px;color:var(--mid);margin-top:8px">Your EA uses this profile to personalize every response</div>
+      </div>
+    </div>
+
+
+    <div class="screen" id="screen-meetings">
+      <div class="pg-h">Meeting Recordings</div>
+      <div class="pg-s">Upload any meeting recording. Your EA transcribes it, extracts Crystal Ball decisions, Bouncy Ball action items, and follow-ups.</div>
+      <div style="display:grid;grid-template-columns:340px 1fr;gap:20px;height:calc(100vh - 160px)">
+        <!-- Left: Upload + History -->
+        <div>
+          <!-- Upload Area -->
+          <div id="meeting-upload-area" style="border:2px dashed rgba(196,154,138,.3);border-radius:8px;padding:24px;text-align:center;cursor:pointer;background:var(--warm);margin-bottom:16px;transition:all .2s" onclick="document.getElementById('meeting-file-input').click()" ondragover="event.preventDefault();this.style.borderColor='#C49A8A'" ondragleave="this.style.borderColor='rgba(196,154,138,.3)'" ondrop="event.preventDefault();handleMeetingFile(event.dataTransfer.files[0])">
+            <div style="font-size:32px;margin-bottom:8px">&#127908;</div>
+            <div style="font-size:13px;font-weight:600;color:var(--blk);margin-bottom:4px">Drop your recording here</div>
+            <div style="font-size:11px;color:var(--mid)">MP3, MP4, M4A, WAV, WEBM, OGG</div>
+            <input type="file" id="meeting-file-input" accept=".mp3,.mp4,.m4a,.wav,.webm,.ogg,.mpeg" style="display:none" onchange="handleMeetingFile(this.files[0])">
+          </div>
+
+          <!-- Record Live -->
+          <div style="padding:16px;background:var(--warm);border:1px solid var(--tan);border-radius:8px;margin-bottom:16px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#C49A8A;margin-bottom:10px">Record Live Meeting</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button id="record-btn" onclick="toggleRecording()" style="font-size:11px;font-weight:700;padding:8px 16px;border-radius:4px;border:none;cursor:pointer;background:#8A3A30;color:white">&#9679; Start Recording</button>
+              <span id="record-timer" style="font-size:12px;color:var(--mid);display:none">00:00</span>
+            </div>
+            <div id="record-status" style="font-size:11px;color:var(--mid);margin-top:6px"></div>
+          </div>
+
+          <!-- Past Meetings -->
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mid);margin-bottom:8px">Past Meetings</div>
+          <div id="meetings-list" style="overflow-y:auto;max-height:300px">
+            <div style="font-size:12px;color:var(--mid);padding:8px 0">Loading meetings...</div>
+          </div>
+        </div>
+
+        <!-- Right: Analysis -->
+        <div>
+          <div id="meeting-processing" style="display:none;padding:40px;text-align:center">
+            <div class="spinner" style="margin:0 auto 16px"></div>
+            <div style="font-size:13px;font-weight:600;color:var(--blk);margin-bottom:4px">Your EA is transcribing...</div>
+            <div id="meeting-progress" style="font-size:12px;color:var(--mid)">This may take 30-60 seconds for longer recordings</div>
+          </div>
+
+          <div id="meeting-result" style="display:none">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+              <div style="font-size:16px;font-weight:600;color:var(--blk)" id="meeting-title">Meeting Analysis</div>
+              <button onclick="copyMeetingNotes()" style="font-size:10px;font-weight:700;padding:6px 14px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Copy Notes</button>
+            </div>
+
+            <!-- Summary -->
+            <div class="panel" style="padding:16px;margin-bottom:12px">
+              <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:8px">Summary</div>
+              <div id="meeting-summary" style="font-size:13px;color:var(--blk);line-height:1.6"></div>
+            </div>
+
+            <!-- Crystal Ball Items -->
+            <div class="panel" style="padding:16px;margin-bottom:12px;border-top:2px solid #C49A8A">
+              <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:8px">&#128302; Crystal Ball - Only You Can Handle These</div>
+              <div id="meeting-crystal" style="font-size:13px;color:var(--blk);line-height:1.8"></div>
+            </div>
+
+            <!-- Bouncy Ball Items -->
+            <div class="panel" style="padding:16px;margin-bottom:12px;border-top:2px solid #2D6A35">
+              <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#2D6A35;margin-bottom:8px">&#127934; Bouncy Ball - Delegate These</div>
+              <div id="meeting-bouncy" style="font-size:13px;color:var(--blk);line-height:1.8"></div>
+            </div>
+
+            <!-- Follow-ups -->
+            <div class="panel" style="padding:16px;margin-bottom:12px">
+              <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid);margin-bottom:8px">Follow-Ups</div>
+              <div id="meeting-followups" style="font-size:13px;color:var(--blk);line-height:1.8"></div>
+            </div>
+
+            <!-- Transcript -->
+            <div class="panel" style="padding:16px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid)">Full Transcript</div>
+                <button onclick="toggleTranscript()" style="font-size:10px;padding:4px 10px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Show/Hide</button>
+              </div>
+              <div id="meeting-transcript" style="display:none;font-size:12px;color:var(--mid);line-height:1.7;max-height:300px;overflow-y:auto;white-space:pre-wrap"></div>
+            </div>
+          </div>
+
+          <div id="meeting-placeholder" style="padding:40px;text-align:center;color:var(--mid)">
+            <div style="font-size:48px;margin-bottom:12px;opacity:0.3">&#127908;</div>
+            <div style="font-size:13px">Upload a recording or record live to see your EA analysis here</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<div id="compose-modal" style="display:none;position:fixed;bottom:20px;right:20px;width:480px;max-width:95vw;background:white;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.15);z-index:9999;border:1px solid var(--tan)">
         <div style="padding:12px 16px;background:#2C2C2A;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:space-between">
           <span style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#FAF8F4">New Email</span>
           <button onclick="hideCompose()" style="background:transparent;border:none;cursor:pointer;color:rgba(250,248,244,0.5);font-size:16px">&#10005;</button>
@@ -798,7 +985,7 @@ const months = ['January','February','March','April','May','June','July','August
 $('tbd').textContent = days[today.getDay()] + ', ' + months[today.getMonth()] + ' ' + today.getDate() + ', ' + today.getFullYear();
 function openSB(){ $('sidebar').classList.add('open'); $('overlay').classList.add('open'); }
 function closeSB(){ $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); }
-const titles = { dashboard:'Good morning, <em>Kristina.</em>', brief:'EA Daily Brief', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', history:'Task History', audit:'Operational Efficiency Audit', docreader:'Document Reader', eatasklist:'EA Task List', operations:'Operations', settings:'Settings' };
+const titles = { dashboard:'Good morning, <em>Kristina.</em>', brief:'EA Daily Brief', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', history:'Task History', audit:'Operational Efficiency Audit', docreader:'Document Reader', eatasklist:'EA Task List', meetings:'Meeting Recordings', profile:'Your EA Profile', week:'Priority Week Generator', settings:'Settings' };
 function nav(name, el) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
@@ -813,6 +1000,8 @@ function nav(name, el) {
   if(name === 'audit') loadAudit();
   if(name === 'eatasklist') renderEATaskList();
   if(name === 'inbox') checkGoogleStatus();
+  if(name === 'profile') loadProfile();
+  if(name === 'meetings') loadMeetingsList();
 }
 async function loadAudit() {
   const el = document.getElementById('audit-content');
@@ -2401,8 +2590,301 @@ window.addEventListener('DOMContentLoaded', function() {
   }
 });
 
+
+var _selectedTone = 'professional';
+
+function setTone(btn, tone) {
+  _selectedTone = tone;
+  document.querySelectorAll('.tone-btn').forEach(function(b) {
+    b.style.background = 'transparent';
+    b.style.color = 'var(--mid)';
+    b.style.border = '1px solid var(--tan)';
+  });
+  btn.style.background = '#C49A8A';
+  btn.style.color = '#1A1A18';
+  btn.style.border = '1px solid #C49A8A';
+}
+
+async function loadProfile() {
+  try {
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/profile');
+    var d = await r.json();
+    if(d.success && d.profile) {
+      var p = d.profile;
+      var fields = {
+        'prof-name': p.name, 'prof-role': p.role, 'prof-company': p.company,
+        'prof-revenue': p.revenue_target, 'prof-priorities': p.priorities,
+        'prof-peak': p.peak_hours, 'prof-hours': p.working_hours,
+        'prof-blocks': p.protected_blocks
+      };
+      Object.keys(fields).forEach(function(id) {
+        var el = document.getElementById(id);
+        if(el && fields[id]) el.value = fields[id];
+      });
+      if(p.industry) { var ind = document.getElementById('prof-industry'); if(ind) ind.value = p.industry; }
+      if(p.team_size) { var tm = document.getElementById('prof-team'); if(tm) tm.value = p.team_size; }
+      if(p.ai_tone) {
+        _selectedTone = p.ai_tone;
+        document.querySelectorAll('.tone-btn').forEach(function(b) {
+          if(b.getAttribute('onclick') && b.getAttribute('onclick').includes(p.ai_tone)) {
+            b.style.background = '#C49A8A'; b.style.color = '#1A1A18'; b.style.border = '1px solid #C49A8A';
+          } else {
+            b.style.background = 'transparent'; b.style.color = 'var(--mid)'; b.style.border = '1px solid var(--tan)';
+          }
+        });
+      }
+      // Update the name in sidebar
+      if(p.name) {
+        var nameEl = document.querySelector('.sb-name');
+        if(nameEl) nameEl.textContent = p.name;
+      }
+      if(p.role) {
+        var roleEl = document.querySelector('.sb-role');
+        if(roleEl) roleEl.textContent = p.role;
+      }
+    }
+  } catch(e) {}
+}
+
+// ============ MEETING RECORDINGS JS ============
+var _mediaRecorder = null;
+var _recordingChunks = [];
+var _recordingTimer = null;
+var _recordingSeconds = 0;
+var _currentMeetingAnalysis = null;
+
+async function handleMeetingFile(file) {
+  if(!file) return;
+  var area = document.getElementById('meeting-upload-area');
+  if(area) area.style.borderColor = '#C49A8A';
+  showMeetingProcessing(file.name);
+  try {
+    var reader = new FileReader();
+    reader.onload = async function(e) {
+      var base64 = e.target.result.split(',')[1];
+      await transcribeMeeting(base64, file.name);
+    };
+    reader.readAsDataURL(file);
+  } catch(err) {
+    hideMeetingProcessing();
+    alert('Error reading file: ' + err.message);
+  }
+}
+
+async function transcribeMeeting(base64Audio, filename) {
+  try {
+    document.getElementById('meeting-progress').textContent = 'Sending to Whisper AI... this takes 30-60 seconds';
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/transcribe', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ audio: base64Audio, filename: filename })
+    });
+    var d = await r.json();
+    if(d.success) {
+      displayMeetingAnalysis(d, filename);
+      loadMeetingsList();
+    } else {
+      hideMeetingProcessing();
+      alert('Transcription failed: ' + (d.error || 'Unknown error'));
+    }
+  } catch(e) {
+    hideMeetingProcessing();
+    alert('Error: ' + e.message);
+  }
+}
+
+function showMeetingProcessing(filename) {
+  document.getElementById('meeting-placeholder').style.display = 'none';
+  document.getElementById('meeting-result').style.display = 'none';
+  document.getElementById('meeting-processing').style.display = 'block';
+  document.getElementById('meeting-title').textContent = filename || 'Meeting Analysis';
+}
+
+function hideMeetingProcessing() {
+  document.getElementById('meeting-processing').style.display = 'none';
+  document.getElementById('meeting-placeholder').style.display = 'block';
+}
+
+function displayMeetingAnalysis(data, filename) {
+  document.getElementById('meeting-processing').style.display = 'none';
+  document.getElementById('meeting-placeholder').style.display = 'none';
+  document.getElementById('meeting-result').style.display = 'block';
+  document.getElementById('meeting-title').textContent = filename || 'Meeting Analysis';
+  _currentMeetingAnalysis = data;
+
+  var a = data.analysis || {};
+  
+  var summary = document.getElementById('meeting-summary');
+  if(summary) summary.textContent = a.summary || 'No summary available';
+
+  var crystal = document.getElementById('meeting-crystal');
+  if(crystal) crystal.innerHTML = (a.crystalBall || []).map(function(item) {
+    return '<div style="padding:4px 0;border-bottom:1px solid rgba(0,0,0,0.04)">&#128302; ' + item + '</div>';
+  }).join('') || '<div style="color:var(--mid)">No Crystal Ball items identified</div>';
+
+  var bouncy = document.getElementById('meeting-bouncy');
+  if(bouncy) bouncy.innerHTML = (a.bouncyBall || []).map(function(item) {
+    return '<div style="padding:4px 0;border-bottom:1px solid rgba(0,0,0,0.04)">&#127934; ' + item + '</div>';
+  }).join('') || '<div style="color:var(--mid)">No Bouncy Ball items identified</div>';
+
+  var followups = document.getElementById('meeting-followups');
+  if(followups) followups.innerHTML = (a.followUps || []).map(function(item) {
+    return '<div style="padding:4px 0;border-bottom:1px solid rgba(0,0,0,0.04)">&#8594; ' + item + '</div>';
+  }).join('') || '<div style="color:var(--mid)">No follow-ups identified</div>';
+
+  var transcript = document.getElementById('meeting-transcript');
+  if(transcript) transcript.textContent = data.transcript || '';
+}
+
+function toggleTranscript() {
+  var el = document.getElementById('meeting-transcript');
+  if(el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function copyMeetingNotes() {
+  if(!_currentMeetingAnalysis) return;
+  var a = _currentMeetingAnalysis.analysis || {};
+  var notes = 'MEETING NOTES\n\n';
+  notes += 'SUMMARY\n' + (a.summary || '') + '\n\n';
+  notes += 'CRYSTAL BALL (Executive Action Required)\n' + (a.crystalBall || []).join('\n') + '\n\n';
+  notes += 'BOUNCY BALL (Delegate to EA)\n' + (a.bouncyBall || []).join('\n') + '\n\n';
+  notes += 'FOLLOW-UPS\n' + (a.followUps || []).join('\n');
+  navigator.clipboard.writeText(notes).then(function() {
+    alert('Meeting notes copied to clipboard!');
+  });
+}
+
+async function loadMeetingsList() {
+  var list = document.getElementById('meetings-list');
+  if(!list) return;
+  try {
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/meetings');
+    var d = await r.json();
+    if(d.success && d.meetings.length) {
+      list.innerHTML = d.meetings.map(function(m) {
+        var date = new Date(m.created_at).toLocaleDateString('en-US', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+        return '<div onclick="loadMeetingById(' + m.id + ')" style="padding:10px 12px;border:1px solid var(--tan);border-radius:6px;cursor:pointer;margin-bottom:6px;background:var(--warm)">' +
+          '<div style="font-size:12px;font-weight:600;color:var(--blk);margin-bottom:2px">' + (m.filename || 'Recording') + '</div>' +
+          '<div style="font-size:11px;color:var(--mid);margin-bottom:4px">' + date + '</div>' +
+          '<div style="font-size:11px;color:var(--mid);line-height:1.4">' + (m.summary || '').substring(0, 80) + '...</div>' +
+          '</div>';
+      }).join('');
+    } else {
+      list.innerHTML = '<div style="font-size:12px;color:var(--mid);padding:8px 0">No recordings yet</div>';
+    }
+  } catch(e) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--mid)">Could not load meetings</div>';
+  }
+}
+
+async function loadMeetingById(id) {
+  showMeetingProcessing('Loading...');
+  try {
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/meetings/' + id);
+    var d = await r.json();
+    if(d.success) {
+      displayMeetingAnalysis({ transcript: d.meeting.transcript, analysis: d.meeting.analysis }, d.meeting.filename);
+    }
+  } catch(e) { hideMeetingProcessing(); }
+}
+
+function toggleRecording() {
+  if(_mediaRecorder && _mediaRecorder.state === 'recording') {
+    stopRecording();
+  } else {
+    startRecording();
+  }
+}
+
+async function startRecording() {
+  try {
+    var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    _recordingChunks = [];
+    _mediaRecorder = new MediaRecorder(stream);
+    _mediaRecorder.ondataavailable = function(e) { if(e.data.size > 0) _recordingChunks.push(e.data); };
+    _mediaRecorder.onstop = function() {
+      var blob = new Blob(_recordingChunks, { type: 'audio/webm' });
+      var reader = new FileReader();
+      reader.onload = async function(e) {
+        var base64 = e.target.result.split(',')[1];
+        await transcribeMeeting(base64, 'Live Recording ' + new Date().toLocaleTimeString() + '.webm');
+      };
+      reader.readAsDataURL(blob);
+      stream.getTracks().forEach(function(t) { t.stop(); });
+    };
+    _mediaRecorder.start();
+    _recordingSeconds = 0;
+    var btn = document.getElementById('record-btn');
+    var timer = document.getElementById('record-timer');
+    var status = document.getElementById('record-status');
+    if(btn) { btn.textContent = '&#9632; Stop Recording'; btn.style.background = '#8A3A30'; }
+    if(timer) timer.style.display = 'inline';
+    if(status) status.textContent = 'Recording in progress...';
+    _recordingTimer = setInterval(function() {
+      _recordingSeconds++;
+      var m = Math.floor(_recordingSeconds / 60);
+      var s = _recordingSeconds % 60;
+      if(timer) timer.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    }, 1000);
+  } catch(e) {
+    alert('Could not access microphone: ' + e.message);
+  }
+}
+
+function stopRecording() {
+  if(_mediaRecorder) { _mediaRecorder.stop(); _mediaRecorder = null; }
+  if(_recordingTimer) { clearInterval(_recordingTimer); _recordingTimer = null; }
+  var btn = document.getElementById('record-btn');
+  var timer = document.getElementById('record-timer');
+  var status = document.getElementById('record-status');
+  if(btn) { btn.textContent = '&#9679; Start Recording'; }
+  if(timer) timer.style.display = 'none';
+  if(status) status.textContent = 'Processing...';
+  showMeetingProcessing('Live Recording');
+}
+
+async function saveProfile() {
+  var status = document.getElementById('profile-save-status');
+  if(status) { status.style.display = 'block'; status.innerHTML = '<div style="color:#C49A8A;font-size:12px">Saving...</div>'; }
+  try {
+    var data = {
+      name: document.getElementById('prof-name').value,
+      role: document.getElementById('prof-role').value,
+      industry: document.getElementById('prof-industry').value,
+      company: document.getElementById('prof-company').value,
+      revenue_target: document.getElementById('prof-revenue').value,
+      team_size: document.getElementById('prof-team').value,
+      priorities: document.getElementById('prof-priorities').value,
+      peak_hours: document.getElementById('prof-peak').value,
+      working_hours: document.getElementById('prof-hours').value,
+      protected_blocks: document.getElementById('prof-blocks').value,
+      ai_tone: _selectedTone
+    };
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/profile', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+    var d = await r.json();
+    if(d.success) {
+      if(status) status.innerHTML = '<div style="color:#2D6A35;font-size:12px">&#9989; Profile saved! Your EA is now personalized to you.</div>';
+      // Update sidebar name
+      var nameEl = document.querySelector('.sb-name');
+      if(nameEl && data.name) nameEl.textContent = data.name;
+      var roleEl = document.querySelector('.sb-role');
+      if(roleEl && data.role) roleEl.textContent = data.role;
+      setTimeout(function(){ if(status) status.style.display = 'none'; }, 4000);
+    } else {
+      if(status) status.innerHTML = '<div style="color:#8A3A30;font-size:12px">Error saving profile</div>';
+    }
+  } catch(e) {
+    if(status) status.innerHTML = '<div style="color:#8A3A30;font-size:12px">Error: ' + e.message + '</div>';
+  }
+}
+
 loadStats();
 setTimeout(loadStats, 1000);
+loadProfile();
 setTimeout(loadStats, 3000);
 window.addEventListener('focus', loadStats);
 </script>
