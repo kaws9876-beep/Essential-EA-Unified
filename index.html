@@ -1105,27 +1105,49 @@ async function generateWeek() {
     const r = await fetch('https://essential-ea-app-production.up.railway.app/api/generate-week', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({goals,revenue,timeblocks}) });
     const d = await r.json();
     if(d.success) {
-      const weekId = 'week_' + Date.now();
       window._lastWeekText = d.plan || '';
-      res.innerHTML = '<div class="week-card"><div class="week-head"><div><div class="week-title">Your Priority Week</div><div class="week-meta">Built on the Essential EA Priority Week Framework</div></div><button class="play-btn" id="pb-'+weekId+'" onclick="playEAVoice(this,' + JSON.stringify(d.plan.substring(0,1500)).replace(/</g,'\u003c') + ')"><svg viewBox=\"0 0 10 10\"><polygon points=\"0,0 10,5 0,10\"/></svg>Listen to Plan</button></div><div style="padding:18px"><div class="pw-note" style="border-top:none;margin-bottom:12px"><strong>Your plan is ready.</strong> Crystal Ball tasks are in your peak hours. Bouncy Balls are delegated. CEO Protection Protocol is enforced.</div><pre style="white-space:pre-wrap;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);line-height:1.85">' + d.plan + '</pre></div></div>';
+      res.innerHTML = '<div class="week-card"><div class="week-head"><div><div class="week-title">Your Priority Week</div><div class="week-meta">Built on the Essential EA Priority Week Framework</div></div><button class=\"play-btn\" onclick=\"playEAVoice(this,window._lastWeekText)\">Listen to Plan</button></div><div style="padding:18px"><div class="pw-note" style="border-top:none;margin-bottom:12px"><strong>Your plan is ready.</strong> Crystal Ball tasks are in your peak hours. Bouncy Balls are delegated. CEO Protection Protocol is enforced.</div><div id=\"week-render-area\"></div></div></div>';
 
+      // Render week as calendar grid
       setTimeout(function(){
-        var pre = document.querySelector('.week-card pre');
-        if(!pre) return;
-        var plan = pre.textContent;
-        var days = plan.split(/\n(?=[A-Z]{3,}[A-Z\s]*:)/m);
-        if(days.length < 2) return;
-        var container = pre.parentNode;
-        var html = days.map(function(day){
-          if(!day.trim()) return '';
-          var nl = day.indexOf('\n');
-          var title = nl > 0 ? day.substring(0,nl) : day;
-          var body = nl > 0 ? day.substring(nl+1) : '';
-          var isC = body.toLowerCase().indexOf('crystal') > -1;
-          return '<div style="margin-bottom:14px;padding:14px 16px;background:'+(isC?'rgba(196,154,138,0.08)':'rgba(255,255,255,0.04)')+';border:1px solid '+(isC?'rgba(196,154,138,0.25)':'rgba(255,255,255,0.08)')+';border-radius:8px"><div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:8px">'+title+'</div><div style="font-size:13px;line-height:1.75;white-space:pre-wrap;color:rgba(26,26,24,0.85)">'+body+'</div></div>';
-        }).join('');
-        if(html.trim()) { pre.style.display='none'; var d=document.createElement('div'); d.innerHTML=html; container.appendChild(d); }
-      }, 200);      $('week-preview').style.display = 'none';
+        var area = document.getElementById('week-render-area');
+        if(!area) return;
+        var plan = d.plan || '';
+        // Try JSON rendering first
+        if(d.planData && d.planData.days) {
+          var pd = d.planData;
+          var typeColor = {crystal:'#C49A8A',ea_owned:'#6A9A70',protected:'#8A8880'};
+          var typeBg = {crystal:'rgba(196,154,138,0.12)',ea_owned:'rgba(106,154,112,0.12)',protected:'rgba(138,136,128,0.1)'};
+          var typeLabel = {crystal:'CRYSTAL BALL',ea_owned:'EA OWNED',protected:'PROTECTED'};
+          var focusHtml = pd.focus ? '<div style="margin-bottom:20px;padding:14px 16px;background:rgba(196,154,138,0.08);border:1px solid rgba(196,154,138,0.3);border-radius:8px"><div style="font-size:10px;font-weight:700;letter-spacing:0.12em;color:#C49A8A;margin-bottom:8px">CRYSTAL BALL FOCUS THIS WEEK</div>' + pd.focus.map(function(f,i){return '<div style="font-size:13px;color:rgba(26,26,24,0.85);padding:4px 0;border-bottom:1px solid rgba(0,0,0,0.04)">'+(i+1)+'. '+f+'</div>';}).join('') + '</div>' : '';
+          var gridHtml = '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px">' + pd.days.map(function(day){
+            return '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 8px"><div style="font-size:10px;font-weight:700;letter-spacing:0.15em;color:#C49A8A;margin-bottom:8px;text-align:center">' + day.day + '</div>' + (day.slots||[]).map(function(slot){
+              var c = typeColor[slot.type]||'#888'; var bg = typeBg[slot.type]||'transparent'; var lbl = typeLabel[slot.type]||slot.type;
+              return '<div style="margin-bottom:6px;padding:8px;background:'+bg+';border-radius:4px;border-left:2px solid '+c+'"><div style="font-size:12px;font-weight:500;color:rgba(26,26,24,0.9);line-height:1.35">'+slot.task+'</div>'+(slot.time?'<div style="font-size:10px;color:rgba(26,26,24,0.5);margin-top:2px">'+slot.time+'</div>':'')+'<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;color:'+c+';margin-top:3px">'+lbl+'</div></div>';
+            }).join('') + '</div>';
+          }).join('') + '</div>';
+          area.innerHTML = focusHtml + gridHtml;
+        } else {
+          // Fallback: render as styled text cards
+          var days = plan.split(/
+(?=(?:MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|##\s*[A-Z]))/i);
+          if(days.length > 1) {
+            area.innerHTML = days.map(function(day){
+              if(!day.trim()) return '';
+              var lines = day.trim().split('
+');
+              var title = lines[0].replace(/^#+\s*/,'');
+              var body = lines.slice(1).join('
+');
+              var isC = body.toLowerCase().indexOf('crystal') > -1;
+              return '<div style="margin-bottom:12px;padding:12px 14px;background:'+(isC?'rgba(196,154,138,0.08)':'rgba(255,255,255,0.04)')+';border:1px solid '+(isC?'rgba(196,154,138,0.25)':'rgba(255,255,255,0.08)')+';border-radius:8px"><div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:6px">'+title+'</div><div style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:rgba(26,26,24,0.85)">'+body+'</div></div>';
+            }).join('');
+          } else {
+            area.innerHTML = '<pre style="white-space:pre-wrap;font-size:13px;line-height:1.85">'+plan+'</pre>';
+          }
+        }
+      }, 100);
+      $('week-preview').style.display = 'none';
     } else {
       res.innerHTML = '<div class="alert alert-err">Error: ' + d.error + '</div>';
     }
@@ -1151,7 +1173,7 @@ async function generateBrief() {
     const d = await r.json();
     if(d.success) {
       const briefId = 'brief_' + Date.now();
-      res.innerHTML = '<div class="brief-box"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div class="ai-lbl" style="margin-bottom:0">Your EA Daily Brief</div><button class="play-btn" id="pb-'+briefId+'" onclick="playEAVoice(this,' + JSON.stringify(d.brief).replace(/</g,'\u003c') + ')"><svg viewBox=\"0 0 10 10\"><polygon points=\"0,0 10,5 0,10\"/></svg>Listen to Brief</button></div><pre>' + d.brief + '</pre></div>';
+      res.innerHTML = '<div class="brief-box"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div class="ai-lbl" style="margin-bottom:0">Your EA Daily Brief</div><button class=\"play-btn\" onclick=\"playEAVoice(this,window._lastBriefText)\">Listen to Brief</button></div><pre>' + d.brief + '</pre></div>';
     } else {
       res.innerHTML = '<div class="alert alert-err">Error: ' + (d.error||'Failed to generate brief') + '</div>';
     }
