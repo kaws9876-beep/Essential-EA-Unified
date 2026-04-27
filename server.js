@@ -74,6 +74,24 @@ async function initDB() {
     await sql`CREATE TABLE IF NOT EXISTS weekly_plans (id SERIAL PRIMARY KEY, goals TEXT, revenue TEXT, timeblocks TEXT, plan TEXT, created_at TIMESTAMP DEFAULT NOW())`;
     await sql`CREATE TABLE IF NOT EXISTS daily_briefs (id SERIAL PRIMARY KEY, name TEXT, role TEXT, brief TEXT, created_at TIMESTAMP DEFAULT NOW())`;
     await sql`CREATE TABLE IF NOT EXISTS feedback (id SERIAL PRIMARY KEY, name TEXT, email TEXT, rating INTEGER, message TEXT, created_at TIMESTAMP DEFAULT NOW())`;
+    await sql`CREATE TABLE IF NOT EXISTS user_profiles (
+      id SERIAL PRIMARY KEY,
+      user_id VARCHAR(255) DEFAULT 'default' UNIQUE,
+      name VARCHAR(255),
+      role VARCHAR(255),
+      industry VARCHAR(255),
+      company VARCHAR(255),
+      revenue_target VARCHAR(255),
+      team_size VARCHAR(50),
+      timezone VARCHAR(100) DEFAULT 'America/Chicago',
+      working_hours VARCHAR(100) DEFAULT '8am-6pm',
+      peak_hours VARCHAR(100) DEFAULT '9am-12pm',
+      priorities TEXT,
+      protected_blocks TEXT,
+      ai_tone VARCHAR(50) DEFAULT 'professional',
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )`;
     await sql`CREATE TABLE IF NOT EXISTS google_tokens (id SERIAL PRIMARY KEY, user_id VARCHAR(255) DEFAULT 'default' UNIQUE, access_token TEXT, refresh_token TEXT, expiry_date BIGINT, email VARCHAR(255), created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW())`;
     await sql`CREATE TABLE IF NOT EXISTS microsoft_tokens (id SERIAL PRIMARY KEY, user_id VARCHAR(255) DEFAULT 'default' UNIQUE, access_token TEXT, refresh_token TEXT, expiry_date BIGINT, email VARCHAR(255), created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW())`;
     try { await sql`ALTER TABLE google_tokens ADD CONSTRAINT google_tokens_user_id_unique UNIQUE (user_id)`; } catch(e) {}
@@ -1312,6 +1330,18 @@ app.post('/api/classify', async (req, res) => {
     if (!taskDescription) return res.status(400).json({ error: 'Task description required', success: false });
 
     const bookContext = await getBookContext(taskDescription);
+    // Get user profile for personalization
+    let profileContext = '';
+    try {
+      const [prof] = await sql`SELECT * FROM user_profiles WHERE user_id = 'default' LIMIT 1\`;
+      if(prof && prof.name) {
+        profileContext = '\n\nUser context: ' + prof.name + ' is a ' + (prof.role||'executive') + 
+          (prof.industry ? ' in ' + prof.industry : '') + 
+          (prof.company ? ' at ' + prof.company : '') +
+          (prof.priorities ? '. Top priorities: ' + prof.priorities : '') +
+          (prof.peak_hours ? '. Peak hours: ' + prof.peak_hours : '');
+      }
+    } catch(e) {}
     const prompt = 'You are the Essential EA - an AI-powered executive assistant built on the methodology from the book The Essential EA by Kristina Spencer.\n\nClassify this task using the Crystal Ball and Bouncy Ball Framework.\n\nCrystal Ball tasks: ONLY the executive can do these. Irreplaceable - if dropped, shatters permanently. Includes: client relationships, negotiations, strategy, approvals, legal, financial decisions.\n\nBouncy Ball tasks: CAN and SHOULD be delegated. Bounces back even if dropped. Includes: scheduling, admin, data entry, routine communication, follow-ups, coordination, vendor management.\n\nCEO Protection Protocol: Every minute on a Bouncy Ball task is stolen from a Crystal Ball task.\n\nTask: "' + taskDescription + '"' + (bookContext ? '\\n\\nFrom The Essential EA by Kristina Spencer:\\n' + bookContext : '') + '\\n\\nRespond ONLYJSON:\n{"classification":"crystal or bouncy","emoji":"crystal or bouncy","urgency":"urgent or today or defer or ea_owned","reason":"2-3 sentences explaining why using Essential EA methodology. MUST reference The Essential EA book if context provided.","bookQuote":"If book context provided copy the most relevant sentence verbatim. Otherwise empty string.","recommendedAction":"Specific next step - if crystal what to do and when, if bouncy who handles it and how","confidence":0.95}';
 
     const response = await anthropic.messages.create({
@@ -2770,6 +2800,167 @@ app.get('/api/microsoft/debug', async (req, res) => {
       updatedAt: token.updated_at
     });
   } catch(e) { res.json({ error: e.message }); }
+});
+
+
+// ============ USER PROFILE ============
+
+app.get('/api/profile', async (req, res) => {
+  try {
+    const [profile] = await sql`SELECT * FROM user_profiles WHERE user_id = 'default' LIMIT 1`;
+    res.json({ success: true, profile: profile || null });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/profile', async (req, res) => {
+  try {
+    const { name, role, industry, company, revenue_target, team_size, timezone, working_hours, peak_hours, priorities, protected_blocks, ai_tone } = req.body;
+    await sql`INSERT INTO user_profiles (user_id, name, role, industry, company, revenue_target, team_size, timezone, working_hours, peak_hours, priorities, protected_blocks, ai_tone, updated_at)
+      VALUES ('default', ${name||''}, ${role||''}, ${industry||''}, ${company||''}, ${revenue_target||''}, ${team_size||''}, ${timezone||'America/Chicago'}, ${working_hours||'8am-6pm'}, ${peak_hours||'9am-12pm'}, ${priorities||''}, ${protected_blocks||''}, ${ai_tone||'professional'}, NOW())
+      ON CONFLICT (user_id) DO UPDATE SET
+        name = EXCLUDED.name, role = EXCLUDED.role, industry = EXCLUDED.industry,
+        company = EXCLUDED.company, revenue_target = EXCLUDED.revenue_target,
+        team_size = EXCLUDED.team_size, timezone = EXCLUDED.timezone,
+        working_hours = EXCLUDED.working_hours, peak_hours = EXCLUDED.peak_hours,
+        priorities = EXCLUDED.priorities, protected_blocks = EXCLUDED.protected_blocks,
+        ai_tone = EXCLUDED.ai_tone, updated_at = NOW()`;
+    res.json({ success: true });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+
+// ============ SECURITY - Rate limiting ============
+
+const requestCounts = new Map();
+function rateLimit(maxRequests, windowMs) {
+  return (req, res, next) => {
+    const key = req.ip || 'unknown';
+    const now = Date.now();
+    if(!requestCounts.has(key)) requestCounts.set(key, []);
+    const requests = requestCounts.get(key).filter(t => now - t < windowMs);
+    if(requests.length >= maxRequests) {
+      return res.status(429).json({ error: 'Too many requests. Please slow down.', success: false });
+    }
+    requests.push(now);
+    requestCounts.set(key, requests);
+    next();
+  };
+}
+
+// Apply rate limiting to AI routes
+app.use('/api/classify', rateLimit(30, 60000));
+app.use('/api/generate-week', rateLimit(10, 60000));
+app.use('/api/daily-brief', rateLimit(10, 60000));
+app.use('/api/ea-draft', rateLimit(20, 60000));
+app.use('/api/ea-run-inbox', rateLimit(5, 60000));
+app.use('/api/audit', rateLimit(10, 60000));
+
+// Security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
+// ============ MEETING RECORDINGS ============
+
+app.post('/api/transcribe', async (req, res) => {
+  try {
+    const { audio, filename } = req.body;
+    if(!audio) return res.status(400).json({ success: false, error: 'No audio data provided' });
+
+    // Decode base64 audio
+    const audioBuffer = Buffer.from(audio, 'base64');
+    const fileExt = (filename || 'recording.webm').split('.').pop();
+
+    // Use OpenAI Whisper for transcription
+    const { OpenAI } = await import('openai');
+    const openaiClient2 = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    const { Blob } = await import('buffer');
+    const audioBlob = new Blob([audioBuffer], { type: 'audio/' + fileExt });
+    const audioFile = new File([audioBlob], filename || 'recording.' + fileExt, { type: 'audio/' + fileExt });
+
+    const transcription = await openaiClient2.audio.transcriptions.create({
+      file: audioFile,
+      model: 'whisper-1',
+      response_format: 'text'
+    });
+
+    const transcript = typeof transcription === 'string' ? transcription : transcription.text || '';
+
+    // Analyze transcript with Claude
+    const bookContext = await getBookContext('meeting action items Crystal Ball decisions follow up');
+    const analysis = await anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 1000,
+      system: [
+        { type: 'text', text: METHODOLOGY_CONTEXT, cache_control: { type: 'ephemeral' } },
+        { type: 'text', text: 'Analyze meeting transcripts and extract actionable intelligence using the Crystal Ball and Bouncy Ball Framework.' }
+      ],
+      messages: [{
+        role: 'user',
+        content: 'Analyze this meeting transcript and return JSON only: {"summary": "2-3 sentence meeting summary", "crystalBall": ["decisions or actions only the executive can handle"], "bouncyBall": ["tasks that can be delegated to EA"], "followUps": ["specific follow-up items with who is responsible"], "keyDecisions": ["major decisions made"], "nextSteps": "recommended immediate next action"}\n\nTranscript: ' + transcript.substring(0, 3000) + bookContext
+      }]
+    });
+
+    const analysisText = analysis.content[0].text.trim();
+    let analysisData = null;
+    try {
+      const match = analysisText.match(/\{[\s\S]*\}/);
+      if(match) analysisData = JSON.parse(match[0]);
+    } catch(e) {}
+
+    // Save to database
+    await sql`CREATE TABLE IF NOT EXISTS meeting_recordings (
+      id SERIAL PRIMARY KEY,
+      filename TEXT,
+      transcript TEXT,
+      summary TEXT,
+      analysis JSONB,
+      duration_seconds INTEGER,
+      created_at TIMESTAMP DEFAULT NOW()
+    )\`;
+    const [saved] = await sql`INSERT INTO meeting_recordings (filename, transcript, summary, analysis)
+      VALUES (\${filename||'Recording'}, \${transcript}, \${analysisData?.summary||''}, \${JSON.stringify(analysisData)})
+      RETURNING id\`;
+
+    res.json({
+      success: true,
+      transcript,
+      analysis: analysisData,
+      id: saved.id
+    });
+  } catch(e) {
+    console.error('Transcription error:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.get('/api/meetings', async (req, res) => {
+  try {
+    await sql`CREATE TABLE IF NOT EXISTS meeting_recordings (id SERIAL PRIMARY KEY, filename TEXT, transcript TEXT, summary TEXT, analysis JSONB, duration_seconds INTEGER, created_at TIMESTAMP DEFAULT NOW())\`;
+    const meetings = await sql`SELECT id, filename, summary, created_at FROM meeting_recordings ORDER BY created_at DESC LIMIT 20\`;
+    res.json({ success: true, meetings });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.get('/api/meetings/:id', async (req, res) => {
+  try {
+    const [meeting] = await sql`SELECT * FROM meeting_recordings WHERE id = \${parseInt(req.params.id)}\`;
+    if(!meeting) return res.status(404).json({ success: false, error: 'Not found' });
+    res.json({ success: true, meeting });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
 });
 
 app.use((req, res) => {
