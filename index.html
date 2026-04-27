@@ -1129,16 +1129,13 @@ async function generateWeek() {
           area.innerHTML = focusHtml + gridHtml;
         } else {
           // Fallback: render as styled text cards
-          var days = plan.split(/
-(?=(?:MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|##\s*[A-Z]))/i);
+          var days = plan.split(/\n(?=(?:MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY))/i);
           if(days.length > 1) {
             area.innerHTML = days.map(function(day){
               if(!day.trim()) return '';
-              var lines = day.trim().split('
-');
+              var lines = day.trim().split('\n');
               var title = lines[0].replace(/^#+\s*/,'');
-              var body = lines.slice(1).join('
-');
+              var body = lines.slice(1).join('\n');
               var isC = body.toLowerCase().indexOf('crystal') > -1;
               return '<div style="margin-bottom:12px;padding:12px 14px;background:'+(isC?'rgba(196,154,138,0.08)':'rgba(255,255,255,0.04)')+';border:1px solid '+(isC?'rgba(196,154,138,0.25)':'rgba(255,255,255,0.08)')+';border-radius:8px"><div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:6px">'+title+'</div><div style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:rgba(26,26,24,0.85)">'+body+'</div></div>';
             }).join('');
