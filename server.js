@@ -2536,7 +2536,17 @@ app.get('/api/outlook/messages', async (req, res) => {
     let url = 'https://graph.microsoft.com/v1.0/me/mailFolders/' + msFolder + '/messages?$top=25&$orderby=receivedDateTime desc&$select=id,subject,from,receivedDateTime,bodyPreview,isRead,flag,hasAttachments' + starFilter;
     if(search) url = 'https://graph.microsoft.com/v1.0/me/messages?$search="' + search + '"&$top=25&$select=id,subject,from,receivedDateTime,bodyPreview,isRead';
     const r = await fetch(url, { headers: { Authorization: 'Bearer ' + accessToken } });
-    const d = await r.json();
+    const responseText = await r.text();
+    console.log('Outlook response status:', r.status);
+    console.log('Outlook response preview:', responseText.substring(0, 200));
+    if(!responseText || responseText.trim() === '') {
+      return res.json({ success: false, error: 'Empty response from Outlook', messages: [] });
+    }
+    let d;
+    try { d = JSON.parse(responseText); } catch(parseErr) {
+      console.error('Outlook JSON parse error:', parseErr.message, 'Response:', responseText.substring(0,200));
+      return res.json({ success: false, error: 'Invalid response from Outlook', messages: [] });
+    }
     if(!d || d.error) {
       console.error('Outlook messages error:', JSON.stringify(d?.error));
       return res.json({ success: false, error: d?.error?.message || 'Failed to fetch messages', messages: [] });
@@ -2563,7 +2573,9 @@ app.get('/api/outlook/message/:id', async (req, res) => {
     const r = await fetch('https://graph.microsoft.com/v1.0/me/messages/' + req.params.id + '?$select=id,subject,from,toRecipients,receivedDateTime,body,isRead', {
       headers: { Authorization: 'Bearer ' + accessToken }
     });
-    const msg = await r.json();
+    const msgText = await r.text();
+    if(!msgText) return res.json({ success: false, error: 'Empty response' });
+    const msg = JSON.parse(msgText);
     res.json({
       success: true,
       id: msg.id,
