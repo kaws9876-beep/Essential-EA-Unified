@@ -2530,11 +2530,17 @@ app.get('/api/outlook/messages', async (req, res) => {
     if(!accessToken) return res.json({ success: false, error: 'Outlook not connected', messages: [] });
     const folder = req.query.folder || 'inbox';
     const search = req.query.search || '';
-    let url = 'https://graph.microsoft.com/v1.0/me/mailFolders/' + folder + '/messages?$top=25&$orderby=receivedDateTime desc&$select=id,subject,from,receivedDateTime,bodyPreview,isRead,flag,hasAttachments';
+    const folderMap = { inbox: 'Inbox', sent: 'SentItems', drafts: 'Drafts', trash: 'DeletedItems', starred: 'Inbox' };
+    const msFolder = folderMap[folder] || 'Inbox';
+    let starFilter = folder === 'starred' ? '&$filter=flag/flagStatus eq \'flagged\'' : '';
+    let url = 'https://graph.microsoft.com/v1.0/me/mailFolders/' + msFolder + '/messages?$top=25&$orderby=receivedDateTime desc&$select=id,subject,from,receivedDateTime,bodyPreview,isRead,flag,hasAttachments' + starFilter;
     if(search) url = 'https://graph.microsoft.com/v1.0/me/messages?$search="' + search + '"&$top=25&$select=id,subject,from,receivedDateTime,bodyPreview,isRead';
     const r = await fetch(url, { headers: { Authorization: 'Bearer ' + accessToken } });
     const d = await r.json();
-    if(d.error) return res.json({ success: false, error: d.error.message, messages: [] });
+    if(!d || d.error) {
+      console.error('Outlook messages error:', JSON.stringify(d?.error));
+      return res.json({ success: false, error: d?.error?.message || 'Failed to fetch messages', messages: [] });
+    }
     const messages = (d.value || []).map(msg => ({
       id: msg.id,
       subject: msg.subject || '(no subject)',
