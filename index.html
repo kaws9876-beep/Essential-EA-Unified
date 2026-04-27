@@ -431,7 +431,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
       <div class="pg-h">Good morning, <em>Kristina.</em></div>
       <div class="pg-s">Your EA is ready. What needs your attention today?</div>
       <div class="kpi-grid">
-        <div class="kpi"><div class="kv" id="k1">0</div><div class="kl">Total Tasks Analyzed</div><div class="kd up">All time</div></div>
+        <div class="kpi" onclick="nav('triage',null)" style="cursor:pointer"><div class="kv" id="k1">0</div><div class="kl">Total Tasks Analyzed</div><div class="kd up">All time</div></div>
         <div class="kpi"><div class="kv" id="k2">0</div><div class="kl">Crystal Ball</div><div class="kd" style="color:var(--mid)">Only you can do these</div></div>
         <div class="kpi"><div class="kv" id="k3">0</div><div class="kl">Bouncy Ball</div><div class="kd" style="color:var(--mid)">Delegate these</div></div>
         <div class="kpi"><div class="kv" id="k4">0%</div><div class="kl">Avg AI Confidence</div><div class="kd up">Accuracy</div></div>
@@ -1023,7 +1023,7 @@ async function loadFullHistory() {
       el.innerHTML = d.tasks.map(t => {
         const ic = t.classification === 'crystal';
         const dt = new Date(t.created_at || t.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
-        return '<div class="history-item"><div class="history-date">' + (ic ? 'Crystal Ball' : 'Bouncy Ball') + ' - ' + dt + '</div><div class="history-text">' + (t.description||'') + '</div><div style="font-size:11px;color:var(--mid);margin-top:6px">' + (t.reason||'') + '</div></div>';
+        return '<div class="history-item" onclick="this.querySelector(\'.history-detail\').style.display=this.querySelector(\'.history-detail\').style.display===\'none\'?\'block\':\'none\'"><div class="history-date">' + (ic ? '&#128302; Crystal Ball' : '&#127934; Bouncy Ball') + ' &mdash; ' + dt + '</div><div class="history-text">' + (t.description||'') + '</div><div class="history-detail" style="display:none;margin-top:8px;padding:8px;background:rgba(0,0,0,0.04);border-radius:6px"><div style="font-size:11px;color:var(--mid);line-height:1.6">' + (t.reason||'') + '</div>' + (t.recommended_action ? '<div style="font-size:11px;font-weight:600;color:#C49A8A;margin-top:6px">Action: ' + t.recommended_action + '</div>' : '') + '</div></div>';
       }).join('');
     } else {
       el.innerHTML = '<div class="empty">No task history yet. Go to Crystal Ball Triage to classify your first task.</div>';
@@ -1036,7 +1036,7 @@ function tCard(t) {
   const bc = t.urgency==='urgent'||t.urgency==='today' ? 'badge-u' : t.urgency==='defer' ? 'badge-f' : 'badge-e';
   const bt = t.urgency==='ea_owned' ? 'EA Owned' : (t.urgency||'classified');
   const ic = t.classification === 'crystal';
-  return '<div class="t-item"><div class="ti-icon">' + (ic ? '&#128302;' : '&#127934;') + '</div><div class="ti-body"><div class="ti-task">' + (t.description||'') + '</div><div class="ti-reason">' + (t.reason||'') + '</div></div><div class="ti-badge ' + bc + '">' + bt + '</div></div>';
+  return '<div class="t-item" onclick="this.querySelector(\'.ti-reason\').style.display=this.querySelector(\'.ti-reason\').style.display===\'none\'?\'block\':\'none\'"><div class="ti-icon">' + (ic ? '&#128302;' : '&#127934;') + '</div><div class="ti-body"><div class="ti-task">' + (t.description||'') + '</div><div class="ti-reason" style="display:none">' + (t.reason||'') + '</div></div><div class="ti-badge ' + bc + '">' + bt + '</div></div>';
 }
 async function doClassify() {
   const inp = $('task-in');
@@ -1081,6 +1081,16 @@ async function doClassify() {
             res.innerHTML = '<div class="t-result-box"><div class="tr-hd"><div class="tr-em">' + em + '</div><div class="tr-ti">' + (ic ? 'Crystal Ball - Only You Can Do This' : 'Bouncy Ball - Your EA Owns This') + '</div></div><div class="tr-meta"><span><strong>Urgency:</strong> ' + (c.urgency||'') + '</span><span><strong>Confidence:</strong> ' + (c.confidence ? (c.confidence*100).toFixed(0)+'%' : '') + '</span></div><div class="tr-body"><strong>Why:</strong> ' + (c.reason||'') + '</div><div class="tr-body"><strong>Action:</strong> ' + (c.recommendedAction||'') + '</div><div class="tr-act">' + actLabel + '</div><button class="play-btn" onclick="playEAVoice(this,window._lastEAText)">Listen</button>' + eaButtons + '</div>';
       inp.value = '';
       loadStats();
+      // Add book quote if available
+      if(c.bookQuote) {
+        setTimeout(function() {
+          var bq = document.createElement('div');
+          bq.className = 'tr-book-quote';
+          bq.innerHTML = '&#128218; ' + c.bookQuote + '<span class="tr-book-src">The Essential EA by Kristina Spencer</span>';
+          var act = res.querySelector('.tr-act');
+          if(act) act.parentNode.insertBefore(bq, act.nextSibling);
+        }, 50);
+      }
     } else {
       res.innerHTML = '<div class="alert alert-err">Error: ' + (d.error||'Classification failed') + '</div>';
     }
@@ -1170,7 +1180,7 @@ async function generateBrief() {
     const d = await r.json();
     if(d.success) {
       window._lastBriefText = d.brief || '';
-      res.innerHTML = '<div class="brief-box"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div class="ai-lbl" style="margin-bottom:0">Your EA Daily Brief</div><button class=\"play-btn\" onclick=\"playEAVoice(this,window._lastBriefText)\">Listen to Brief</button></div><pre>' + d.brief + '</pre></div>';
+      res.innerHTML = '<div class="brief-box"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div class="ai-lbl" style="margin-bottom:0">Your EA Daily Brief</div>\'</div>\' + (c.bookQuote ? \'<div class=\"tr-book-quote\">&#128218; \' + c.bookQuote + \'<span class=\"tr-book-src\">The Essential EA by Kristina Spencer</span></div>\' : \'\') + \'<button class=\"play-btn\" onclick=\"playEAVoice(this,window._lastBriefText)\">Listen to Brief</button></div><pre>' + d.brief + '</pre></div>';
     } else {
       res.innerHTML = '<div class="alert alert-err">Error: ' + (d.error||'Failed to generate brief') + '</div>';
     }
