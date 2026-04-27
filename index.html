@@ -1610,6 +1610,15 @@ async function runEAInbox() {
             '</div>';
         }
 
+        // Add action buttons for flagged items too
+        if(r.action === 'flag' && !r.executed) {
+          html += '<div style="display:flex;gap:6px;margin-top:8px">' +
+            '<button onclick="openEmailFromReport(this)" data-id="' + r.id + '" style="font-size:10px;font-weight:700;padding:5px 14px;border-radius:3px;border:none;cursor:pointer;background:#C49A8A;color:#1A1A18">Open Email</button>' +
+            '<button onclick="archiveFromReport(' + JSON.stringify({id:r.id}) + ',this)" style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:3px;border:1px solid rgba(26,26,24,0.15);cursor:pointer;background:transparent;color:var(--mid)">Archive</button>' +
+            '<button onclick="trashFromReport(' + JSON.stringify({id:r.id}) + ',this)" style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:3px;border:1px solid rgba(138,56,48,0.3);cursor:pointer;background:transparent;color:#8A3A30">Delete</button>' +
+            '</div>';
+        }
+
         html += '</div>';
         return html;
       }).join('');
@@ -1673,6 +1682,47 @@ function editReply(btn) {
 function skipReply(btn) {
   var card = btn.closest('[style*="border-left"]');
   if(card) card.style.opacity = '0.4';
+}
+
+async function archiveFromReport(data, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Archiving...';
+  var r = await fetch('https://essential-ea-app-production.up.railway.app/api/gmail/archive', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ messageId: data.id })
+  });
+  var d = await r.json();
+  if(d.success) {
+    var card = btn.closest('[style*="border-left"]');
+    if(card) { card.style.opacity = '0.4'; btn.parentElement.innerHTML = '<span style="color:#2D6A35;font-size:11px">&#9989; Archived</span>'; }
+  } else { btn.disabled = false; btn.textContent = 'Archive'; }
+}
+
+async function trashFromReport(data, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Deleting...';
+  var r = await fetch('https://essential-ea-app-production.up.railway.app/api/gmail/trash', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ messageId: data.id })
+  });
+  var d = await r.json();
+  if(d.success) {
+    var card = btn.closest('[style*="border-left"]');
+    if(card) { card.style.opacity = '0.4'; btn.parentElement.innerHTML = '<span style="color:#8A3A30;font-size:11px">&#10005; Deleted</span>'; }
+  } else { btn.disabled = false; btn.textContent = 'Delete'; }
+}
+
+function openEmailFromReport(btn) {
+  var msgId = btn.getAttribute('data-id');
+  var msgs = window._gmailMessages || [];
+  var idx = msgs.findIndex(function(m) { return m.id === msgId; });
+  if(idx !== -1) {
+    closeEAResults();
+    openGmailMsgByIdx(idx, null);
+  } else {
+    closeEAResults();
+    loadGmailMessages();
+  }
 }
 
 function closeEAResults() {
