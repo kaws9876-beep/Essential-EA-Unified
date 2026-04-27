@@ -1568,7 +1568,7 @@ async function loadGmailMessages(search) {
         var date = new Date(msg.date).toLocaleDateString('en-US', {month:'short', day:'numeric'});
         return '<div class="msg" data-id="' + msg.id + '" data-idx="' + i + '" style="' + (unread ? 'font-weight:600;background:rgba(196,154,138,0.04)' : '') + ';cursor:pointer">' +
           '<div style="display:flex;gap:8px;align-items:flex-start">' +
-          '<input type="checkbox" class="msg-check" onclick="event.stopPropagation();toggleMsgSelect(chr39' + msg.id + 'chr39,this)" style="margin-top:3px;cursor:pointer">' +
+          '<input type="checkbox" class="msg-check" onclick="event.stopPropagation();toggleMsgSelect(' + msg.id + ',this)" style="margin-top:3px;cursor:pointer">' +
           '<div style="flex:1;min-width:0" onclick="openGmailMsgByIdx(' + i + ',this.parentElement.parentElement)">' +
           '<div class="msg-from" style="' + (unread ? 'font-weight:700' : '') + '">' + (starred ? '&#9733; ' : '') + fromName + '<span style="float:right;font-size:10px;color:var(--mid);font-weight:400">' + date + '</span></div>' +
           '<div class="msg-sub">' + msg.subject + '</div>' +
@@ -2020,8 +2020,8 @@ async function loadMoreMessages() {
     var div = document.createElement('div');
     div.className = 'msg';
     div.setAttribute('data-id', msg.id);
-    div.innerHTML = '<div style="display:flex;gap:8px"><input type="checkbox" class="msg-check" onclick="event.stopPropagation();toggleMsgSelect(chr39' + msg.id + 'chr39,this)" style="margin-top:3px"><div style="flex:1" onclick="openGmailMsgByIdx(' + idx + ',this.parentElement.parentElement)"><div class="msg-from">' + (msg.from||'').replace(/<[^>]+>/g,'').trim() + '</div><div class="msg-sub">' + msg.subject + '</div><div class="msg-prev">' + (msg.snippet||'').substring(0,80) + '</div></div></div>';
-    div.innerHTML = div.innerHTML.replace(/chr39/g, "'");
+    div.innerHTML = '<div style="display:flex;gap:8px"><input type="checkbox" class="msg-check" onclick="event.stopPropagation();toggleMsgSelect(' + msg.id + ',this)" style="margin-top:3px"><div style="flex:1" onclick="openGmailMsgByIdx(' + idx + ',this.parentElement.parentElement)"><div class="msg-from">' + (msg.from||'').replace(/<[^>]+>/g,'').trim() + '</div><div class="msg-sub">' + msg.subject + '</div><div class="msg-prev">' + (msg.snippet||'').substring(0,80) + '</div></div></div>';
+    div.innerHTML = div.innerHTML.replace(/'/g, "'");
     if(list) list.appendChild(div);
   });
 }
