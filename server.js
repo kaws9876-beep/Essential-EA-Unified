@@ -1333,7 +1333,7 @@ app.post('/api/classify', async (req, res) => {
     // Get user profile for personalization
     let profileContext = '';
     try {
-      const [prof] = await sql`SELECT * FROM user_profiles WHERE user_id = 'default' LIMIT 1\`;
+      const [prof] = await sql`SELECT * FROM user_profiles WHERE user_id = 'default' LIMIT 1`;
       if(prof && prof.name) {
         profileContext = '\n\nUser context: ' + prof.name + ' is a ' + (prof.role||'executive') + (prof.industry ? ' in ' + prof.industry : '') + (prof.company ? ' at ' + prof.company : '') + (prof.priorities ? '. Top priorities: ' + prof.priorities : '') + (prof.peak_hours ? '. Peak hours: ' + prof.peak_hours : '');
       }
@@ -2926,10 +2926,10 @@ app.post('/api/transcribe', async (req, res) => {
       analysis JSONB,
       duration_seconds INTEGER,
       created_at TIMESTAMP DEFAULT NOW()
-    )\`;
+    )`;
     const [saved] = await sql`INSERT INTO meeting_recordings (filename, transcript, summary, analysis)
       VALUES (\${filename||'Recording'}, \${transcript}, \${analysisData?.summary||''}, \${JSON.stringify(analysisData)})
-      RETURNING id\`;
+      RETURNING id`;
 
     res.json({
       success: true,
@@ -2945,8 +2945,8 @@ app.post('/api/transcribe', async (req, res) => {
 
 app.get('/api/meetings', async (req, res) => {
   try {
-    await sql`CREATE TABLE IF NOT EXISTS meeting_recordings (id SERIAL PRIMARY KEY, filename TEXT, transcript TEXT, summary TEXT, analysis JSONB, duration_seconds INTEGER, created_at TIMESTAMP DEFAULT NOW())\`;
-    const meetings = await sql`SELECT id, filename, summary, created_at FROM meeting_recordings ORDER BY created_at DESC LIMIT 20\`;
+    await sql`CREATE TABLE IF NOT EXISTS meeting_recordings (id SERIAL PRIMARY KEY, filename TEXT, transcript TEXT, summary TEXT, analysis JSONB, duration_seconds INTEGER, created_at TIMESTAMP DEFAULT NOW())`;
+    const meetings = await sql`SELECT id, filename, summary, created_at FROM meeting_recordings ORDER BY created_at DESC LIMIT 20`;
     res.json({ success: true, meetings });
   } catch(e) {
     res.status(500).json({ success: false, error: e.message });
@@ -2955,7 +2955,7 @@ app.get('/api/meetings', async (req, res) => {
 
 app.get('/api/meetings/:id', async (req, res) => {
   try {
-    const [meeting] = await sql`SELECT * FROM meeting_recordings WHERE id = \${parseInt(req.params.id)}\`;
+    const [meeting] = await sql`SELECT * FROM meeting_recordings WHERE id = \${parseInt(req.params.id)}`;
     if(!meeting) return res.status(404).json({ success: false, error: 'Not found' });
     res.json({ success: true, meeting });
   } catch(e) {
