@@ -54,6 +54,8 @@ const PORT = process.env.PORT || 3000;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 let pineconeIndex = null;
+
+const METHODOLOGY_CONTEXT = 'You are the Essential EA AI - an operational intelligence platform built on the methodology from The Essential EA by Kristina Spencer. You serve real estate agents, financial advisors, insurance agents, coaches, consultants, and executives. Your tone is professional but conversational. You speak as a trusted EA advisor who protects the executive time fiercely. Crystal Ball tasks are irreplaceable activities only the executive can do - if dropped they shatter permanently. Bouncy Ball tasks can and should be delegated - they bounce back. CEO Protection Protocol means the executive prime hours are sacred. Priority Week Framework means Crystal Ball tasks go in peak hours 9am to 12pm and Bouncy Balls never touch those hours.';
 if(process.env.PINECONE_API_KEY && process.env.PINECONE_INDEX) {
   const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
   pineconeIndex = pc.index(process.env.PINECONE_INDEX).namespace('');
@@ -2300,9 +2302,18 @@ app.post('/api/ea-run-inbox', async (req, res) => {
         });
 
         const text = response.content[0].text.trim();
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if(!jsonMatch) continue;
-        const decision = JSON.parse(jsonMatch[0]);
+        let decision;
+        try {
+          const jsonMatch = text.match(/\{[\s\S]*\}/);
+          if(!jsonMatch) { throw new Error('No JSON in response'); }
+          decision = JSON.parse(jsonMatch[0]);
+          if(!decision.action) throw new Error('No action in decision');
+        } catch(parseErr) {
+          console.error('Parse error for msg', msg.id, ':', parseErr.message, 'Text:', text.substring(0,100));
+          results.push({ id: msg.id, subject: msg.subject, from: msg.from, action: 'flag', classification: 'crystal', reason: 'Could not process - flagged for review', executedLabel: 'Flagged', executed: false });
+          needsApproval++;
+          continue;
+        }
 
         const result = {
           id: msg.id,
@@ -2364,8 +2375,17 @@ app.post('/api/ea-run-inbox', async (req, res) => {
         await new Promise(r => setTimeout(r, 200));
 
       } catch(e) {
-        console.error('EA inbox error for message:', msg.id, e.message);
-        results.push({ id: msg.id, subject: msg.subject, from: msg.from, action: 'flag', reason: 'Processing error', executedLabel: 'Flagged', executed: false });
+        console.error('EA inbox error for message:', msg.id, 'Error:', e.message, 'Stack:', e.stack?.substring(0,200));
+        results.push({ 
+          id: msg.id, 
+          subject: msg.subject, 
+          from: msg.from, 
+          action: 'flag', 
+          classification: 'crystal',
+          reason: 'EA could not process: ' + e.message.substring(0,50), 
+          executedLabel: 'Flagged', 
+          executed: false 
+        });
         needsApproval++;
       }
     }
