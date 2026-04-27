@@ -694,6 +694,106 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
           </div>
         </div>
       </div>
+    <div class="screen" id="screen-profile">
+      <div class="pg-h">Your EA Profile</div>
+      <div class="pg-s">Your EA uses this to personalize every response. The more detail you give, the smarter your EA gets.</div>
+      <div style="max-width:680px">
+        <div class="panel" style="padding:24px;margin-bottom:16px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">About You</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Your Name</label>
+              <input id="prof-name" type="text" placeholder="Kristina Spencer" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Your Role</label>
+              <input id="prof-role" type="text" placeholder="Broker - Team Lead" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Industry</label>
+              <select id="prof-industry" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
+                <option value="">Select your industry</option>
+                <option value="Real Estate">Real Estate</option>
+                <option value="Financial Advisory">Financial Advisory</option>
+                <option value="Insurance">Insurance</option>
+                <option value="Coaching/Consulting">Coaching/Consulting</option>
+                <option value="Mortgage">Mortgage</option>
+                <option value="Legal">Legal</option>
+                <option value="Healthcare">Healthcare</option>
+                <option value="Technology">Technology</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Company</label>
+              <input id="prof-company" type="text" placeholder="Operational Consulting Group" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" style="padding:24px;margin-bottom:16px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">Your Business</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Revenue Target</label>
+              <input id="prof-revenue" type="text" placeholder="e.g. $500K GCI, $1M ARR" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Team Size</label>
+              <select id="prof-team" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
+                <option value="Solo">Solo</option>
+                <option value="2-5">2-5 people</option>
+                <option value="6-15">6-15 people</option>
+                <option value="16-50">16-50 people</option>
+                <option value="50+">50+ people</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-bottom:16px">
+            <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Top Priorities Right Now</label>
+            <textarea id="prof-priorities" rows="3" placeholder="e.g. Close 3 new listings, build referral pipeline, hire transaction coordinator..." style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none;resize:vertical"></textarea>
+          </div>
+        </div>
+
+        <div class="panel" style="padding:24px;margin-bottom:16px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">Your Schedule</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Peak Hours</label>
+              <input id="prof-peak" type="text" placeholder="e.g. 9am-12pm" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Working Hours</label>
+              <input id="prof-hours" type="text" placeholder="e.g. 8am-6pm" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
+            </div>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Non-Negotiable Time Blocks</label>
+            <input id="prof-blocks" type="text" placeholder="e.g. No meetings before 9am, lunch 12-1pm, hard stop 5:30pm" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
+          </div>
+        </div>
+
+        <div class="panel" style="padding:24px;margin-bottom:24px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">EA Preferences</div>
+          <div>
+            <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">AI Communication Tone</label>
+            <div style="display:flex;gap:8px">
+              <button class="tone-btn active" onclick="setTone(this,'professional')" style="font-size:11px;font-weight:600;padding:7px 16px;border-radius:3px;border:1px solid #C49A8A;cursor:pointer;background:#C49A8A;color:#1A1A18">Professional</button>
+              <button class="tone-btn" onclick="setTone(this,'direct')" style="font-size:11px;font-weight:600;padding:7px 16px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Direct</button>
+              <button class="tone-btn" onclick="setTone(this,'warm')" style="font-size:11px;font-weight:600;padding:7px 16px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Warm</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="profile-save-status" style="display:none;margin-bottom:12px"></div>
+        <button onclick="saveProfile()" style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:12px 32px;border-radius:4px;border:none;cursor:pointer;background:#C49A8A;color:#1A1A18">Save Profile</button>
+        <div style="font-size:11px;color:var(--mid);margin-top:8px">Your EA uses this profile to personalize every response</div>
+      </div>
+    </div>
+
+
+      <!-- Compose Modal -->
+      
       <!-- Compose Modal -->
       
     <div class="screen" id="screen-profile">
