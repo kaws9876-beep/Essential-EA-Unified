@@ -927,10 +927,10 @@ function eaAddToTaskList(taskId, task, action) {
 }
 
 function showEAResult(taskId, text, show) {
-  const el = document.getElementById('ea-result-' + taskId);
-  const content = document.getElementById('ea-result-content-' + taskId);
-  if(el) el.classList.add('show');
-  if(content) content.textContent = text;
+  const el = document.getElementById('ea-result-box');
+  const cnt = document.getElementById('ea-result-content');
+  if(el) el.style.display = 'block';
+  if(cnt) cnt.textContent = text || '';
 }
 
 function clearEAResult(taskId) {
@@ -939,13 +939,8 @@ function clearEAResult(taskId) {
 }
 
 function copyEAResult(taskId) {
-  const content = document.getElementById('ea-result-content-' + taskId);
-  if(content) {
-    navigator.clipboard.writeText(content.textContent).then(() => {
-      const btn = content.parentElement.querySelector('.ea-copy-btn');
-      if(btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy to Clipboard', 2000); }
-    });
-  }
+  const cnt = document.getElementById('ea-result-content');
+  if(cnt) navigator.clipboard.writeText(cnt.textContent).catch(function(){});
 }
 
 function handleDocDrop(e) {
@@ -1339,14 +1334,14 @@ app.post('/api/generate-week', async (req, res) => {
     const { goals, revenue, timeblocks } = req.body;
     if (!goals || !revenue || !timeblocks) return res.status(400).json({ error: 'Missing required fields', success: false });
 
-    const prompt = 'You are the Essential EA building a Priority Week using the Essential EA methodology by Kristina Spencer.\n\nPriority Week Framework:\n1. Crystal Ball Protection: Schedule highest-leverage activities first and protect fiercely.\n2. Bouncy Ball Delegation: Every delegatable task goes to EA. Never on the executive calendar.\n3. CEO Protection Protocol: Non-negotiable blocks are sacred. EA enforces them.\n\nBuild a Priority Week for:\nGoals: ' + goals + '\nRevenue Target: ' + revenue + '\nProtected Blocks: ' + timeblocks + '\n\nFORMAT:\n\nPRIORITY WEEK\n\nCRYSTAL BALL FOCUS THIS WEEK\n1. [Activity] - [Why only you]\n2. [Activity] - [Why only you]\n3. [Activity] - [Why only you]\n\nMONDAY\nCrystal Ball (You): [task] - [time]\nBouncy Ball (EA): [task]\nProtected: [block]\n\nTUESDAY\nCrystal Ball (You): [task] - [time]\nBouncy Ball (EA): [task]\n\nWEDNESDAY\nCrystal Ball (You): [task] - [time]\nBouncy Ball (EA): [task]\nProtected: [block]\n\nTHURSDAY\nCrystal Ball (You): [task] - [time]\nBouncy Ball (EA): [task]\n\nFRIDAY\nCrystal Ball (You): [task] - [time]\nProtected: Friday afternoon - CEO Protection Protocol\n\nEA TASK LIST\n- [task]: [instruction]\n- [task]: [instruction]\n- [task]: [instruction]\n\nREVENUE FOCUS\nTo hit your target: [specific activity]\nKey metric: [measurable indicator]\n\nCEO PROTECTION REMINDER\nProtected blocks: ' + timeblocks;
+    const prompt = 'You are the Essential EA building a Priority Week. Return ONLY a JSON object, no other text. Format:\n{\n  "focus": ["Crystal Ball item 1", "Crystal Ball item 2", "Crystal Ball item 3"],\n  "days": [\n    {\n      "day": "MON",\n      "slots": [\n        {"task": "Task name", "time": "9:00 AM", "type": "crystal"},\n        {"task": "EA Task name", "type": "ea_owned"},\n        {"task": "Protected block", "time": "12:00 PM", "type": "protected"}\n      ]\n    }\n  ]\n}\nTypes: crystal, ea_owned, protected.\nBuild for goals: ' + goals + ' Revenue: ' + revenue + ' Protected blocks: ' + timeblocks + '\nInclude MON, TUE, WED, THU, FRI. Each day 2-3 slots max. Crystal Ball tasks in morning, EA tasks in afternoon.'
 
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5',
       max_tokens: 1200,
       system: [
         { type: 'text', text: 'You are the Essential EA AI - an operational intelligence platform built on the methodology from The Essential EA by Kristina Spencer. You serve real estate agents, financial advisors, insurance agents, coaches, consultants, and executives. Your tone is professional but conversational. You speak as a trusted EA advisor who protects the executive time fiercely. You always use Crystal Ball and Bouncy Ball Framework language naturally. Crystal Ball tasks are irreplaceable activities only the executive can do - if dropped they shatter permanently. Bouncy Ball tasks can and should be delegated - they bounce back. CEO Protection Protocol means the executive prime hours are sacred. Priority Week Framework means Crystal Ball tasks go in peak hours 9am to 12pm and Bouncy Balls never touch those hours.', cache_control: { type: 'ephemeral' } },
-        { type: 'text', text: 'Build Priority Week plans using the Crystal Ball and Bouncy Ball Framework. Be specific, actionable, and decisive. Label every task clearly as Crystal Ball or Bouncy Ball.' }
+        { type: 'text', text: 'Build Priority Week plans. Return ONLY valid JSON in this exact format: {"focus":["item1","item2","item3"],"days":[{"day":"MON","slots":[{"task":"Task","time":"9:00 AM","type":"crystal"},{"task":"EA Task","type":"ea_owned"}]}]} Types must be: crystal, ea_owned, or protected. Include MON TUE WED THU FRI. 2-3 slots per day. Crystal Ball in morning slots. No text outside the JSON.' }
       ],
       messages: [{ role: 'user', content: prompt }]
     });
@@ -1355,7 +1350,12 @@ app.post('/api/generate-week', async (req, res) => {
 
     await sql`INSERT INTO weekly_plans (goals, revenue, timeblocks, plan) VALUES (${goals}, ${revenue}, ${timeblocks}, ${plan})`;
 
-    res.json({ success: true, plan });
+    let planData = null;
+    try {
+      const jsonMatch = plan.match(/\{[\s\S]*\}/);
+      if(jsonMatch) planData = JSON.parse(jsonMatch[0]);
+    } catch(e) { planData = null; }
+    res.json({ success: true, plan, planData });
   } catch (error) {
     console.error('Error:', error.message);
     res.status(500).json({ error: error.message || 'Failed to generate plan', success: false });
