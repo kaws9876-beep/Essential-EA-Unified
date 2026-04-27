@@ -2288,8 +2288,8 @@ app.post('/api/ea-run-inbox', async (req, res) => {
           '\nSubject: ' + msg.subject +
           '\nPreview: ' + msg.snippet +
           '\n\nRespond ONLY with JSON:\n{"action":"auto_reply|draft_approval|archive|flag","classification":"crystal|bouncy","reason":"brief explanation (max 15 words)","reply":"full reply text if action is auto_reply or draft_approval, else empty string","confidence":0.0-1.0}' +
-          '\n\nRules:\n- auto_reply: routine vendor/scheduling/confirmation emails where a standard reply suffices\n- draft_approval: needs a reply but user should review before sending\n- archive: newsletters, notifications, automated, no-reply emails\n- flag: anything involving clients, money, legal, or important decisions (Crystal Ball)\n- Never auto_reply to clients, never auto_reply if unsure' +
-          bookContext;
+          '\n\nRules:\\n- archive: newsletters, marketing, promotions, no-reply, automated, subscription emails. Be AGGRESSIVE - if it looks commercial, archive it.\\n- flag: real person emailing about clients, deals, money, legal (Crystal Ball decisions)\\n- draft_approval: real person who needs a thoughtful reply\\n- auto_reply: only simple scheduling confirmations with confidence > 0.9' +
+           bookContext;
 
         const response = await anthropic.messages.create({
           model: 'claude-haiku-4-5',
