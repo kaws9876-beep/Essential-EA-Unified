@@ -844,10 +844,10 @@ function eaAddToTaskList(taskId, task, action) {
 }
 
 function showEAResult(taskId, text, show) {
-  const el = document.getElementById('ea-result-' + taskId);
-  const content = document.getElementById('ea-result-content-' + taskId);
-  if(el) el.classList.add('show');
-  if(content) content.textContent = text;
+  const el = document.getElementById('ea-result-box');
+  const cnt = document.getElementById('ea-result-content');
+  if(el) el.style.display = 'block';
+  if(cnt) cnt.textContent = text || '';
 }
 
 function clearEAResult(taskId) {
@@ -1169,7 +1169,7 @@ async function generateBrief() {
     const r = await fetch('https://essential-ea-app-production.up.railway.app/api/daily-brief', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name,role,priorities,timeblocks:blocks,date:new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}) });
     const d = await r.json();
     if(d.success) {
-      const briefId = 'brief_' + Date.now();
+      window._lastBriefText = d.brief || '';
       res.innerHTML = '<div class="brief-box"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div class="ai-lbl" style="margin-bottom:0">Your EA Daily Brief</div><button class=\"play-btn\" onclick=\"playEAVoice(this,window._lastBriefText)\">Listen to Brief</button></div><pre>' + d.brief + '</pre></div>';
     } else {
       res.innerHTML = '<div class="alert alert-err">Error: ' + (d.error||'Failed to generate brief') + '</div>';
