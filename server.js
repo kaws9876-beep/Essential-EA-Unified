@@ -2236,6 +2236,180 @@ app.post('/api/calendar/suggest', async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+
+// ============ EA RUN MY INBOX - AUTONOMOUS EXECUTION ============
+
+app.post('/api/ea-run-inbox', async (req, res) => {
+  try {
+    const accessToken = await getGoogleAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Gmail not connected' });
+
+    // Fetch unread inbox messages
+    const listRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=20&q=is:unread in:inbox', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    const listData = await listRes.json();
+    if(!listData.messages || !listData.messages.length) {
+      return res.json({ success: true, summary: 'Your inbox is clear. No unread emails to process.', results: [], handled: 0, needsApproval: 0 });
+    }
+
+    // Fetch message details
+    const messages = await Promise.all(
+      listData.messages.slice(0, 15).map(async (msg) => {
+        const msgRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + msg.id + '?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date', {
+          headers: { Authorization: 'Bearer ' + accessToken }
+        });
+        const msgData = await msgRes.json();
+        const headers = msgData.payload?.headers || [];
+        const getHeader = (name) => headers.find(h => h.name === name)?.value || '';
+        return {
+          id: msg.id,
+          threadId: msgData.threadId,
+          subject: getHeader('Subject') || '(no subject)',
+          from: getHeader('From'),
+          date: getHeader('Date'),
+          snippet: msgData.snippet || ''
+        };
+      })
+    );
+
+    const bookContext = await getBookContext('Bouncy Ball email delegation EA handles routine emails');
+    const results = [];
+    let handled = 0;
+    let needsApproval = 0;
+
+    // Process each message with AI decision
+    for(const msg of messages) {
+      try {
+        const prompt = 'You are the Essential EA analyzing an email on behalf of Kristina Spencer. Decide what to do with this email using the Crystal Ball and Bouncy Ball Framework.' +
+          '\n\nFrom: ' + msg.from +
+          '\nSubject: ' + msg.subject +
+          '\nPreview: ' + msg.snippet +
+          '\n\nRespond ONLY with JSON:\n{"action":"auto_reply|draft_approval|archive|flag","classification":"crystal|bouncy","reason":"brief explanation (max 15 words)","reply":"full reply text if action is auto_reply or draft_approval, else empty string","confidence":0.0-1.0}' +
+          '\n\nRules:\n- auto_reply: routine vendor/scheduling/confirmation emails where a standard reply suffices\n- draft_approval: needs a reply but user should review before sending\n- archive: newsletters, notifications, automated, no-reply emails\n- flag: anything involving clients, money, legal, or important decisions (Crystal Ball)\n- Never auto_reply to clients, never auto_reply if unsure' +
+          bookContext;
+
+        const response = await anthropic.messages.create({
+          model: 'claude-haiku-4-5',
+          max_tokens: 600,
+          system: [
+            { type: 'text', text: METHODOLOGY_CONTEXT, cache_control: { type: 'ephemeral' } },
+            { type: 'text', text: 'You are processing emails as an EA. Return only valid JSON. Be conservative - when in doubt, flag for user review.' }
+          ],
+          messages: [{ role: 'user', content: prompt }]
+        });
+
+        const text = response.content[0].text.trim();
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if(!jsonMatch) continue;
+        const decision = JSON.parse(jsonMatch[0]);
+
+        const result = {
+          id: msg.id,
+          threadId: msg.threadId,
+          from: msg.from,
+          subject: msg.subject,
+          action: decision.action,
+          classification: decision.classification,
+          reason: decision.reason,
+          reply: decision.reply || '',
+          confidence: decision.confidence || 0.8,
+          executed: false
+        };
+
+        // Execute the decision
+        if(decision.action === 'archive') {
+          await fetch(RAILWAY + '/api/gmail/archive', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messageId: msg.id })
+          });
+          result.executed = true;
+          result.executedLabel = 'Archived';
+          handled++;
+        } else if(decision.action === 'auto_reply' && decision.reply && decision.confidence > 0.85) {
+          // Send the reply
+          const email = ['To: ' + msg.from, 'Subject: Re: ' + msg.subject, 'Content-Type: text/plain; charset=utf-8', '', decision.reply].join('\n');
+          const encoded = Buffer.from(email).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+          const sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+            method: 'POST',
+            headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ raw: encoded })
+          });
+          const sendData = await sendRes.json();
+          if(sendData.id) {
+            // Archive after replying
+            await fetch(RAILWAY + '/api/gmail/archive', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ messageId: msg.id })
+            });
+            result.executed = true;
+            result.executedLabel = 'Replied & Archived';
+            handled++;
+          } else {
+            result.action = 'draft_approval';
+            result.executedLabel = 'Draft - Needs Approval';
+            needsApproval++;
+          }
+        } else if(decision.action === 'draft_approval') {
+          result.executedLabel = 'Draft Ready - Needs Your Approval';
+          needsApproval++;
+        } else {
+          result.executedLabel = 'Flagged for Your Review';
+          needsApproval++;
+        }
+
+        results.push(result);
+
+        // Small delay to avoid rate limiting
+        await new Promise(r => setTimeout(r, 200));
+
+      } catch(e) {
+        console.error('EA inbox error for message:', msg.id, e.message);
+        results.push({ id: msg.id, subject: msg.subject, from: msg.from, action: 'flag', reason: 'Processing error', executedLabel: 'Flagged', executed: false });
+        needsApproval++;
+      }
+    }
+
+    const summary = 'Your EA processed ' + messages.length + ' emails. ' +
+      (handled > 0 ? handled + ' handled automatically. ' : '') +
+      (needsApproval > 0 ? needsApproval + ' need your review.' : 'All clear!');
+
+    res.json({ success: true, summary, results, handled, needsApproval, total: messages.length });
+
+  } catch(e) {
+    console.error('EA run inbox error:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/ea-approve-reply', async (req, res) => {
+  try {
+    const { messageId, threadId, to, subject, reply } = req.body;
+    const accessToken = await getGoogleAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Not connected' });
+    const email = ['To: ' + to, 'Subject: Re: ' + subject, 'Content-Type: text/plain; charset=utf-8', '', reply].join('\n');
+    const encoded = Buffer.from(email).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw: encoded, threadId: threadId || undefined })
+    });
+    const sendData = await sendRes.json();
+    if(sendData.id) {
+      // Archive after approving
+      await fetch(RAILWAY + '/api/gmail/archive', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageId })
+      });
+      res.json({ success: true });
+    } else {
+      res.json({ success: false, error: 'Send failed' });
+    }
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });
 });
