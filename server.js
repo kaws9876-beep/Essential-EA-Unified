@@ -2855,8 +2855,12 @@ app.use('/api/ea-draft', rateLimit(20, 60000));
 app.use('/api/ea-run-inbox', rateLimit(5, 60000));
 app.use('/api/audit', rateLimit(10, 60000));
 
-// Security headers
+// Security headers + CORS
 app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if(req.method === 'OPTIONS') { res.status(200).end(); return; }
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-XSS-Protection', '1; mode=block');
