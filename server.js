@@ -1769,7 +1769,7 @@ app.get('/auth/google', (req, res) => {
     client_id: process.env.GOOGLE_CLIENT_ID,
     redirect_uri: process.env.GOOGLE_REDIRECT_URI,
     response_type: 'code',
-    scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events email profile',
+    scope: 'https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events email profile',
     access_type: 'offline',
     prompt: 'consent'
   });
@@ -1870,43 +1870,6 @@ async function getGoogleAccessToken() {
   }
 }
 
-app.get('/api/gmail/messages', async (req, res) => {
-  try {
-    const accessToken = await getGoogleAccessToken();
-    if(!accessToken) return res.json({ success: false, error: 'Google not connected', messages: [] });
-
-    const listRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=20&q=is:inbox', {
-      headers: { Authorization: 'Bearer ' + accessToken }
-    });
-    const listData = await listRes.json();
-    if(!listData.messages) return res.json({ success: true, messages: [] });
-
-    // Fetch first 10 message details
-    const messages = await Promise.all(
-      listData.messages.slice(0, 10).map(async (msg) => {
-        const msgRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + msg.id + '?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date', {
-          headers: { Authorization: 'Bearer ' + accessToken }
-        });
-        const msgData = await msgRes.json();
-        const headers = msgData.payload?.headers || [];
-        const getHeader = (name) => headers.find(h => h.name === name)?.value || '';
-        return {
-          id: msg.id,
-          subject: getHeader('Subject') || '(no subject)',
-          from: getHeader('From'),
-          date: getHeader('Date'),
-          snippet: msgData.snippet || '',
-          labelIds: msgData.labelIds || []
-        };
-      })
-    );
-
-    res.json({ success: true, messages });
-  } catch(e) {
-    console.error('Gmail error:', e.message);
-    res.status(500).json({ success: false, error: e.message, messages: [] });
-  }
-});
 
 app.post('/api/gmail/send', async (req, res) => {
   try {
@@ -1956,6 +1919,321 @@ app.get('/api/calendar/events', async (req, res) => {
   } catch(e) {
     res.status(500).json({ success: false, error: e.message, events: [] });
   }
+});
+
+
+
+
+// ============ GMAIL - FULL MANAGEMENT ============
+
+app.get('/api/gmail/messages', async (req, res) => {
+  try {
+    const accessToken = await getGoogleAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Google not connected', messages: [] });
+    const folder = req.query.folder || 'inbox';
+    const search = req.query.search || '';
+    const pageToken = req.query.pageToken || '';
+    let query = folder === 'inbox' ? 'in:inbox' : folder === 'sent' ? 'in:sent' : folder === 'drafts' ? 'in:drafts' : folder === 'starred' ? 'is:starred' : folder === 'trash' ? 'in:trash' : 'in:inbox';
+    if(search) query += ' ' + search;
+    let url = 'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=25&q=' + encodeURIComponent(query);
+    if(pageToken) url += '&pageToken=' + pageToken;
+    const listRes = await fetch(url, { headers: { Authorization: 'Bearer ' + accessToken } });
+    const listData = await listRes.json();
+    if(!listData.messages) return res.json({ success: true, messages: [], nextPageToken: null });
+    const messages = await Promise.all(
+      listData.messages.slice(0, 15).map(async (msg) => {
+        const msgRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + msg.id + '?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date&metadataHeaders=To', {
+          headers: { Authorization: 'Bearer ' + accessToken }
+        });
+        const msgData = await msgRes.json();
+        const headers = msgData.payload?.headers || [];
+        const getHeader = (name) => headers.find(h => h.name === name)?.value || '';
+        return {
+          id: msg.id,
+          threadId: msgData.threadId,
+          subject: getHeader('Subject') || '(no subject)',
+          from: getHeader('From'),
+          to: getHeader('To'),
+          date: getHeader('Date'),
+          snippet: msgData.snippet || '',
+          labelIds: msgData.labelIds || [],
+          isUnread: (msgData.labelIds || []).includes('UNREAD'),
+          isStarred: (msgData.labelIds || []).includes('STARRED')
+        };
+      })
+    );
+    res.json({ success: true, messages, nextPageToken: listData.nextPageToken || null });
+  } catch(e) {
+    console.error('Gmail messages error:', e.message);
+    res.status(500).json({ success: false, error: e.message, messages: [] });
+  }
+});
+
+app.get('/api/gmail/message/:id', async (req, res) => {
+  try {
+    const accessToken = await getGoogleAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Not connected' });
+    const msgRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + req.params.id + '?format=full', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    const msg = await msgRes.json();
+    const headers = msg.payload?.headers || [];
+    const getHeader = (name) => headers.find(h => h.name === name)?.value || '';
+    // Extract body
+    let body = '';
+    const extractBody = (parts) => {
+      if(!parts) return;
+      for(const part of parts) {
+        if(part.mimeType === 'text/plain' && part.body?.data) {
+          body = Buffer.from(part.body.data, 'base64').toString('utf-8');
+        } else if(part.mimeType === 'text/html' && part.body?.data && !body) {
+          body = Buffer.from(part.body.data, 'base64').toString('utf-8');
+        }
+        if(part.parts) extractBody(part.parts);
+      }
+    };
+    if(msg.payload?.body?.data) {
+      body = Buffer.from(msg.payload.body.data, 'base64').toString('utf-8');
+    } else {
+      extractBody(msg.payload?.parts);
+    }
+    res.json({
+      success: true,
+      id: msg.id,
+      subject: getHeader('Subject'),
+      from: getHeader('From'),
+      to: getHeader('To'),
+      date: getHeader('Date'),
+      body: body || msg.snippet || '',
+      labelIds: msg.labelIds || [],
+      isUnread: (msg.labelIds || []).includes('UNREAD')
+    });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/gmail/send', async (req, res) => {
+  try {
+    const { to, subject, body, threadId } = req.body;
+    const accessToken = await getGoogleAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Google not connected' });
+    const emailLines = ['To: ' + to, 'Subject: ' + subject, 'Content-Type: text/plain; charset=utf-8', '', body];
+    if(threadId) emailLines.unshift('Thread-Id: ' + threadId);
+    const email = emailLines.join('\n');
+    const encoded = Buffer.from(email).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw: encoded, threadId: threadId || undefined })
+    });
+    const sendData = await sendRes.json();
+    if(sendData.id) res.json({ success: true, messageId: sendData.id });
+    else res.json({ success: false, error: sendData.error?.message || 'Send failed' });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/gmail/archive', async (req, res) => {
+  try {
+    const { messageId } = req.body;
+    const accessToken = await getGoogleAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Not connected' });
+    await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + messageId + '/modify', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ removeLabelIds: ['INBOX'] })
+    });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/gmail/trash', async (req, res) => {
+  try {
+    const { messageId } = req.body;
+    const accessToken = await getGoogleAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Not connected' });
+    await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + messageId + '/trash', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/gmail/markread', async (req, res) => {
+  try {
+    const { messageId, unread } = req.body;
+    const accessToken = await getGoogleAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Not connected' });
+    await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + messageId + '/modify', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify(unread ? { addLabelIds: ['UNREAD'] } : { removeLabelIds: ['UNREAD'] })
+    });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/gmail/star', async (req, res) => {
+  try {
+    const { messageId, starred } = req.body;
+    const accessToken = await getGoogleAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Not connected' });
+    await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + messageId + '/modify', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify(starred ? { addLabelIds: ['STARRED'] } : { removeLabelIds: ['STARRED'] })
+    });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/gmail/move', async (req, res) => {
+  try {
+    const { messageId, addLabel, removeLabel } = req.body;
+    const accessToken = await getGoogleAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Not connected' });
+    const body = {};
+    if(addLabel) body.addLabelIds = [addLabel];
+    if(removeLabel) body.removeLabelIds = [removeLabel];
+    await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + messageId + '/modify', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/gmail/bulk', async (req, res) => {
+  try {
+    const { messageIds, action } = req.body;
+    const accessToken = await getGoogleAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Not connected' });
+    await Promise.all(messageIds.map(async (id) => {
+      if(action === 'archive') {
+        await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + id + '/modify', {
+          method: 'POST', headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ removeLabelIds: ['INBOX'] })
+        });
+      } else if(action === 'trash') {
+        await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + id + '/trash', {
+          method: 'POST', headers: { Authorization: 'Bearer ' + accessToken }
+        });
+      } else if(action === 'read') {
+        await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + id + '/modify', {
+          method: 'POST', headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ removeLabelIds: ['UNREAD'] })
+        });
+      }
+    }));
+    res.json({ success: true, processed: messageIds.length });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/gmail/ai-classify', async (req, res) => {
+  try {
+    const { messages } = req.body;
+    if(!messages || !messages.length) return res.json({ success: true, classified: [] });
+    const bookContext = await getBookContext('email inbox management Crystal Ball Bouncy Ball');
+    const classified = await Promise.all(messages.map(async (msg) => {
+      try {
+        const text = msg.subject + ': ' + msg.snippet;
+        const r = await fetch('https://essential-ea-app-production.up.railway.app/api/classify', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ taskDescription: text })
+        });
+        const d = await r.json();
+        return { id: msg.id, classification: d.success ? d.classification : null };
+      } catch(e) { return { id: msg.id, classification: null }; }
+    }));
+    res.json({ success: true, classified });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/gmail/labels', async (req, res) => {
+  try {
+    const accessToken = await getGoogleAccessToken();
+    if(!accessToken) return res.json({ success: false, labels: [] });
+    const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/labels', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    const d = await r.json();
+    const userLabels = (d.labels || []).filter(l => l.type === 'user');
+    res.json({ success: true, labels: userLabels });
+  } catch(e) { res.status(500).json({ success: false, labels: [] }); }
+});
+
+// ============ CALENDAR - FULL ============
+
+app.get('/api/calendar/events', async (req, res) => {
+  try {
+    const accessToken = await getGoogleAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Google not connected', events: [] });
+    const days = parseInt(req.query.days) || 7;
+    const now = new Date().toISOString();
+    const future = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+    const calRes = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=' + now + '&timeMax=' + future + '&singleEvents=true&orderBy=startTime&maxResults=50', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    const calData = await calRes.json();
+    const events = (calData.items || []).map(e => ({
+      id: e.id, summary: e.summary || '(no title)',
+      start: e.start?.dateTime || e.start?.date,
+      end: e.end?.dateTime || e.end?.date,
+      location: e.location || '', description: e.description || '',
+      attendees: (e.attendees || []).map(a => a.email),
+      isAllDay: !e.start?.dateTime
+    }));
+    res.json({ success: true, events });
+  } catch(e) { res.status(500).json({ success: false, error: e.message, events: [] }); }
+});
+
+app.post('/api/calendar/create', async (req, res) => {
+  try {
+    const { summary, start, end, description, location, attendees } = req.body;
+    const accessToken = await getGoogleAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Not connected' });
+    const event = {
+      summary, description: description || '', location: location || '',
+      start: { dateTime: start, timeZone: 'America/Chicago' },
+      end: { dateTime: end, timeZone: 'America/Chicago' },
+      attendees: (attendees || []).map(e => ({ email: e }))
+    };
+    const r = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify(event)
+    });
+    const d = await r.json();
+    if(d.id) res.json({ success: true, event: d });
+    else res.json({ success: false, error: d.error?.message || 'Failed' });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.delete('/api/calendar/event/:id', async (req, res) => {
+  try {
+    const accessToken = await getGoogleAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Not connected' });
+    await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events/' + req.params.id, {
+      method: 'DELETE', headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/calendar/suggest', async (req, res) => {
+  try {
+    const { emailText } = req.body;
+    const bookContext = await getBookContext('calendar meeting schedule Crystal Ball time blocks');
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5', max_tokens: 400,
+      system: [{ type: 'text', text: METHODOLOGY_CONTEXT, cache_control: { type: 'ephemeral' } }],
+      messages: [{ role: 'user', content: 'This email mentions a meeting or appointment. Extract the event details and return JSON only: {"shouldAdd": true/false, "summary": "event title", "suggestedDate": "YYYY-MM-DD", "suggestedTime": "HH:MM", "duration": 60, "notes": "any relevant notes"}. Email: ' + emailText + bookContext }]
+    });
+    const text = response.content[0].text;
+    try {
+      const match = text.match(/\{[\s\S]*\}/);
+      const data = match ? JSON.parse(match[0]) : { shouldAdd: false };
+      res.json({ success: true, suggestion: data });
+    } catch(e) { res.json({ success: true, suggestion: { shouldAdd: false } }); }
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.use((req, res) => {
