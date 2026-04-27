@@ -2431,6 +2431,266 @@ app.post('/api/ea-approve-reply', async (req, res) => {
   }
 });
 
+
+// ============ MICROSOFT OAUTH ============
+
+app.get('/auth/microsoft', (req, res) => {
+  const params = new URLSearchParams({
+    client_id: process.env.MICROSOFT_CLIENT_ID,
+    response_type: 'code',
+    redirect_uri: process.env.MICROSOFT_REDIRECT_URI,
+    scope: 'openid email profile Mail.Read Mail.ReadWrite Mail.Send Calendars.Read Calendars.ReadWrite offline_access',
+    response_mode: 'query',
+    prompt: 'select_account'
+  });
+  const tenantId = process.env.MICROSOFT_TENANT_ID || 'common';
+  res.redirect('https://login.microsoftonline.com/' + tenantId + '/oauth2/v2.0/authorize?' + params.toString());
+});
+
+app.get('/auth/microsoft/callback', async (req, res) => {
+  const { code, error } = req.query;
+  if(error) return res.redirect(VERCEL + '/?microsoft_error=' + error);
+  if(!code) return res.redirect(VERCEL + '/?microsoft_error=no_code');
+  try {
+    const tenantId = process.env.MICROSOFT_TENANT_ID || 'common';
+    const tokenRes = await fetch('https://login.microsoftonline.com/' + tenantId + '/oauth2/v2.0/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: process.env.MICROSOFT_CLIENT_ID,
+        client_secret: process.env.MICROSOFT_CLIENT_SECRET,
+        redirect_uri: process.env.MICROSOFT_REDIRECT_URI,
+        grant_type: 'authorization_code',
+        scope: 'openid email profile Mail.Read Mail.ReadWrite Mail.Send Calendars.Read Calendars.ReadWrite offline_access'
+      })
+    });
+    const tokens = await tokenRes.json();
+    if(tokens.error) throw new Error(tokens.error_description || tokens.error);
+
+    // Get user profile
+    const profileRes = await fetch('https://graph.microsoft.com/v1.0/me', {
+      headers: { Authorization: 'Bearer ' + tokens.access_token }
+    });
+    const profile = await profileRes.json();
+    const email = profile.mail || profile.userPrincipalName || '';
+
+    // Store tokens
+    const expiry = tokens.expires_in ? Date.now() + (tokens.expires_in * 1000) : null;
+    await sql`CREATE TABLE IF NOT EXISTS microsoft_tokens (
+      id SERIAL PRIMARY KEY,
+      user_id VARCHAR(255) DEFAULT 'default' UNIQUE,
+      access_token TEXT,
+      refresh_token TEXT,
+      expiry_date BIGINT,
+      email VARCHAR(255),
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )`;
+    await sql`DELETE FROM microsoft_tokens WHERE user_id = 'default'`;
+    await sql`INSERT INTO microsoft_tokens (user_id, access_token, refresh_token, expiry_date, email)
+      VALUES ('default', ${tokens.access_token}, ${tokens.refresh_token || null}, ${expiry}, ${email})`;
+
+    console.log('Microsoft OAuth success for:', email);
+    res.redirect(VERCEL + '/?microsoft_connected=true&email=' + encodeURIComponent(email));
+  } catch(e) {
+    console.error('Microsoft OAuth error:', e.message);
+    res.redirect(VERCEL + '/?microsoft_error=' + encodeURIComponent(e.message));
+  }
+});
+
+app.get('/api/microsoft/status', async (req, res) => {
+  try {
+    await sql`CREATE TABLE IF NOT EXISTS microsoft_tokens (id SERIAL PRIMARY KEY, user_id VARCHAR(255) DEFAULT 'default' UNIQUE, access_token TEXT, refresh_token TEXT, expiry_date BIGINT, email VARCHAR(255), created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW())`;
+    const [token] = await sql`SELECT email, updated_at FROM microsoft_tokens WHERE user_id = 'default' LIMIT 1`;
+    if(token) res.json({ connected: true, email: token.email });
+    else res.json({ connected: false });
+  } catch(e) { res.json({ connected: false }); }
+});
+
+app.get('/api/microsoft/disconnect', async (req, res) => {
+  try {
+    await sql`DELETE FROM microsoft_tokens WHERE user_id = 'default'`;
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false }); }
+});
+
+async function getMicrosoftAccessToken() {
+  try {
+    const [token] = await sql`SELECT * FROM microsoft_tokens WHERE user_id = 'default' LIMIT 1`;
+    if(!token) return null;
+    if(token.expiry_date && Date.now() > token.expiry_date - 60000) {
+      if(!token.refresh_token) return null;
+      const tenantId = process.env.MICROSOFT_TENANT_ID || 'common';
+      const refreshRes = await fetch('https://login.microsoftonline.com/' + tenantId + '/oauth2/v2.0/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: process.env.MICROSOFT_CLIENT_ID,
+          client_secret: process.env.MICROSOFT_CLIENT_SECRET,
+          refresh_token: token.refresh_token,
+          grant_type: 'refresh_token',
+          scope: 'Mail.Read Mail.ReadWrite Mail.Send Calendars.Read Calendars.ReadWrite offline_access'
+        })
+      });
+      const newTokens = await refreshRes.json();
+      if(newTokens.access_token) {
+        const newExpiry = Date.now() + ((newTokens.expires_in || 3600) * 1000);
+        await sql`UPDATE microsoft_tokens SET access_token = ${newTokens.access_token}, expiry_date = ${newExpiry}, updated_at = NOW() WHERE user_id = 'default'`;
+        return newTokens.access_token;
+      }
+      return null;
+    }
+    return token.access_token;
+  } catch(e) { return null; }
+}
+
+app.get('/api/outlook/messages', async (req, res) => {
+  try {
+    const accessToken = await getMicrosoftAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Outlook not connected', messages: [] });
+    const folder = req.query.folder || 'inbox';
+    const search = req.query.search || '';
+    let url = 'https://graph.microsoft.com/v1.0/me/mailFolders/' + folder + '/messages?$top=25&$orderby=receivedDateTime desc&$select=id,subject,from,receivedDateTime,bodyPreview,isRead,flag,hasAttachments';
+    if(search) url = 'https://graph.microsoft.com/v1.0/me/messages?$search="' + search + '"&$top=25&$select=id,subject,from,receivedDateTime,bodyPreview,isRead';
+    const r = await fetch(url, { headers: { Authorization: 'Bearer ' + accessToken } });
+    const d = await r.json();
+    if(d.error) return res.json({ success: false, error: d.error.message, messages: [] });
+    const messages = (d.value || []).map(msg => ({
+      id: msg.id,
+      subject: msg.subject || '(no subject)',
+      from: msg.from?.emailAddress?.address || '',
+      fromName: msg.from?.emailAddress?.name || '',
+      date: msg.receivedDateTime,
+      snippet: msg.bodyPreview || '',
+      isUnread: !msg.isRead,
+      isStarred: msg.flag?.flagStatus === 'flagged',
+      hasAttachments: msg.hasAttachments
+    }));
+    res.json({ success: true, messages });
+  } catch(e) { res.status(500).json({ success: false, error: e.message, messages: [] }); }
+});
+
+app.get('/api/outlook/message/:id', async (req, res) => {
+  try {
+    const accessToken = await getMicrosoftAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Not connected' });
+    const r = await fetch('https://graph.microsoft.com/v1.0/me/messages/' + req.params.id + '?$select=id,subject,from,toRecipients,receivedDateTime,body,isRead', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    const msg = await r.json();
+    res.json({
+      success: true,
+      id: msg.id,
+      subject: msg.subject,
+      from: msg.from?.emailAddress?.address,
+      fromName: msg.from?.emailAddress?.name,
+      date: msg.receivedDateTime,
+      body: msg.body?.content || msg.bodyPreview || '',
+      bodyType: msg.body?.contentType || 'text',
+      isUnread: !msg.isRead
+    });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/outlook/send', async (req, res) => {
+  try {
+    const { to, subject, body } = req.body;
+    const accessToken = await getMicrosoftAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Not connected' });
+    const message = {
+      subject,
+      body: { contentType: 'Text', content: body },
+      toRecipients: [{ emailAddress: { address: to } }]
+    };
+    const r = await fetch('https://graph.microsoft.com/v1.0/me/sendMail', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, saveToSentItems: true })
+    });
+    if(r.status === 202) res.json({ success: true });
+    else { const d = await r.json(); res.json({ success: false, error: d.error?.message || 'Send failed' }); }
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/outlook/archive', async (req, res) => {
+  try {
+    const { messageId } = req.body;
+    const accessToken = await getMicrosoftAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Not connected' });
+    await fetch('https://graph.microsoft.com/v1.0/me/messages/' + messageId + '/move', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ destinationId: 'archive' })
+    });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/outlook/trash', async (req, res) => {
+  try {
+    const { messageId } = req.body;
+    const accessToken = await getMicrosoftAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Not connected' });
+    await fetch('https://graph.microsoft.com/v1.0/me/messages/' + messageId + '/move', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ destinationId: 'deleteditems' })
+    });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/outlook/markread', async (req, res) => {
+  try {
+    const { messageId, unread } = req.body;
+    const accessToken = await getMicrosoftAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Not connected' });
+    await fetch('https://graph.microsoft.com/v1.0/me/messages/' + messageId, {
+      method: 'PATCH',
+      headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isRead: !unread })
+    });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/outlook/star', async (req, res) => {
+  try {
+    const { messageId, starred } = req.body;
+    const accessToken = await getMicrosoftAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Not connected' });
+    await fetch('https://graph.microsoft.com/v1.0/me/messages/' + messageId, {
+      method: 'PATCH',
+      headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ flag: { flagStatus: starred ? 'flagged' : 'notFlagged' } })
+    });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/outlook/calendar', async (req, res) => {
+  try {
+    const accessToken = await getMicrosoftAccessToken();
+    if(!accessToken) return res.json({ success: false, error: 'Not connected', events: [] });
+    const now = new Date().toISOString();
+    const future = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const r = await fetch('https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=' + now + '&endDateTime=' + future + '&$top=20&$orderby=start/dateTime&$select=id,subject,start,end,location,bodyPreview', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    const d = await r.json();
+    const events = (d.value || []).map(e => ({
+      id: e.id,
+      summary: e.subject || '(no title)',
+      start: e.start?.dateTime,
+      end: e.end?.dateTime,
+      location: e.location?.displayName || '',
+      description: e.bodyPreview || ''
+    }));
+    res.json({ success: true, events });
+  } catch(e) { res.status(500).json({ success: false, error: e.message, events: [] }); }
+});
+
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });
 });
