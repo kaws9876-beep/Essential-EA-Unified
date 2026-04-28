@@ -1658,13 +1658,16 @@ app.post('/api/audit-insights', async (req, res) => {
 });
 app.post('/api/ea-draft', async (req, res) => {
   try {
-    const { type, task, action } = req.body;
+    const { type, task, action, prompt: customPrompt } = req.body;
+    // Map action names to types
+    const actionTypeMap = {'draft-email':'email','schedule':'schedule','task-list':'task','generate-doc':'document'};
+    const resolvedType = type || actionTypeMap[action] || 'email';
     if(!task) return res.status(400).json({ error: 'Task required', success: false });
 
     let prompt = '';
     let label = '';
 
-    if(type === 'email') {
+    if(resolvedType === 'email') {
       label = 'Email Draft';
       prompt = 'You are a highly competent executive assistant using the Essential EA methodology by Kristina Spencer. ' +
         'Draft a professional, neutral email on behalf of the executive for this task: ' + task + '. ' +
@@ -1673,7 +1676,7 @@ app.post('/api/ea-draft', async (req, res) => {
         'Tone: professional but warm. Concise. No fluff. ' +
         'Format: SUBJECT: [subject line] then blank line then the email body. ' +
         'Sign off with [Executive Name] as the signature placeholder.';
-    } else if(type === 'document') {
+    } else if(resolvedType === 'document') {
       label = 'Generated Document';
       prompt = 'You are a highly competent executive assistant using the Essential EA methodology by Kristina Spencer. ' +
         'Generate a professional document for this task: ' + task + '. ' +
@@ -1682,7 +1685,7 @@ app.post('/api/ea-draft', async (req, res) => {
         'Include all relevant sections a professional would expect. ' +
         'Use [PLACEHOLDER] for any specific details that need to be filled in. ' +
         'Be thorough but concise. Professional tone throughout.';
-    } else if(type === 'schedule') {
+    } else if(resolvedType === 'schedule') {
       label = 'Schedule Suggestion';
       prompt = 'You are a highly competent executive assistant using the Essential EA methodology by Kristina Spencer. ' +
         'This is a Bouncy Ball task that should be delegated or handled efficiently: ' + task + '. ' +
