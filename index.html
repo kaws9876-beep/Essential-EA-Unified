@@ -423,7 +423,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
     <div class="tb-tw"><div class="tb-title" id="tbt">Good morning, <em>Kristina.</em></div></div>
     <div class="tb-date" id="tbd"></div>
     <div class="tb-acts">
-      <button class="tbtn tbtn-g" onclick="nav('week',null)">Weekly Report</button>
+      <button class="tbtn tbtn-g" onclick="nav('priorityweek',null)">Weekly Report</button>
       <button class="tbtn tbtn-p" onclick="nav('triage',null)">+ Add Task</button>
     </div>
   </div>
@@ -1009,8 +1009,8 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
       <div class="pg-h2">Operations</div>
       <div class="pg-s2">Your business infrastructure - coming online as the platform builds.</div>
       <div class="ops-grid">
-        <div class="ops-card"><div class="ops-icon">&#128101;</div><div class="ops-title">Team and Pipeline</div><div class="ops-desc">Manage team members, roles, and deal pipeline.</div></div>
-        <div class="ops-card"><div class="ops-icon">&#128176;</div><div class="ops-title">Financial Tracking</div><div class="ops-desc">GCI goals, commission tracking, stewardship cadence.</div></div>
+        <div class="ops-card" onclick="nav('crm',null)"><div class="ops-icon">&#128101;</div><div class="ops-title">Team and Pipeline</div><div class="ops-desc">Manage team members, roles, and deal pipeline.</div></div>
+        <div class="ops-card" onclick="nav('finance',null)"><div class="ops-icon">&#128176;</div><div class="ops-title">Financial Tracking</div><div class="ops-desc">GCI goals, commission tracking, stewardship cadence.</div></div>
         <div class="ops-card"><div class="ops-icon">&#128227;</div><div class="ops-title">Marketing Content</div><div class="ops-desc">AI-generated content from your brand guide.</div></div>
         <div class="ops-card"><div class="ops-icon">&#127873;</div><div class="ops-title">Gifting and Database</div><div class="ops-desc">Sphere touchpoints, closing gifts, relationship cadence.</div></div>
       </div>
@@ -1252,6 +1252,9 @@ function openSB(){ $('sidebar').classList.add('open'); $('overlay').classList.ad
 function closeSB(){ $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); }
 const titles = { dashboard:'Good morning, <em>Kristina.</em>', brief:'EA Daily Brief', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', history:'Task History', audit:'Operational Efficiency Audit', docreader:'Document Reader', eatasklist:'EA Task List', meetings:'Meeting Recordings', crm:'CRM - Go High Level', finance:'Financial Tracking', finance:'Financial Tracking', pricing:'Choose Your Plan', profile:'Your EA Profile', week:'Priority Week Generator', settings:'Settings' };
 function nav(name, el) {
+  // Handle aliases
+  if(name === 'week') name = 'priorityweek';
+  if(name === 'financials' || name === 'financial') name = 'finance';
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
   const sc = $('screen-' + name);
