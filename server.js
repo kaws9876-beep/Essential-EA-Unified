@@ -57,6 +57,16 @@ let pineconeIndex = null;
 
 const RAILWAY = 'https://essential-ea-app-production.up.railway.app';
 const VERCEL = 'https://essential-ea-unified.vercel.app';
+
+function safeParseAI(text) {
+  if(!text) return null;
+  let t = text.trim();
+  if(t.startsWith('`')) {
+    t = t.replace(/^`{3}[a-z]*\n?/, '').replace(/\n?`{3}$/, '').trim();
+  }
+  try { return JSON.parse(t); } catch(e) { return null; }
+}
+
 const METHODOLOGY_CONTEXT = 'You are the Essential EA AI - an operational intelligence platform built on the methodology from The Essential EA by Kristina Spencer. You serve real estate agents, financial advisors, insurance agents, coaches, consultants, and executives. Your tone is professional but conversational. You speak as a trusted EA advisor who protects the executive time fiercely. Crystal Ball tasks are irreplaceable activities only the executive can do - if dropped they shatter permanently. Bouncy Ball tasks can and should be delegated - they bounce back. CEO Protection Protocol means the executive prime hours are sacred. Priority Week Framework means Crystal Ball tasks go in peak hours 9am to 12pm and Bouncy Balls never touch those hours.';
 if(process.env.PINECONE_API_KEY && process.env.PINECONE_INDEX) {
   const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
@@ -1352,6 +1362,10 @@ app.post('/api/classify', async (req, res) => {
 
     let content = response.content[0].text.trim();
     content = content.trim();
+    // Strip markdown code blocks if present
+    if(content.startsWith('```')) {
+      content = content.replace(/^```[a-z]*\n?/,'').replace(/\n?```$/,'').trim();
+    }
     const result = JSON.parse(content);
 
     await sql`INSERT INTO tasks (description, classification, urgency, reason, recommended_action, confidence) VALUES (${taskDescription}, ${result.classification}, ${result.urgency}, ${result.reason}, ${result.recommendedAction}, ${result.confidence})`;
@@ -1386,8 +1400,7 @@ app.post('/api/generate-week', async (req, res) => {
 
     let planData = null;
     try {
-      const jsonMatch = plan.match(/\{[\s\S]*\}/);
-      if(jsonMatch) planData = JSON.parse(jsonMatch[0]);
+      planData = safeParseAI(plan);
     } catch(e) { planData = null; }
     res.json({ success: true, plan, planData });
   } catch (error) {
@@ -2248,8 +2261,7 @@ app.post('/api/calendar/suggest', async (req, res) => {
     });
     const text = response.content[0].text;
     try {
-      const match = text.match(/\{[\s\S]*\}/);
-      const data = match ? JSON.parse(match[0]) : { shouldAdd: false };
+      const data = safeParseAI(text) || { shouldAdd: false };
       res.json({ success: true, suggestion: data });
     } catch(e) { res.json({ success: true, suggestion: { shouldAdd: false } }); }
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
@@ -2321,9 +2333,8 @@ app.post('/api/ea-run-inbox', async (req, res) => {
         const text = response.content[0].text.trim();
         let decision;
         try {
-          const jsonMatch = text.match(/\{[\s\S]*\}/);
-          if(!jsonMatch) { throw new Error('No JSON in response'); }
-          decision = JSON.parse(jsonMatch[0]);
+          decision = safeParseAI(text);
+          if(!decision) { throw new Error('No JSON in response'); }
           if(!decision.action) throw new Error('No action in decision');
         } catch(parseErr) {
           console.error('Parse error for msg', msg.id, ':', parseErr.message, 'Text:', text.substring(0,100));
