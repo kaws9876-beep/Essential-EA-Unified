@@ -3219,22 +3219,15 @@ app.get('/api/ghl/status', async (req, res) => {
   try {
     if(!process.env.GHL_API_KEY) return res.json({ connected: false });
     // Test connection by fetching location info
-    const data = await ghlRequest('/locations/' + process.env.GHL_LOCATION_ID);
-    console.log('GHL status response:', JSON.stringify(data).substring(0, 200));
-    if(data.id || data.name || data.location) {
-      const loc = data.location || data;
-      res.json({ connected: true, name: loc.name || 'Go High Level', id: loc.id || process.env.GHL_LOCATION_ID });
-    } else if(data.statusCode === 401 || data.message?.includes('Unauthorized')) {
-      res.json({ connected: false, error: 'Invalid API key' });
+    // Use contacts endpoint to verify connection - locations requires extra scope
+    const contacts = await ghlRequest('/contacts/?locationId=' + process.env.GHL_LOCATION_ID + '&limit=1');
+    console.log('GHL status check:', JSON.stringify(contacts).substring(0, 150));
+    if(contacts.contacts !== undefined || Array.isArray(contacts.contacts)) {
+      res.json({ connected: true, name: 'Be. Coaching - Go High Level', id: process.env.GHL_LOCATION_ID });
+    } else if(contacts.statusCode === 401) {
+      res.json({ connected: false, error: 'Token not authorized - check scopes in GHL' });
     } else {
-      // Try contacts endpoint as fallback test
-      const contacts = await ghlRequest('/contacts/?locationId=' + process.env.GHL_LOCATION_ID + '&limit=1');
-      console.log('GHL contacts test:', JSON.stringify(contacts).substring(0, 100));
-      if(contacts.contacts !== undefined) {
-        res.json({ connected: true, name: 'Be. Coaching - Go High Level', id: process.env.GHL_LOCATION_ID });
-      } else {
-        res.json({ connected: false, error: JSON.stringify(data).substring(0, 100) });
-      }
+      res.json({ connected: false, error: contacts.message || JSON.stringify(contacts).substring(0, 100) });
     }
   } catch(e) {
     res.json({ connected: false, error: e.message });
