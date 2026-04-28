@@ -1046,6 +1046,79 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
       </div>
     </div>
 
+    <div class="screen" id="screen-finance">
+      <div class="pg-h">Financial Tracking</div>
+      <div class="pg-s">Your QuickBooks data - unpaid invoices, expenses, and P&amp;L at a glance.</div>
+
+      <!-- Connect Banner -->
+      <div id="qb-connect-banner" style="padding:14px 20px;background:rgba(45,106,53,0.06);border:1px solid rgba(45,106,53,0.2);border-radius:8px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#2D6A35;margin-bottom:2px">Connect QuickBooks</div>
+          <div style="font-size:12px;color:var(--mid)">See your invoices, expenses and cash flow in The Essential EA</div>
+        </div>
+        <button onclick="connectQuickBooks()" style="font-size:11px;font-weight:700;padding:8px 18px;border-radius:4px;border:none;cursor:pointer;background:#2D6A35;color:white;white-space:nowrap">Connect QuickBooks</button>
+      </div>
+
+      <!-- Connected Banner -->
+      <div id="qb-connected-banner" style="display:none;padding:10px 20px;background:rgba(45,106,53,0.06);border:1px solid rgba(45,106,53,0.15);border-radius:8px;margin-bottom:20px;align-items:center;justify-content:space-between">
+        <div style="font-size:12px;color:var(--mid)">&#9989; <strong style="color:#2D6A35">QuickBooks Connected</strong></div>
+        <div style="display:flex;gap:8px">
+          <button onclick="loadQBSummary()" style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:3px;border:1px solid rgba(45,106,53,0.4);cursor:pointer;background:transparent;color:#2D6A35">Refresh</button>
+          <button onclick="disconnectQB()" style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:3px;border:1px solid rgba(138,56,48,0.3);cursor:pointer;background:transparent;color:#8A3A30">Disconnect</button>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div id="qb-summary" style="display:none">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+          <div class="kpi" style="border-top:2px solid #8A3A30">
+            <div class="kv" id="qb-unpaid-count" style="color:#8A3A30">-</div>
+            <div class="kl">Unpaid Invoices</div>
+            <div class="kd" style="color:#8A3A30" id="qb-unpaid-total"></div>
+          </div>
+          <div class="kpi" style="border-top:2px solid #2D6A35">
+            <div class="kv" id="qb-expense-count" style="color:#2D6A35">-</div>
+            <div class="kl">Recent Expenses</div>
+            <div class="kd" id="qb-expense-total"></div>
+          </div>
+          <div class="kpi" style="border-top:2px solid #C49A8A">
+            <div class="kv" id="qb-revenue" style="color:#C49A8A">-</div>
+            <div class="kl">YTD Revenue</div>
+            <div class="kd">This year</div>
+          </div>
+          <div class="kpi">
+            <div class="kv" id="qb-health">-</div>
+            <div class="kl">Financial Health</div>
+            <div class="kd" id="qb-health-label"></div>
+          </div>
+        </div>
+
+        <!-- Unpaid Invoices -->
+        <div class="panel" style="padding:20px;margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A3A30">&#128274; Unpaid Invoices - Crystal Ball</div>
+            <button onclick="loadQBInvoices()" style="font-size:10px;padding:4px 10px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">View All</button>
+          </div>
+          <div id="qb-invoices-list">
+            <div style="font-size:12px;color:var(--mid)">Loading...</div>
+          </div>
+        </div>
+
+        <!-- Recent Expenses -->
+        <div class="panel" style="padding:20px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid);margin-bottom:12px">Recent Expenses</div>
+          <div id="qb-expenses-list">
+            <div style="font-size:12px;color:var(--mid)">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="qb-placeholder" style="padding:40px;text-align:center;color:var(--mid)">
+        <div style="font-size:48px;margin-bottom:12px;opacity:0.3">&#128200;</div>
+        <div style="font-size:13px">Connect QuickBooks above to see your financial data here</div>
+      </div>
+    </div>
+
     <div class="screen" id="screen-settings">
       <div class="pg-h2">Settings</div>
       <div class="pg-s2">Manage your account, preferences, and integrations.</div>
@@ -1088,7 +1161,7 @@ const months = ['January','February','March','April','May','June','July','August
 $('tbd').textContent = days[today.getDay()] + ', ' + months[today.getMonth()] + ' ' + today.getDate() + ', ' + today.getFullYear();
 function openSB(){ $('sidebar').classList.add('open'); $('overlay').classList.add('open'); }
 function closeSB(){ $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); }
-const titles = { dashboard:'Good morning, <em>Kristina.</em>', brief:'EA Daily Brief', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', history:'Task History', audit:'Operational Efficiency Audit', docreader:'Document Reader', eatasklist:'EA Task List', meetings:'Meeting Recordings', crm:'CRM - Go High Level', pricing:'Choose Your Plan', profile:'Your EA Profile', week:'Priority Week Generator', settings:'Settings' };
+const titles = { dashboard:'Good morning, <em>Kristina.</em>', brief:'EA Daily Brief', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', history:'Task History', audit:'Operational Efficiency Audit', docreader:'Document Reader', eatasklist:'EA Task List', meetings:'Meeting Recordings', crm:'CRM - Go High Level', finance:'Financial Tracking', pricing:'Choose Your Plan', profile:'Your EA Profile', week:'Priority Week Generator', settings:'Settings' };
 function nav(name, el) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
@@ -1107,6 +1180,7 @@ function nav(name, el) {
   if(name === 'settings') checkSubscriptionStatus();
   if(name === 'meetings') loadMeetingsList();
   if(name === 'crm') checkGHLStatus();
+  if(name === 'finance') checkQBStatus();
 }
 async function loadAudit() {
   const el = document.getElementById('audit-content');
@@ -3235,6 +3309,102 @@ function toggleGHLSync(checkbox) {
   _ghlAutoSync = checkbox.checked;
   localStorage.setItem('ghlAutoSync', _ghlAutoSync);
 }
+
+
+function connectQuickBooks() {
+  window.location.href = 'https://essential-ea-app-production.up.railway.app/auth/quickbooks';
+}
+
+async function disconnectQB() {
+  await fetch('https://essential-ea-app-production.up.railway.app/api/quickbooks/disconnect');
+  document.getElementById('qb-connect-banner').style.display = 'flex';
+  document.getElementById('qb-connected-banner').style.display = 'none';
+  document.getElementById('qb-summary').style.display = 'none';
+  document.getElementById('qb-placeholder').style.display = 'block';
+}
+
+async function checkQBStatus() {
+  try {
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/quickbooks/status');
+    var d = await r.json();
+    if(d.connected) {
+      document.getElementById('qb-connect-banner').style.display = 'none';
+      document.getElementById('qb-connected-banner').style.display = 'flex';
+      document.getElementById('qb-placeholder').style.display = 'none';
+      loadQBSummary();
+    }
+  } catch(e) {}
+}
+
+async function loadQBSummary() {
+  document.getElementById('qb-summary').style.display = 'block';
+  try {
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/quickbooks/summary');
+    var d = await r.json();
+    if(d.success) {
+      var s = d.summary;
+      var unpaidCount = document.getElementById('qb-unpaid-count');
+      var unpaidTotal = document.getElementById('qb-unpaid-total');
+      var expCount = document.getElementById('qb-expense-count');
+      var expTotal = document.getElementById('qb-expense-total');
+      var health = document.getElementById('qb-health');
+      var healthLabel = document.getElementById('qb-health-label');
+      if(unpaidCount) unpaidCount.textContent = s.unpaidInvoices;
+      if(unpaidTotal) unpaidTotal.textContent = '$' + parseFloat(s.unpaidTotal).toLocaleString();
+      if(expCount) expCount.textContent = s.recentExpenses;
+      if(expTotal) expTotal.textContent = '$' + parseFloat(s.expenseTotal).toLocaleString();
+      var healthScore = s.unpaidInvoices > 5 ? 'At Risk' : s.unpaidInvoices > 2 ? 'Watch' : 'Healthy';
+      if(health) health.textContent = healthScore;
+      if(healthLabel) healthLabel.textContent = s.unpaidInvoices + ' invoices pending';
+      // Show top unpaid
+      var invList = document.getElementById('qb-invoices-list');
+      if(invList && s.topUnpaid && s.topUnpaid.length) {
+        invList.innerHTML = s.topUnpaid.map(function(inv) {
+          var overdue = inv.due && new Date(inv.due) < new Date();
+          return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--tan)">' +
+            '<div><div style="font-size:13px;font-weight:600">' + inv.customer + '</div>' +
+            '<div style="font-size:11px;color:' + (overdue ? '#8A3A30' : 'var(--mid)') + '">Due: ' + (inv.due || 'N/A') + (overdue ? ' - OVERDUE' : '') + '</div></div>' +
+            '<div style="font-size:16px;font-weight:700;color:#8A3A30">$' + parseFloat(inv.amount).toLocaleString() + '</div>' +
+            '</div>';
+        }).join('');
+      } else if(invList) {
+        invList.innerHTML = '<div style="font-size:12px;color:#2D6A35">&#9989; No outstanding invoices</div>';
+      }
+    }
+  } catch(e) {
+    console.log('QB summary error:', e.message);
+  }
+}
+
+async function loadQBInvoices() {
+  try {
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/quickbooks/invoices');
+    var d = await r.json();
+    var list = document.getElementById('qb-invoices-list');
+    if(d.success && d.invoices.length && list) {
+      list.innerHTML = d.invoices.map(function(inv) {
+        var overdue = inv.DueDate && new Date(inv.DueDate) < new Date();
+        return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--tan)">' +
+          '<div><div style="font-size:13px;font-weight:600">' + (inv.CustomerRef?.name || 'Unknown') + '</div>' +
+          '<div style="font-size:11px;color:' + (overdue ? '#8A3A30' : 'var(--mid)') + '">Due: ' + (inv.DueDate || 'N/A') + (overdue ? ' OVERDUE' : '') + '</div></div>' +
+          '<div style="font-size:16px;font-weight:700;color:#8A3A30">$' + parseFloat(inv.Balance).toLocaleString() + '</div>' +
+          '</div>';
+      }).join('');
+    }
+  } catch(e) {}
+}
+
+// Handle QuickBooks redirect
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  if(params.get('qb_connected')) {
+    history.replaceState({}, '', '/');
+    setTimeout(function() {
+      nav('finance', null);
+      checkQBStatus();
+    }, 500);
+  }
+})();
 
 loadStats();
 setTimeout(loadStats, 1000);
