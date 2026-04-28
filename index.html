@@ -3202,6 +3202,19 @@ if(document.readyState === 'loading') {
   setTimeout(initClerk, 500);
 }
 
+// Fallback: hide clerk overlay after 4 seconds regardless
+setTimeout(function() {
+  var overlay = document.getElementById('clerk-auth-overlay');
+  if(overlay && overlay.style.display !== 'none') {
+    console.log('Clerk fallback - hiding overlay');
+    overlay.style.display = 'none';
+    loadStats();
+    loadProfile();
+    checkGoogleStatus();
+    checkSubscriptionStatus();
+  }
+}, 4000);
+
 
 async function startCheckout(plan) {
   var errEl = document.getElementById('checkout-error');
