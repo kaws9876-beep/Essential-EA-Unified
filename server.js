@@ -1636,8 +1636,19 @@ app.post('/api/audit-insights', async (req, res) => {
     });
 
     let auditText = response.content[0].text.trim();
+    console.log('Audit raw response:', auditText.substring(0, 300));
+    // Strip any markdown
+    if(auditText.includes('```')) {
+      auditText = auditText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    }
+    // Find JSON object in response
+    const jsonMatch = auditText.match(/\{[\s\S]*\}/);
+    if(jsonMatch) auditText = jsonMatch[0];
     const audit = safeParseAI(auditText);
-    if(!audit) return res.status(500).json({ success: false, error: 'Failed to parse audit response' });
+    if(!audit) {
+      console.error('Audit parse failed. Raw:', auditText.substring(0, 200));
+      return res.status(500).json({ success: false, error: 'Failed to parse audit response', raw: auditText.substring(0, 200) });
+    }
 
     res.json({ success: true, audit, stats: { total, crystal, bouncy, delegationRate } });
   } catch(e) {
