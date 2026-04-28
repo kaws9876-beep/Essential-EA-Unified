@@ -3047,8 +3047,7 @@ app.post('/api/stripe/create-checkout', async (req, res) => {
         'success_url': VERCEL + '/?subscription=success&plan=' + (plan||''),
         'cancel_url': VERCEL + '/?subscription=cancelled',
         'allow_promotion_codes': 'true',
-        'billing_address_collection': 'auto',
-        'customer_creation': 'always'
+        'billing_address_collection': 'auto'
       })
     });
 
