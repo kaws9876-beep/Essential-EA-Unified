@@ -420,6 +420,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
     <div class="sb-sec">Settings</div>
     <div class="sb-item" onclick="nav('profile',this)"><span class="sb-icon">&#9881;</span>Preferences</div>
     <div class="sb-item" onclick="nav('profile',this)"><span class="sb-icon">&#9711;</span>Account</div>
+    <div class="sb-item" onclick="nav('pricing',this)"><span class="sb-icon">&#128176;</span>Upgrade Plan</div>
   </nav>
   <div class="sb-status"><div class="sdot"></div><span class="slbl">EA AI - <strong>Active</strong></span></div>
 </aside>
@@ -931,7 +932,64 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
 
     
 
-<div class="screen" id="screen-settings">
+<div class="screen" id="screen-pricing">
+      <div class="pg-h">Choose Your Plan</div>
+      <div class="pg-s">Start your Essential EA subscription. Cancel anytime.</div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:900px;margin-top:8px">
+
+        <!-- Founding Member -->
+        <div style="background:linear-gradient(135deg,rgba(196,154,138,0.15),rgba(196,154,138,0.05));border:2px solid #C49A8A;border-radius:12px;padding:28px;position:relative">
+          <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#C49A8A;color:#1A1A18;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:4px 12px;border-radius:20px;white-space:nowrap">Most Popular</div>
+          <div style="font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#C49A8A;margin-bottom:8px">Founding Member</div>
+          <div style="font-size:40px;font-weight:300;font-family:Cormorant Garamond,serif;color:#1A1A18;margin-bottom:4px">$67<span style="font-size:16px;font-weight:400">/mo</span></div>
+          <div style="font-size:11px;color:var(--mid);margin-bottom:20px">Locked for life - never increases</div>
+          <div style="margin-bottom:20px">
+            <div style="font-size:12px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05)">&#10003; All EA features</div>
+            <div style="font-size:12px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05)">&#10003; Gmail + Outlook</div>
+            <div style="font-size:12px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05)">&#10003; Meeting recordings</div>
+            <div style="font-size:12px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05)">&#10003; Crystal Ball AI</div>
+            <div style="font-size:12px;padding:5px 0">&#10003; Priority support</div>
+          </div>
+          <button onclick="startCheckout('founding')" style="width:100%;padding:12px;border-radius:6px;border:none;cursor:pointer;background:#C49A8A;color:#1A1A18;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase">Get Started</button>
+        </div>
+
+        <!-- Solo -->
+        <div style="background:white;border:1px solid var(--tan);border-radius:12px;padding:28px">
+          <div style="font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);margin-bottom:8px">Solo</div>
+          <div style="font-size:40px;font-weight:300;font-family:Cormorant Garamond,serif;color:#1A1A18;margin-bottom:4px">$79<span style="font-size:16px;font-weight:400">/mo</span></div>
+          <div style="font-size:11px;color:var(--mid);margin-bottom:20px">For individual executives</div>
+          <div style="margin-bottom:20px">
+            <div style="font-size:12px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05)">&#10003; All EA features</div>
+            <div style="font-size:12px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05)">&#10003; Gmail + Outlook</div>
+            <div style="font-size:12px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05)">&#10003; Meeting recordings</div>
+            <div style="font-size:12px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05)">&#10003; Crystal Ball AI</div>
+            <div style="font-size:12px;padding:5px 0">&#10003; Email support</div>
+          </div>
+          <button onclick="startCheckout('solo')" style="width:100%;padding:12px;border-radius:6px;border:1px solid #C49A8A;cursor:pointer;background:transparent;color:#C49A8A;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase">Get Started</button>
+        </div>
+
+        <!-- Blueprint -->
+        <div style="background:white;border:1px solid var(--tan);border-radius:12px;padding:28px">
+          <div style="font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);margin-bottom:8px">Blueprint</div>
+          <div style="font-size:40px;font-weight:300;font-family:Cormorant Garamond,serif;color:#1A1A18;margin-bottom:4px">$167<span style="font-size:16px;font-weight:400">/mo</span></div>
+          <div style="font-size:11px;color:var(--mid);margin-bottom:20px">For teams up to 5</div>
+          <div style="margin-bottom:20px">
+            <div style="font-size:12px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05)">&#10003; Everything in Solo</div>
+            <div style="font-size:12px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05)">&#10003; Up to 5 team members</div>
+            <div style="font-size:12px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05)">&#10003; Team inbox management</div>
+            <div style="font-size:12px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05)">&#10003; Priority support</div>
+            <div style="font-size:12px;padding:5px 0">&#10003; Onboarding call</div>
+          </div>
+          <button onclick="startCheckout('blueprint')" style="width:100%;padding:12px;border-radius:6px;border:1px solid #C49A8A;cursor:pointer;background:transparent;color:#C49A8A;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase">Get Started</button>
+        </div>
+
+      </div>
+
+      <div id="checkout-error" style="display:none;margin-top:16px;padding:12px 16px;background:rgba(138,56,48,0.1);border:1px solid rgba(138,56,48,0.3);border-radius:6px;font-size:12px;color:#8A3A30"></div>
+    </div>
+
+    <div class="screen" id="screen-settings">
       <div class="pg-h2">Settings</div>
       <div class="pg-s2">Manage your account, preferences, and integrations.</div>
       <div class="s-grid">
@@ -973,7 +1031,7 @@ const months = ['January','February','March','April','May','June','July','August
 $('tbd').textContent = days[today.getDay()] + ', ' + months[today.getMonth()] + ' ' + today.getDate() + ', ' + today.getFullYear();
 function openSB(){ $('sidebar').classList.add('open'); $('overlay').classList.add('open'); }
 function closeSB(){ $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); }
-const titles = { dashboard:'Good morning, <em>Kristina.</em>', brief:'EA Daily Brief', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', history:'Task History', audit:'Operational Efficiency Audit', docreader:'Document Reader', eatasklist:'EA Task List', meetings:'Meeting Recordings', profile:'Your EA Profile', week:'Priority Week Generator', settings:'Settings' };
+const titles = { dashboard:'Good morning, <em>Kristina.</em>', brief:'EA Daily Brief', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', history:'Task History', audit:'Operational Efficiency Audit', docreader:'Document Reader', eatasklist:'EA Task List', meetings:'Meeting Recordings', pricing:'Choose Your Plan', profile:'Your EA Profile', week:'Priority Week Generator', settings:'Settings' };
 function nav(name, el) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
@@ -2952,6 +3010,56 @@ if(document.readyState === 'loading') {
 } else {
   setTimeout(initClerk, 500);
 }
+
+
+async function startCheckout(plan) {
+  var errEl = document.getElementById('checkout-error');
+  if(errEl) errEl.style.display = 'none';
+  
+    var prices = {
+    solo: 'price_1TR1bUAeuLhJQyhrb27jc5bf',
+    founding: 'price_1TR1dwAeuLhJQyhrp7J0sl3L',
+    blueprint: 'price_1TR1fLAeuLhJQyhrX21n8nxq'
+  };
+  
+  var priceId = prices[plan];
+  if(!priceId) { alert('Plan not found'); return; }
+  
+  var btn = event.target;
+  btn.textContent = 'Loading...';
+  btn.disabled = true;
+  
+  try {
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/stripe/create-checkout', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ priceId: priceId, plan: plan })
+    });
+    var d = await r.json();
+    if(d.success && d.url) {
+      window.location.href = d.url;
+    } else {
+      if(errEl) { errEl.textContent = 'Error: ' + (d.error || 'Checkout failed'); errEl.style.display = 'block'; }
+      btn.textContent = 'Get Started';
+      btn.disabled = false;
+    }
+  } catch(e) {
+    if(errEl) { errEl.textContent = 'Error: ' + e.message; errEl.style.display = 'block'; }
+    btn.textContent = 'Get Started';
+    btn.disabled = false;
+  }
+}
+
+// Handle successful subscription redirect
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  if(params.get('subscription') === 'success') {
+    history.replaceState({}, '', '/');
+    setTimeout(function() {
+      alert('Welcome to The Essential EA! Your subscription is active.');
+    }, 1000);
+  }
+})();
 
 loadStats();
 setTimeout(loadStats, 1000);
