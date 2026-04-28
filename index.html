@@ -10,12 +10,13 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;-webkit-text-size-adjust:100%}
 :root{--blk:#1A1A18;--gold:#C49A8A;--cream:#FAF8F4;--warm:#F5F0E8;--tan:#E8E0D4;--mid:#8A8070;--green:#2D6A35;--red:#8A3A30}
-body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--blk);font-size:14px}
+body{font-family:'Cormorant Garamond',Georgia,serif;background:var(--cream);color:var(--blk);font-size:15px;letter-spacing:.01em}
+input,select,textarea,button{font-family:'DM Sans',sans-serif}
 
 /* APP SHELL */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200}
 .shell{display:flex;height:100vh;overflow:hidden}
-.sidebar{width:240px;min-width:240px;background:var(--blk);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.sidebar{width:240px;min-width:240px;background:#1A1A18;display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;border-right:1px solid #2A2A28}
 .sb-top{padding:20px 16px 12px}
 .sb-logo{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--cream);letter-spacing:.05em}
 .sb-logo em{color:var(--gold);font-style:italic}
@@ -46,7 +47,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--blk);f
 .screen-wrap{padding:24px;flex:1}
 .screen{display:none}
 .screen.active{display:block}
-.pg-h{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;margin-bottom:6px}
+.pg-h{font-family:'Cormorant Garamond',Georgia,serif;font-size:36px;font-weight:300;margin-bottom:8px;letter-spacing:.02em}
 .pg-h2{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;margin-bottom:6px}
 .pg-s,.pg-s2{font-size:13px;color:var(--mid);margin-bottom:20px}
 
@@ -253,10 +254,17 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
 <!-- DAILY BRIEF SCREEN -->
 <div class="screen" id="screen-brief">
   <div class="pg-h2">EA Daily Brief</div>
-  <div class="pg-s2">Your AI-powered morning brief built from your goals, calendar, and priorities.</div>
-  <button class="btn-primary" onclick="generateBrief()" id="brief-btn">Generate My EA Daily Brief</button>
+  <div class="pg-s2">Your AI-powered morning brief. Add context to make it more personalized.</div>
+  <div class="panel" style="padding:20px;max-width:600px;margin-bottom:20px">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Brief Context (Optional)</div>
+    <label style="font-size:11px;font-weight:600;color:var(--mid);display:block;margin-bottom:6px">Top Priorities Today</label>
+    <textarea id="brief-priorities" rows="2" placeholder="e.g. Close the Henderson deal, prepare for 2pm team call..." style="width:100%;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-size:13px;outline:none;resize:vertical;margin-bottom:12px;font-family:DM Sans,sans-serif"></textarea>
+    <label style="font-size:11px;font-weight:600;color:var(--mid);display:block;margin-bottom:6px">What is on your mind?</label>
+    <textarea id="brief-context" rows="2" placeholder="e.g. Worried about the Q2 numbers, need to follow up on 3 proposals..." style="width:100%;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-size:13px;outline:none;resize:vertical;margin-bottom:14px;font-family:DM Sans,sans-serif"></textarea>
+    <button class="btn-primary" onclick="generateBrief()" id="brief-btn">Generate My EA Daily Brief</button>
+  </div>
   <div id="brief-loading" style="display:none;padding:40px;text-align:center"><div class="spinner" style="margin:0 auto 12px"></div><div style="font-size:13px;color:var(--mid)">Your EA is preparing your brief...</div></div>
-  <div id="brief-result" style="margin-top:20px"></div>
+  <div id="brief-result" style="margin-top:4px"></div>
 </div>
 
 <!-- PRIORITY WEEK SCREEN -->
@@ -786,14 +794,19 @@ async function runClassify() {
       var c = d.classification;
       var isCrystal = c.classification === 'crystal';
       res.style.display = 'block';
+      var bookHtml = c.bookInsight ? '<div style="padding:10px 14px;background:rgba(196,154,138,.08);border-left:2px solid var(--gold);border-radius:0 4px 4px 0;margin-top:12px;font-size:12px;color:var(--mid);font-style:italic;line-height:1.6">&#128218; '+c.bookInsight+'</div>' : '';
       res.innerHTML = '<div class="panel '+(isCrystal?'result-crystal':'result-bouncy')+'" style="padding:20px;animation:fadeUp .3s ease">' +
-        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">' +
-        '<span style="font-size:28px">'+(isCrystal?'&#128302;':'&#127934;')+'</span>' +
-        '<div><div style="font-size:14px;font-weight:600">'+(isCrystal?'Crystal Ball':'Bouncy Ball')+'</div>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">' +
+        '<div style="display:flex;align-items:center;gap:10px">' +
+        '<span style="font-size:32px">'+(isCrystal?'&#128302;':'&#127934;')+'</span>' +
+        '<div><div style="font-family:Cormorant Garamond,serif;font-size:20px;font-weight:400">'+(isCrystal?'Crystal Ball - Executive Only':'Bouncy Ball - Delegate to EA')+'</div>' +
         '<span class="'+(isCrystal?'crystal-tag':'bouncy-tag')+'">'+c.urgency+'</span></div></div>' +
-        '<div style="font-size:13px;color:var(--mid);margin-bottom:8px">'+c.reason+'</div>' +
-        '<div style="font-size:12px;font-weight:600;color:var(--blk)">Recommended: '+c.recommendedAction+'</div>' +
-        (c.bookInsight ? '<div style="font-size:11px;color:var(--gold);margin-top:8px;font-style:italic">'+c.bookInsight+'</div>' : '') +
+        '<button onclick="playVoice(this)" data-text="'+(isCrystal?'Crystal Ball. ':'Bouncy Ball. ')+c.reason.substring(0,200)+'" style="font-size:11px;padding:6px 12px;border:1px solid var(--tan);border-radius:3px;cursor:pointer;background:transparent;color:var(--mid)">&#9654; Listen</button>' +
+        '</div>' +
+        '<div style="font-size:14px;line-height:1.7;margin-bottom:10px">'+c.reason+'</div>' +
+        '<div style="font-size:13px;font-weight:600;color:var(--blk);padding:10px 14px;background:var(--warm);border-radius:4px">Recommended Action: '+c.recommendedAction+'</div>' +
+        bookHtml +
+        (c.confidence ? '<div style="font-size:11px;color:var(--mid);margin-top:10px">Confidence: '+c.confidence+'%</div>' : '') +
         '</div>';
       loadStats();
       if(!isCrystal) loadEATasks();
@@ -838,13 +851,19 @@ async function generateBrief() {
   var btn = $('brief-btn'), loading = $('brief-loading'), result = $('brief-result');
   btn.style.display = 'none'; loading.style.display = 'block'; result.innerHTML = '';
   try {
-    var r = await fetch(RAILWAY + '/api/daily-brief', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+    var priorities = $('brief-priorities') ? $('brief-priorities').value : '';
+    var context = $('brief-context') ? $('brief-context').value : '';
+    var r = await fetch(RAILWAY + '/api/daily-brief', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({priorities:priorities,context:context})});
     var d = await r.json();
     if(d.success) {
       var b = d.brief;
-      result.innerHTML = '<div class="panel" style="padding:20px;margin-top:16px">' +
-        '<div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:12px">Your EA Daily Brief</div>' +
-        '<div style="font-size:14px;line-height:1.8">' + (d.briefText || JSON.stringify(b)) + '</div>' +
+      window._briefContent = d.briefText || (b ? (b.greeting||'')+' '+(b.priorities||'')+' '+(b.insight||'') : ''); var briefContent = window._briefContent || (b ? (b.greeting||'') + ' ' + (b.priorities||'') + ' ' + (b.insight||'') : JSON.stringify(b));
+      result.innerHTML = '<div class="panel" style="padding:24px;border-top:3px solid var(--gold)">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">' +
+        '<div style="font-family:Cormorant Garamond,serif;font-size:22px;font-weight:400">Your EA Daily Brief</div>' +
+        '<button id="brief-voice-btn" style="font-size:11px;padding:6px 14px;border:1px solid var(--tan);border-radius:3px;cursor:pointer;background:transparent;color:var(--mid)" onclick="playBriefVoice()">&#9654; Listen</button>' +
+        '</div>' +
+        '<div style="font-size:15px;line-height:1.9;font-family:Cormorant Garamond,serif">' + briefContent + '</div>' +
         '</div>';
     }
   } catch(e) {
@@ -1478,6 +1497,22 @@ async function readDocument(file) {
     setTimeout(function() { alert('Welcome to The Essential EA! Your subscription is active.'); }, 1000);
   }
 })();
+
+// VOICE PLAYBACK
+async function playVoice(elOrText) {
+  try {
+    var text = typeof elOrText === 'string' ? decodeURIComponent(elOrText) : (elOrText.getAttribute('data-text') || '');
+    var r = await fetch(RAILWAY + '/api/speak', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text.substring(0,300)})});
+    var blob = await r.blob();
+    var url = URL.createObjectURL(blob);
+    var audio = new Audio(url);
+    audio.play();
+  } catch(e) { console.log('Voice error:', e.message); }
+}
+
+async function playBriefVoice() {
+  if(window._briefContent) await playVoice(window._briefContent.substring(0,300));
+}
 
 // INIT
 loadStats();
