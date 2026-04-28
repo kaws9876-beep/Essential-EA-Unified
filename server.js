@@ -1604,63 +1604,29 @@ app.post('/api/audit-insights', async (req, res) => {
 
     const bookContext = await getBookContext('operational efficiency executive performance business intelligence audit');
 
-    const prompt = 'You are an elite executive advisor analyzing an executive operational performance. Provide a comprehensive business intelligence audit.
-
-' +
-      'EXECUTIVE PROFILE:
-' + profileContext + '
-
-' +
-      'EA USAGE DATA:
-' +
-      '- Total tasks classified: ' + total + '
-' +
-      '- Crystal Ball (executive only): ' + crystal + ' (' + (total > 0 ? Math.round(crystal/total*100) : 0) + '%)
-' +
-      '- Bouncy Ball (delegatable): ' + bouncy + ' (' + delegationRate + '%)
-' +
-      '- Delegation rate: ' + delegationRate + '%
-
-' +
-      'RECENT TASKS:
-' + taskSummary + '
-
-' +
-      financialContext + emailContext + crmContext + '
-
-' +
-      bookContext + '
-
-' +
-      'Return a JSON object with this exact structure:
-' +
-      '{
-' +
-      '  "overallScore": 85,
-' +
-      '  "scoreLabel": "High Performer",
-' +
-      '  "executiveSummary": "2-3 sentence overall assessment",
-' +
-      '  "strengths": ["strength 1", "strength 2", "strength 3"],
-' +
-      '  "criticalGaps": ["gap 1", "gap 2", "gap 3"],
-' +
-      '  "crystalBallInsights": ["key decision or risk only executive can handle 1", "insight 2"],
-' +
-      '  "financialAlerts": ["financial alert or opportunity 1", "alert 2"],
-' +
-      '  "weeklyFocus": ["top priority action for this week 1", "priority 2", "priority 3"],
-' +
-      '  "delegationOpportunities": ["specific task to delegate 1", "task 2"],
-' +
-      '  "thirtyDayPlan": ["action 1", "action 2", "action 3", "action 4", "action 5"],
-' +
-      '  "revenueOpportunities": ["revenue opportunity 1", "opportunity 2"],
-' +
-      '  "timeRecovery": "X hours per week could be recovered by..."
-' +
-      '}';
+    const prompt = [
+      'You are an elite executive advisor analyzing operational performance. Provide a comprehensive business intelligence audit.',
+      '',
+      'EXECUTIVE PROFILE:',
+      profileContext,
+      '',
+      'EA USAGE DATA:',
+      '- Total tasks classified: ' + total,
+      '- Crystal Ball (executive only): ' + crystal + ' (' + (total > 0 ? Math.round(crystal/total*100) : 0) + '%)',
+      '- Bouncy Ball (delegatable): ' + bouncy + ' (' + delegationRate + '%)',
+      '- Delegation rate: ' + delegationRate + '%',
+      '',
+      'RECENT TASKS:',
+      taskSummary,
+      '',
+      financialContext,
+      emailContext,
+      crmContext,
+      '',
+      bookContext,
+      '',
+      'Return JSON only with this structure: {"overallScore":85,"scoreLabel":"High Performer","executiveSummary":"assessment","strengths":["s1","s2","s3"],"criticalGaps":["g1","g2","g3"],"crystalBallInsights":["i1","i2"],"financialAlerts":["a1","a2"],"weeklyFocus":["w1","w2","w3"],"delegationOpportunities":["d1","d2"],"thirtyDayPlan":["p1","p2","p3","p4","p5"],"revenueOpportunities":["r1","r2"],"timeRecovery":"X hours per week recovered by..."}'
+    ].join('\n')
 
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5',
