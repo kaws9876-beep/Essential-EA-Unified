@@ -3467,12 +3467,21 @@ async function checkQBStatus() {
   try {
     var r = await fetch('https://essential-ea-app-production.up.railway.app/api/quickbooks/status');
     var d = await r.json();
+    var banner = document.getElementById('qb-connect-banner');
+    var view = document.getElementById('qb-connected-view');
     if(d.connected) {
-      document.getElementById('qb-connect-banner').style.display = 'none';
-      document.getElementById('qb-connected-view').style.display = 'block';
+      if(banner) banner.style.display = 'none';
+      if(view) { view.style.display = 'block'; view.style.removeProperty('display'); view.style.display = 'block'; }
       loadQBData();
+      loadQBInvoices();
+      loadQBExpenses();
+    } else {
+      if(banner) banner.style.display = 'flex';
+      if(view) view.style.display = 'none';
     }
-  } catch(e) {}
+  } catch(e) {
+    console.log('QB status error:', e.message);
+  }
 }
 
 async function loadQBData() {
@@ -3481,17 +3490,18 @@ async function loadQBData() {
     var d = await r.json();
     if(d.success) {
       var s = d.summary;
-      var fmt = function(n) { return '$' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0}); };
+      var fmt = function(n) { return '$' + parseFloat(n||0).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0}); };
       var revEl = document.getElementById('qb-revenue');
       var expEl = document.getElementById('qb-expenses');
       var netEl = document.getElementById('qb-net');
       var unpaidEl = document.getElementById('qb-unpaid');
       var periodEl = document.getElementById('qb-period');
-      if(revEl) revEl.textContent = fmt(s.totalRevenue);
-      if(expEl) expEl.textContent = fmt(s.totalExpenses);
-      if(netEl) { netEl.textContent = fmt(s.netIncome); netEl.style.color = s.netIncome >= 0 ? '#2D6A35' : '#8A3A30'; }
-      if(unpaidEl) unpaidEl.textContent = s.unpaidInvoices;
-      if(periodEl) periodEl.textContent = 'YTD: ' + s.period;
+      if(revEl) revEl.textContent = fmt(s.unpaidTotal || s.totalRevenue || 0);
+      if(expEl) expEl.textContent = fmt(s.expenseTotal || s.totalExpenses || 0);
+      var net = parseFloat(s.unpaidTotal||0) - parseFloat(s.expenseTotal||0);
+      if(netEl) { netEl.textContent = fmt(net); netEl.style.color = net >= 0 ? '#2D6A35' : '#8A3A30'; }
+      if(unpaidEl) unpaidEl.textContent = s.unpaidInvoices || 0;
+      if(periodEl) periodEl.textContent = 'QuickBooks Connected';
     }
   } catch(e) {}
 }
