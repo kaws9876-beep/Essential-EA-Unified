@@ -1123,7 +1123,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
           <div id="qb-period" style="font-size:12px;color:var(--mid)"></div>
           <div style="display:flex;gap:8px">
-            <button onclick="loadQBData()" style="font-size:10px;font-weight:700;padding:6px 14px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Refresh</button>
+            <button onclick="loadQBData();loadQBInvoices();loadQBExpenses();" style="font-size:10px;font-weight:700;padding:6px 14px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Refresh All</button>
             <button onclick="disconnectQB()" style="font-size:10px;font-weight:700;padding:6px 14px;border-radius:3px;border:1px solid rgba(138,56,48,0.3);cursor:pointer;background:transparent;color:#8A3A30">Disconnect</button>
           </div>
         </div>
@@ -1225,7 +1225,19 @@ function nav(name, el) {
   if(name === 'settings') checkSubscriptionStatus();
   if(name === 'meetings') loadMeetingsList();
   if(name === 'crm') checkGHLStatus();
-  if(name === 'finance') checkQBStatus();
+  if(name === 'finance') {
+    checkQBStatus();
+    // Also directly try to load data in case status check is slow
+    setTimeout(function() {
+      var view = document.getElementById('qb-connected-view');
+      var banner = document.getElementById('qb-connect-banner');
+      if(view && view.style.display === 'block') {
+        loadQBData();
+        loadQBInvoices();
+        loadQBExpenses();
+      }
+    }, 1500);
+  }
   if(name === 'finance') checkQBStatus();
 }
 async function loadAudit() {
