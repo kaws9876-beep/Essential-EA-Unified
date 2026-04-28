@@ -1344,8 +1344,9 @@ function nav(name, el) {
   if(name === 'finance') checkQBStatus();
 }
 async function loadAudit() {
+  // New audit screen - just show the run button, don't auto-run
   const el = document.getElementById('audit-content');
-  el.innerHTML = '<div class="spin-wrap"><div class="spinner"></div> Generating your Operational Efficiency Audit...</div>';
+  if(!el) return; // New screen uses different IDs
   try {
     const r = await fetch('https://essential-ea-app-production.up.railway.app/api/audit');
     const d = await r.json();
@@ -1573,70 +1574,6 @@ function renderEATaskList() {
   ).join('') + '</div>';
 }
 
-function toggleEATask(idx) {
-  eaTaskListData[idx].done = !eaTaskListData[idx].done;
-  renderEATaskList();
-}
-
-async function playEAVoice(btn, text) {
-  if(btn.classList.contains('playing')) {
-    window._eaAudio && window._eaAudio.pause();
-    btn.classList.remove('playing');
-    btn.innerHTML = '<svg viewBox="0 0 10 10"><polygon points="0,0 10,5 0,10"/></svg>Listen';
-    return;
-  }
-  document.querySelectorAll('.play-btn.playing,.play-btn-light.playing').forEach(b => {
-    b.classList.remove('playing');
-    b.innerHTML = '<svg viewBox="0 0 10 10"><polygon points="0,0 10,5 0,10"/></svg>Listen';
-  });
-  window._eaAudio && window._eaAudio.pause();
-  btn.classList.add('playing');
-  btn.innerHTML = '<svg viewBox="0 0 10 10"><rect x="1" y="1" width="3" height="8"/><rect x="6" y="1" width="3" height="8"/></svg>Playing...';
-  try {
-    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/speak', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ text: text.substring(0, 2500) })
-    });
-    if(!r.ok) throw new Error('Voice unavailable');
-    const blob = await r.blob();
-    const url = URL.createObjectURL(blob);
-    window._eaAudio = new Audio(url);
-    window._eaAudio.play();
-    window._eaAudio.onended = () => {
-      btn.classList.remove('playing');
-      btn.innerHTML = '<svg viewBox="0 0 10 10"><polygon points="0,0 10,5 0,10"/></svg>Listen';
-      URL.revokeObjectURL(url);
-    };
-  } catch(e) {
-    btn.classList.remove('playing');
-    btn.innerHTML = '<svg viewBox="0 0 10 10"><polygon points="0,0 10,5 0,10"/></svg>Listen';
-    console.error('Voice error:', e.message);
-  }
-}
-
-async function loadStats() {
-  try {
-    const r = await fetch('https://essential-ea-app-production.up.railway.app/api/stats');
-    const d = await r.json();
-    if(d.success) {
-      const s = d.stats;
-      $('k1').textContent = s.totalTasks;
-      $('k2').textContent = s.crystal;
-      $('k3').textContent = s.bouncy;
-      $('k4').textContent = s.avgAccuracy + '%';
-      $('tc').textContent = s.totalTasks || '0';
-      const total = s.totalTasks || 1;
-      const cp = Math.round((s.crystal/total)*100);
-      const bp = Math.round((s.bouncy/total)*100);
-      $('sc1').textContent = s.crystal; $('sb1').style.width = cp + '%';
-      $('sc2').textContent = s.bouncy;  $('sb2').style.width = bp + '%';
-      $('sc3').textContent = s.totalTasks; $('sb3').style.width = Math.min(100,s.totalTasks*5) + '%';
-      $('sc4').textContent = s.avgAccuracy + '%'; $('sb4').style.width = s.avgAccuracy + '%';
-    }
-    loadHistory();
-  } catch(e) { console.error(e); }
-}
 async function loadHistory() {
   try {
     const r = await fetch('https://essential-ea-app-production.up.railway.app/api/history?limit=20');
@@ -1846,82 +1783,11 @@ function openMsg(idx, el) {
   $('reply-in').value = '';
   if(window.innerWidth <= 768) { $('inbox-wrap').classList.add('detail-open'); $('back-btn').style.display='block'; }
 }
-function closeDetail() { $('inbox-wrap').classList.remove('detail-open'); $('back-btn').style.display='none'; }
+
 function setReply(t) { $('reply-in').value = t; $('reply-in').focus(); }
-function sendReply() {
-  if(!$('reply-in').value.trim()) return;
-  const replyText = $('reply-in').value.trim();
-  // If Gmail connected, send via API
-  if(window._currentGmailMsg) {
-    const msg = window._currentGmailMsg;
-    fetch('https://essential-ea-app-production.up.railway.app/api/gmail/send', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ to: msg.from, subject: 'Re: ' + msg.subject, body: replyText })
-    }).then(function(r){ return r.json(); }).then(function(d){
-      var btn = document.querySelector('.reply-send');
-      btn.textContent = d.success ? 'Sent!' : 'Error';
-      btn.style.background = d.success ? '#4A7A50' : '#8A3A30';
-      setTimeout(function(){ btn.textContent='Send'; btn.style.background=''; }, 2000);
-    });
-  }
-  $('reply-in').value = '';
-  var btn = document.querySelector('.reply-send');
-  btn.textContent='Sent'; btn.style.background='#4A7A50';
-  setTimeout(function(){ btn.textContent='Send'; btn.style.background=''; }, 2000);
-}
 
-async function archiveEmail() {
-  if(!window._currentGmailMsg) return;
-  const r = await fetch('https://essential-ea-app-production.up.railway.app/api/gmail/archive', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ messageId: window._currentGmailMsg.id })
-  });
-  const d = await r.json();
-  if(d.success) { removeCurrentEmail(); loadGmailMessages(); }
-}
 
-async function trashEmail() {
-  if(!window._currentGmailMsg) return;
-  const r = await fetch('https://essential-ea-app-production.up.railway.app/api/gmail/trash', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ messageId: window._currentGmailMsg.id })
-  });
-  const d = await r.json();
-  if(d.success) { removeCurrentEmail(); loadGmailMessages(); }
-}
 
-async function markReadEmail() {
-  if(!window._currentGmailMsg) return;
-  await fetch('https://essential-ea-app-production.up.railway.app/api/gmail/markread', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ messageId: window._currentGmailMsg.id })
-  });
-  loadGmailMessages();
-}
-
-function removeCurrentEmail() {
-  var el = document.querySelector('.msg.active');
-  if(el) el.remove();
-  $('d-body').innerHTML = '<p>Select a message from the list to read it here.</p>';
-  $('d-sub').textContent = '';
-  document.getElementById('email-actions').style.display = 'none';
-  window._currentGmailMsg = null;
-}
-
-async function classifyAndDraft() {
-  if(!window._currentGmailMsg) return;
-  var msg = window._currentGmailMsg;
-  var replyIn = $('reply-in');
-  replyIn.value = 'Drafting reply...';
-  const r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-draft', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ type: 'email', task: msg.subject + ': ' + msg.snippet, action: 'Draft a professional reply' })
-  });
-  const d = await r.json();
-  if(d.success) replyIn.value = d.output;
-  else replyIn.value = '';
-}
 function filterMsgs(tag, btn) {
   document.querySelectorAll('.fpill').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
@@ -2372,136 +2238,18 @@ async function openOutlookMsg(idx, el) {
   }
 }
 
-async function archiveEmail() {
-  if(!window._currentGmailMsg) return;
-  var msg = window._currentGmailMsg;
-  var endpoint = msg.source === 'outlook' ? '/api/outlook/archive' : '/api/gmail/archive';
-  var r = await fetch('https://essential-ea-app-production.up.railway.app' + endpoint, {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ messageId: msg.id })
-  });
-  var d = await r.json();
-  if(d.success) { removeCurrentEmail(); msg.source === 'outlook' ? loadOutlookMessages() : loadGmailMessages(); }
-}
 
-async function trashEmail() {
-  if(!window._currentGmailMsg) return;
-  var msg = window._currentGmailMsg;
-  var endpoint = msg.source === 'outlook' ? '/api/outlook/trash' : '/api/gmail/trash';
-  var r = await fetch('https://essential-ea-app-production.up.railway.app' + endpoint, {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ messageId: msg.id })
-  });
-  var d = await r.json();
-  if(d.success) { removeCurrentEmail(); msg.source === 'outlook' ? loadOutlookMessages() : loadGmailMessages(); }
-}
-
-async function toggleStar() {
-  if(!window._currentGmailMsg) return;
-  var msg = window._currentGmailMsg;
-  var starred = !msg.isStarred;
-  msg.isStarred = starred;
-  var btn = document.getElementById('btn-star');
-  if(btn) btn.innerHTML = starred ? '&#9733; Unstar' : '&#9733; Star';
-  var endpoint = msg.source === 'outlook' ? '/api/outlook/star' : '/api/gmail/star';
-  await fetch('https://essential-ea-app-production.up.railway.app' + endpoint, {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ messageId: msg.id, starred: starred })
-  });
-}
-
-async function sendReply() {
-  var replyText = document.getElementById('reply-in').value.trim();
-  if(!replyText) return;
-  if(window._currentGmailMsg) {
-    var msg = window._currentGmailMsg;
-    var endpoint = msg.source === 'outlook' ? '/api/outlook/send' : '/api/gmail/send';
-    var r = await fetch('https://essential-ea-app-production.up.railway.app' + endpoint, {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ to: msg.from, subject: 'Re: ' + msg.subject, body: replyText, threadId: msg.threadId })
-    });
-    var d = await r.json();
-    if(d.success) {
-      document.getElementById('reply-in').value = '';
-      document.getElementById('reply-panel').style.display = 'none';
-      var route = document.getElementById('d-route');
-      if(route) route.innerHTML = '<span style="color:#2D6A35">&#9989; Reply sent</span>';
-      return;
-    }
-  }
-}
 
 async function runEAInboxOutlook() {
   // Switch to outlook view first
   var outTab = document.getElementById('outlook-tab');
-  if(outTab) switchToOutlook(outTab);
-  // Then run the same EA inbox logic but for Outlook
-  var btn = document.querySelector('#microsoft-connected-banner button');
-  var panel = document.getElementById('ea-results-panel');
-  var summaryText = document.getElementById('ea-summary-text');
-  var resultsList = document.getElementById('ea-results-list');
-  if(panel) panel.style.display = 'block';
-  if(summaryText) summaryText.textContent = 'EA is analyzing your Outlook inbox...';
-  if(resultsList) resultsList.innerHTML = '<div style="padding:10px;text-align:center"><div class="spinner"></div></div>';
+  if(outTab) { outTab.style.display = 'flex'; outTab.click(); }
+  var summaryText = document.getElementById('outlook-ai-summary');
   try {
-    // Fetch Outlook messages
-    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/outlook/messages?folder=inbox');
+    if(summaryText) summaryText.textContent = 'Running EA on your Outlook inbox...';
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/outlook/run-inbox', { method: 'POST' });
     var d = await r.json();
-    if(!d.success || !d.messages.length) {
-      if(summaryText) summaryText.textContent = 'No unread Outlook messages to process.';
-      if(resultsList) resultsList.innerHTML = '';
-      return;
-    }
-    // Process each message with AI
-    var results = [];
-    var handled = 0;
-    var needsApproval = 0;
-    for(var i = 0; i < Math.min(d.messages.length, 10); i++) {
-      var msg = d.messages[i];
-      if(!msg.isUnread) continue;
-      try {
-        var cr = await fetch('https://essential-ea-app-production.up.railway.app/api/classify', {
-          method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ taskDescription: msg.subject + ' ' + msg.snippet })
-        });
-        var cd = await cr.json();
-        var ic = cd.success && cd.classification.classification === 'crystal';
-        var isNewsletter = /newsletter|noreply|no-reply|marketing|promo|unsubscribe/i.test(msg.from + ' ' + msg.subject);
-        var action = isNewsletter ? 'archive' : (ic ? 'flag' : 'draft_approval');
-        var result = { id: msg.id, subject: msg.subject, from: msg.from, action: action, classification: ic ? 'crystal' : 'bouncy', reason: cd.success ? cd.classification.reason : 'Classified', reply: '', executed: false, executedLabel: action === 'archive' ? 'Archived' : action === 'flag' ? 'Flagged for Review' : 'Draft Ready', source: 'outlook' };
-        if(action === 'archive') {
-          await fetch('https://essential-ea-app-production.up.railway.app/api/outlook/archive', {
-            method: 'POST', headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ messageId: msg.id })
-          });
-          result.executed = true;
-          handled++;
-        } else {
-          needsApproval++;
-        }
-        results.push(result);
-        await new Promise(function(r){ setTimeout(r, 150); });
-      } catch(e) {
-        results.push({ id: msg.id, subject: msg.subject, from: msg.from, action: 'flag', reason: 'Processing error', executedLabel: 'Flagged', executed: false, source: 'outlook' });
-        needsApproval++;
-      }
-    }
-    if(summaryText) summaryText.textContent = 'Outlook: processed ' + results.length + ' emails. ' + handled + ' handled. ' + needsApproval + ' need review.';
-    if(resultsList) {
-      resultsList.innerHTML = results.map(function(r) {
-        var actionColor = r.executed ? '#2D6A35' : (r.action === 'flag' ? '#C49A8A' : '#0072EF');
-        return '<div style="margin-bottom:10px;padding:12px 14px;background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.06);border-left:3px solid ' + actionColor + ';border-radius:6px">' +
-          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">' +
-          '<div style="font-size:12px;font-weight:600">' + r.subject + '</div>' +
-          '<span style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:2px;background:' + actionColor + ';color:white">' + r.executedLabel + '</span>' +
-          '</div>' +
-          '<div style="font-size:11px;color:var(--mid)">' + (r.from||'') + '</div>' +
-          '<div style="font-size:11px;color:var(--mid);margin-top:2px">' + (r.reason||'') + '</div>' +
-          (!r.executed ? '<div style="display:flex;gap:6px;margin-top:8px"><button onclick="archiveFromReport(' + JSON.stringify({id:r.id}) + ',this)" style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:3px;border:1px solid rgba(26,26,24,0.15);cursor:pointer;background:transparent;color:var(--mid)">Archive</button><button onclick="trashFromReport(' + JSON.stringify({id:r.id}) + ',this)" style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:3px;border:1px solid rgba(138,56,48,0.3);cursor:pointer;background:transparent;color:#8A3A30">Delete</button></div>' : '') +
-          '</div>';
-      }).join('');
-    }
-    setTimeout(loadOutlookMessages, 1000);
+    if(summaryText) summaryText.textContent = d.summary || 'EA has processed your Outlook inbox.';
   } catch(e) {
     if(summaryText) summaryText.textContent = 'Error: ' + e.message;
   }
@@ -3660,30 +3408,6 @@ function toggleGHLSync(checkbox) {
 }
 
 
-function connectQuickBooks() {
-  window.location.href = 'https://essential-ea-app-production.up.railway.app/auth/quickbooks';
-}
-
-async function disconnectQB() {
-  await fetch('https://essential-ea-app-production.up.railway.app/api/quickbooks/disconnect');
-  document.getElementById('qb-connect-banner').style.display = 'flex';
-  document.getElementById('qb-connected-banner').style.display = 'none';
-  document.getElementById('qb-summary').style.display = 'none';
-  document.getElementById('qb-placeholder').style.display = 'block';
-}
-
-async function checkQBStatus() {
-  try {
-    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/quickbooks/status');
-    var d = await r.json();
-    if(d.connected) {
-      document.getElementById('qb-connect-banner').style.display = 'none';
-      document.getElementById('qb-connected-banner').style.display = 'flex';
-      document.getElementById('qb-placeholder').style.display = 'none';
-      loadQBSummary();
-    }
-  } catch(e) {}
-}
 
 async function loadQBSummary() {
   document.getElementById('qb-summary').style.display = 'block';
@@ -3725,23 +3449,6 @@ async function loadQBSummary() {
   }
 }
 
-async function loadQBInvoices() {
-  try {
-    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/quickbooks/invoices');
-    var d = await r.json();
-    var list = document.getElementById('qb-invoices-list');
-    if(d.success && d.invoices.length && list) {
-      list.innerHTML = d.invoices.map(function(inv) {
-        var overdue = inv.DueDate && new Date(inv.DueDate) < new Date();
-        return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--tan)">' +
-          '<div><div style="font-size:13px;font-weight:600">' + (inv.CustomerRef?.name || 'Unknown') + '</div>' +
-          '<div style="font-size:11px;color:' + (overdue ? '#8A3A30' : 'var(--mid)') + '">Due: ' + (inv.DueDate || 'N/A') + (overdue ? ' OVERDUE' : '') + '</div></div>' +
-          '<div style="font-size:16px;font-weight:700;color:#8A3A30">$' + parseFloat(inv.Balance).toLocaleString() + '</div>' +
-          '</div>';
-      }).join('');
-    }
-  } catch(e) {}
-}
 
 // Handle QuickBooks redirect
 (function() {
