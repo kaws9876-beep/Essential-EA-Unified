@@ -1021,16 +1021,45 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
     
 
 <div class="screen" id="screen-eatasklist">
-      <div class="pg-h2">EA Task List</div>
-      <div class="pg-s2">Every Bouncy Ball task your EA is handling. These never touch your calendar.</div>
-      <div id="ea-task-list-content">
-        <div class="empty" style="padding:40px;text-align:center;color:var(--mid)">No tasks in your EA list yet. Classify a Bouncy Ball task and click Add to EA Task List.</div>
+      <div class="pg-h">EA Task List</div>
+      <div class="pg-s">Every Bouncy Ball task your EA is handling. Bouncy Ball tasks from Crystal Ball Triage are automatically added here.</div>
+
+      <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+        <button onclick="showAddEATask()" style="font-size:11px;font-weight:700;padding:8px 18px;border-radius:4px;border:none;cursor:pointer;background:#C49A8A;color:#1A1A18">+ Add Task</button>
+        <select id="ea-task-filter" onchange="loadEATasks()" style="font-size:12px;padding:7px 12px;border:1px solid var(--tan);border-radius:4px;background:white;outline:none">
+          <option value="all">All Tasks</option>
+          <option value="pending">Pending</option>
+          <option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
+        </select>
+        <button onclick="loadEATasks()" style="font-size:11px;padding:7px 14px;border-radius:4px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Refresh</button>
       </div>
-    </div>
 
-        
+      <!-- Add Task Form -->
+      <div id="ea-add-task-form" style="display:none;background:var(--warm);border:1px solid var(--tan);border-radius:8px;padding:16px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#C49A8A;margin-bottom:12px">Add EA Task</div>
+        <input id="ea-task-title" type="text" placeholder="Task title..." style="width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid var(--tan);border-radius:4px;font-size:13px;margin-bottom:8px;outline:none">
+        <textarea id="ea-task-desc" rows="2" placeholder="Description or context..." style="width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid var(--tan);border-radius:4px;font-size:13px;margin-bottom:8px;outline:none;resize:vertical"></textarea>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="ea-task-priority" style="font-size:12px;padding:7px 10px;border:1px solid var(--tan);border-radius:4px;background:white;outline:none">
+            <option value="normal">Normal</option>
+            <option value="high">High Priority</option>
+            <option value="low">Low Priority</option>
+          </select>
+          <input id="ea-task-due" type="text" placeholder="Due date (e.g. Today, Friday, Apr 30)" style="flex:1;padding:7px 10px;border:1px solid var(--tan);border-radius:4px;font-size:12px;outline:none">
+          <button onclick="addEATask()" style="font-size:11px;font-weight:700;padding:7px 16px;border-radius:4px;border:none;cursor:pointer;background:#C49A8A;color:#1A1A18">Save</button>
+          <button onclick="document.getElementById('ea-add-task-form').style.display='none'" style="font-size:11px;padding:7px 12px;border-radius:4px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Cancel</button>
+        </div>
+        <div id="ea-task-save-status" style="margin-top:6px;font-size:11px"></div>
+      </div>
 
-<div class="screen" id="screen-operations">
+      <div id="ea-task-list-content">
+        <div style="padding:40px;text-align:center;color:var(--mid)">
+          <div style="font-size:32px;margin-bottom:8px">&#127934;</div>
+          <div style="font-size:13px">No tasks yet. Classify a Bouncy Ball task and it will appear here automatically.</div>
+        </div>
+      </div>
+    <div class="screen" id="screen-operations">
       <div class="pg-h2">Operations</div>
       <div class="pg-s2">Your business infrastructure - coming online as the platform builds.</div>
       <div class="ops-grid">
@@ -1275,7 +1304,7 @@ const months = ['January','February','March','April','May','June','July','August
 $('tbd').textContent = days[today.getDay()] + ', ' + months[today.getMonth()] + ' ' + today.getDate() + ', ' + today.getFullYear();
 function openSB(){ $('sidebar').classList.add('open'); $('overlay').classList.add('open'); }
 function closeSB(){ $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); }
-const titles = { dashboard:'Good morning, <em>Kristina.</em>', brief:'EA Daily Brief', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', history:'Task History', audit:'Operational Efficiency Audit', docreader:'Document Reader', eatasklist:'EA Task List', meetings:'Meeting Recordings', crm:'CRM - Go High Level', finance:'Financial Tracking', finance:'Financial Tracking', pricing:'Choose Your Plan', profile:'Your EA Profile', week:'Priority Week Generator', settings:'Settings' };
+const titles = { dashboard:'Good morning, <em>Kristina.</em>', brief:'EA Daily Brief', priorityweek:'Priority Week Generator', triage:'Crystal Ball Triage', inbox:'Communication Hub', history:'Task History', audit:'Operational Efficiency Audit', docreader:'Document Reader', eatasklist:'EA Task List', meetings:'Meeting Recordings', crm:'CRM - Go High Level', finance:'Financial Tracking', pricing:'Choose Your Plan', profile:'Your EA Profile', week:'Priority Week Generator', settings:'Settings', operations:'Operations' };
 function nav(name, el) {
   // Handle aliases
   if(name === 'week') name = 'priorityweek';
@@ -1297,6 +1326,7 @@ function nav(name, el) {
   if(name === 'settings') checkSubscriptionStatus();
   if(name === 'dashboard') loadDashboard();
   if(name === 'meetings') loadMeetingsList();
+  if(name === 'eatasklist') loadEATasks();
   if(name === 'crm') checkGHLStatus();
   if(name === 'finance') {
     checkQBStatus();
@@ -3062,6 +3092,122 @@ function copyMeetingNotes() {
   navigator.clipboard.writeText(notes).then(function() {
     alert('Meeting notes copied to clipboard!');
   });
+}
+
+
+async function loadEATasks() {
+  var list = document.getElementById('ea-task-list-content');
+  var filter = document.getElementById('ea-task-filter');
+  if(!list) return;
+  list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--mid);font-size:12px">Loading...</div>';
+  try {
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-tasks');
+    var d = await r.json();
+    if(d.success && d.tasks.length) {
+      var filterVal = filter ? filter.value : 'all';
+      var tasks = filterVal === 'all' ? d.tasks : d.tasks.filter(function(t) { return t.status === filterVal; });
+      
+      if(!tasks.length) {
+        list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--mid);font-size:12px">No ' + filterVal + ' tasks</div>';
+        return;
+      }
+      
+      list.innerHTML = tasks.map(function(t) {
+        var priorityColor = t.priority === 'high' ? '#8A3A30' : t.priority === 'low' ? '#888' : '#C49A8A';
+        var isComplete = t.status === 'completed';
+        var date = new Date(t.created_at).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+        return '<div style="padding:14px;border:1px solid var(--tan);border-radius:8px;margin-bottom:8px;background:' + (isComplete ? 'rgba(0,0,0,0.02)' : 'white') + ';opacity:' + (isComplete ? '0.6' : '1') + '">' +
+          '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">' +
+            '<div style="display:flex;align-items:flex-start;gap:10px;flex:1">' +
+              '<input type="checkbox" ' + (isComplete ? 'checked' : '') + ' onchange="toggleEATask(' + t.id + ', this.checked)" style="margin-top:3px;width:16px;height:16px;cursor:pointer">' +
+              '<div style="flex:1">' +
+                '<div style="font-size:13px;font-weight:600;color:var(--blk);' + (isComplete ? 'text-decoration:line-through' : '') + '">' + t.title + '</div>' +
+                (t.description ? '<div style="font-size:11px;color:var(--mid);margin-top:3px">' + t.description.substring(0,100) + '</div>' : '') +
+                '<div style="display:flex;gap:8px;margin-top:6px;align-items:center">' +
+                  '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:2px;background:rgba(196,154,138,0.1);color:' + priorityColor + '">' + (t.priority||'normal').toUpperCase() + '</span>' +
+                  (t.source ? '<span style="font-size:9px;color:var(--mid)">' + t.source + '</span>' : '') +
+                  (t.due_date ? '<span style="font-size:9px;color:#C49A8A">Due: ' + t.due_date + '</span>' : '') +
+                  '<span style="font-size:9px;color:var(--mid)">' + date + '</span>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+            '<button onclick="deleteEATask(' + t.id + ')" style="font-size:10px;padding:3px 8px;border:1px solid rgba(138,56,48,0.2);border-radius:3px;cursor:pointer;background:transparent;color:#8A3A30;flex-shrink:0">Delete</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      // Update badge count
+      var pending = d.tasks.filter(function(t) { return t.status !== 'completed'; }).length;
+      var badges = document.querySelectorAll('.sb-badge');
+      // Find the EA task list badge
+      var sbItems = document.querySelectorAll('.sb-item');
+      sbItems.forEach(function(item) {
+        if(item.textContent.includes('EA Task List')) {
+          var badge = item.querySelector('.sb-badge');
+          if(badge) badge.textContent = pending;
+        }
+      });
+    } else if(d.success) {
+      list.innerHTML = '<div style="padding:40px;text-align:center;color:var(--mid)"><div style="font-size:32px;margin-bottom:8px">&#127934;</div><div style="font-size:13px">No tasks yet. Classify a Bouncy Ball task and it will appear here automatically.</div></div>';
+    }
+  } catch(e) {
+    list.innerHTML = '<div style="padding:16px;color:#8A3A30;font-size:12px">Error: ' + e.message + '</div>';
+  }
+}
+
+async function toggleEATask(id, completed) {
+  try {
+    await fetch('https://essential-ea-app-production.up.railway.app/api/ea-tasks/' + id, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ status: completed ? 'completed' : 'pending' })
+    });
+    loadEATasks();
+  } catch(e) {}
+}
+
+async function deleteEATask(id) {
+  try {
+    await fetch('https://essential-ea-app-production.up.railway.app/api/ea-tasks/' + id, { method: 'DELETE' });
+    loadEATasks();
+  } catch(e) {}
+}
+
+function showAddEATask() {
+  var form = document.getElementById('ea-add-task-form');
+  if(form) { form.style.display = form.style.display === 'none' ? 'block' : 'none'; }
+  var titleEl = document.getElementById('ea-task-title');
+  if(titleEl) titleEl.focus();
+}
+
+async function addEATask() {
+  var title = document.getElementById('ea-task-title').value;
+  var desc = document.getElementById('ea-task-desc').value;
+  var priority = document.getElementById('ea-task-priority').value;
+  var due = document.getElementById('ea-task-due').value;
+  var status = document.getElementById('ea-task-save-status');
+  
+  if(!title) { if(status) status.textContent = 'Please enter a task title'; return; }
+  if(status) status.textContent = 'Saving...';
+  
+  try {
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/ea-tasks', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ title, description: desc, priority, due_date: due, source: 'manual' })
+    });
+    var d = await r.json();
+    if(d.success) {
+      document.getElementById('ea-task-title').value = '';
+      document.getElementById('ea-task-desc').value = '';
+      document.getElementById('ea-add-task-form').style.display = 'none';
+      loadEATasks();
+    } else {
+      if(status) status.textContent = 'Error: ' + (d.error||'Failed');
+    }
+  } catch(e) {
+    if(status) status.textContent = 'Error: ' + e.message;
+  }
 }
 
 async function loadMeetingsList() {
