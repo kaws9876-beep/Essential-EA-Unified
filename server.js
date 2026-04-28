@@ -1696,6 +1696,20 @@ app.post('/api/ea-draft', async (req, res) => {
         '4. Whether it can be fully delegated to an EA or team member ' +
         '5. The specific calendar block recommendation ' +
         'Be specific, decisive, and use Crystal Ball and Bouncy Ball language naturally.';
+    } else if(resolvedType === 'task') {
+      label = 'EA Task Breakdown';
+      prompt = 'You are a highly competent executive assistant using the Essential EA methodology by Kristina Spencer. ' +
+        'Break down this Bouncy Ball task into specific, actionable steps an EA can execute: ' + task + '. ' +
+        'Provide: ' +
+        '1. A clear task title ' +
+        '2. Step-by-step action items (numbered) ' +
+        '3. Estimated time for each step ' +
+        '4. Any resources or information needed ' +
+        '5. Definition of done - what success looks like ' +
+        'Be specific and actionable. Use the Crystal Ball / Bouncy Ball framework language.';
+    } else {
+      label = 'EA Response';
+      prompt = 'You are the Essential EA. Handle this task: ' + task;
     }
 
     const response = await anthropic.messages.create({
