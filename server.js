@@ -3026,6 +3026,69 @@ app.get('/api/auth/status', async (req, res) => {
   });
 });
 
+
+// ============ STRIPE PAYMENTS ============
+
+app.post('/api/stripe/create-checkout', async (req, res) => {
+  try {
+    const { priceId, plan } = req.body;
+    if(!priceId) return res.status(400).json({ success: false, error: 'No price ID provided' });
+
+    const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + process.env.STRIPE_SECRET_KEY,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        'mode': 'subscription',
+        'line_items[0][price]': priceId,
+        'line_items[0][quantity]': '1',
+        'success_url': VERCEL + '/?subscription=success&plan=' + (plan||''),
+        'cancel_url': VERCEL + '/?subscription=cancelled',
+        'allow_promotion_codes': 'true',
+        'billing_address_collection': 'auto',
+        'customer_creation': 'always'
+      })
+    });
+
+    const session = await response.json();
+    if(session.error) return res.status(400).json({ success: false, error: session.error.message });
+    res.json({ success: true, url: session.url, sessionId: session.id });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.get('/api/stripe/prices', (req, res) => {
+  res.json({
+    success: true,
+    prices: {
+      solo: { id: process.env.STRIPE_PRICE_SOLO, name: 'Solo', price: 79, description: 'Perfect for individual executives' },
+      founding: { id: process.env.STRIPE_PRICE_FOUNDING, name: 'Founding Member', price: 67, description: 'Locked for life - founding rate' },
+      blueprint: { id: process.env.STRIPE_PRICE_BLUEPRINT, name: 'Blueprint', price: 167, description: 'For teams up to 5' }
+    }
+  });
+});
+
+app.post('/api/stripe/webhook', async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  
+  try {
+    // For now just log and acknowledge
+    const body = req.body;
+    console.log('Stripe webhook received:', typeof body === 'string' ? body.substring(0, 100) : JSON.stringify(body).substring(0, 100));
+    res.json({ received: true });
+  } catch(e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+app.get('/api/stripe/publishable-key', (req, res) => {
+  res.json({ key: process.env.STRIPE_PUBLISHABLE_KEY });
+});
+
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });
 });
