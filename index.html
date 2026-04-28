@@ -695,53 +695,9 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
         </div>
       </div>
       </div>
-    </div>
-  </div>
-    <div class="screen" id="screen-audit">
-      <div class="pg-h2">Operational Efficiency Audit</div>
-      <div class="pg-s2">Your AI-powered business health report. Built on the Essential EA methodology and your real usage data.</div>
-      <div id="audit-content">
-        <div class="spin-wrap"><div class="spinner"></div> Loading your audit data...</div>
-      </div>
-    </div>
+    
 
-        <div class="screen" id="screen-docreader">
-      <div class="pg-h2">Document Reader</div>
-      <div class="pg-s2">Upload any document. Your EA AI reads it, summarizes it, and classifies every action item as Crystal Ball or Bouncy Ball.</div>
-      <div class="doc-upload-area" id="drop-zone" onclick="document.getElementById('doc-file-input').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDocDrop(event)">
-        <input type="file" id="doc-file-input" accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.png,.jpg,.jpeg" style="display:none" onchange="handleDocFile(this.files[0])">
-        <div class="doc-upload-icon">&#128196;</div>
-        <div class="doc-upload-title">Drop your document here or click to upload</div>
-        <div class="doc-upload-sub">PDF, Word, Excel, TXT, CSV, Images supported - Any industry</div>
-      </div>
-      <div id="doc-result" class="doc-result">
-        <div class="ai-lbl">EA Document Analysis</div>
-        <pre id="doc-result-content"></pre>
-        <button class="ea-copy-btn" style="margin-top:12px" onclick="navigator.clipboard.writeText(document.getElementById('doc-result-content').textContent).then(()=>this.textContent='Copied!').catch(()=>{})">Copy Analysis</button>
-      </div>
-    </div>
-
-    <div class="screen" id="screen-eatasklist">
-      <div class="pg-h2">EA Task List</div>
-      <div class="pg-s2">Every Bouncy Ball task your EA is handling. These never touch your calendar.</div>
-      <div id="ea-task-list-content">
-        <div class="empty" style="padding:40px;text-align:center;color:var(--mid)">No tasks in your EA list yet. Classify a Bouncy Ball task and click Add to EA Task List.</div>
-      </div>
-    </div>
-
-        <div class="screen" id="screen-operations">
-      <div class="pg-h2">Operations</div>
-      <div class="pg-s2">Your business infrastructure - coming online as the platform builds.</div>
-      <div class="ops-grid">
-        <div class="ops-card"><div class="ops-icon">&#128101;</div><div class="ops-title">Team and Pipeline</div><div class="ops-desc">Manage team members, roles, and deal pipeline.</div></div>
-        <div class="ops-card"><div class="ops-icon">&#128176;</div><div class="ops-title">Financial Tracking</div><div class="ops-desc">GCI goals, commission tracking, stewardship cadence.</div></div>
-        <div class="ops-card"><div class="ops-icon">&#128227;</div><div class="ops-title">Marketing Content</div><div class="ops-desc">AI-generated content from your brand guide.</div></div>
-        <div class="ops-card"><div class="ops-icon">&#127873;</div><div class="ops-title">Gifting and Database</div><div class="ops-desc">Sphere touchpoints, closing gifts, relationship cadence.</div></div>
-      </div>
-      <div class="cs"><div class="cs-title">Full Operations Suite - Coming in Phase 3</div><div class="cs-body">Crystal Ball Triage, Priority Week, and EA Daily Brief are live now with full PostgreSQL persistence.</div></div>
-    </div>
-
-    <div class="screen" id="screen-profile">
+<div class="screen" id="screen-profile">
       <div class="pg-h">Your EA Profile</div>
       <div class="pg-s">Your EA uses this to personalize every response. The more detail you give, the smarter your EA gets.</div>
       <div style="max-width:680px;padding-bottom:40px">
@@ -837,7 +793,9 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
       </div>
     </div>
 
-    <div class="screen" id="screen-meetings">
+    
+
+<div class="screen" id="screen-meetings">
       <div class="pg-h">Meeting Recordings</div>
       <div class="pg-s">Upload any meeting recording. Your EA transcribes it and extracts Crystal Ball decisions, Bouncy Ball action items, and follow-ups.</div>
 
@@ -907,6 +865,54 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
           </div>
         </div>
       </div>
+    </div>
+
+    
+
+    </div>
+  </div>
+    <div class="screen" id="screen-audit">
+      <div class="pg-h2">Operational Efficiency Audit</div>
+      <div class="pg-s2">Your AI-powered business health report. Built on the Essential EA methodology and your real usage data.</div>
+      <div id="audit-content">
+        <div class="spin-wrap"><div class="spinner"></div> Loading your audit data...</div>
+      </div>
+    </div>
+
+        <div class="screen" id="screen-docreader">
+      <div class="pg-h2">Document Reader</div>
+      <div class="pg-s2">Upload any document. Your EA AI reads it, summarizes it, and classifies every action item as Crystal Ball or Bouncy Ball.</div>
+      <div class="doc-upload-area" id="drop-zone" onclick="document.getElementById('doc-file-input').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDocDrop(event)">
+        <input type="file" id="doc-file-input" accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.png,.jpg,.jpeg" style="display:none" onchange="handleDocFile(this.files[0])">
+        <div class="doc-upload-icon">&#128196;</div>
+        <div class="doc-upload-title">Drop your document here or click to upload</div>
+        <div class="doc-upload-sub">PDF, Word, Excel, TXT, CSV, Images supported - Any industry</div>
+      </div>
+      <div id="doc-result" class="doc-result">
+        <div class="ai-lbl">EA Document Analysis</div>
+        <pre id="doc-result-content"></pre>
+        <button class="ea-copy-btn" style="margin-top:12px" onclick="navigator.clipboard.writeText(document.getElementById('doc-result-content').textContent).then(()=>this.textContent='Copied!').catch(()=>{})">Copy Analysis</button>
+      </div>
+    </div>
+
+    <div class="screen" id="screen-eatasklist">
+      <div class="pg-h2">EA Task List</div>
+      <div class="pg-s2">Every Bouncy Ball task your EA is handling. These never touch your calendar.</div>
+      <div id="ea-task-list-content">
+        <div class="empty" style="padding:40px;text-align:center;color:var(--mid)">No tasks in your EA list yet. Classify a Bouncy Ball task and click Add to EA Task List.</div>
+      </div>
+    </div>
+
+        <div class="screen" id="screen-operations">
+      <div class="pg-h2">Operations</div>
+      <div class="pg-s2">Your business infrastructure - coming online as the platform builds.</div>
+      <div class="ops-grid">
+        <div class="ops-card"><div class="ops-icon">&#128101;</div><div class="ops-title">Team and Pipeline</div><div class="ops-desc">Manage team members, roles, and deal pipeline.</div></div>
+        <div class="ops-card"><div class="ops-icon">&#128176;</div><div class="ops-title">Financial Tracking</div><div class="ops-desc">GCI goals, commission tracking, stewardship cadence.</div></div>
+        <div class="ops-card"><div class="ops-icon">&#128227;</div><div class="ops-title">Marketing Content</div><div class="ops-desc">AI-generated content from your brand guide.</div></div>
+        <div class="ops-card"><div class="ops-icon">&#127873;</div><div class="ops-title">Gifting and Database</div><div class="ops-desc">Sphere touchpoints, closing gifts, relationship cadence.</div></div>
+      </div>
+      <div class="cs"><div class="cs-title">Full Operations Suite - Coming in Phase 3</div><div class="cs-body">Crystal Ball Triage, Priority Week, and EA Daily Brief are live now with full PostgreSQL persistence.</div></div>
     </div>
 
     <div class="screen" id="screen-settings">
