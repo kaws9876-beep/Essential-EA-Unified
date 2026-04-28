@@ -1545,60 +1545,141 @@ app.get('/api/audit', async (req, res) => {
 
 app.post('/api/audit-insights', async (req, res) => {
   try {
+    // Gather ALL data sources for comprehensive audit
     const [totalRes] = await sql`SELECT COUNT(*) FROM tasks`;
     const [crystalRes] = await sql`SELECT COUNT(*) FROM tasks WHERE classification = 'crystal'`;
     const [bouncyRes] = await sql`SELECT COUNT(*) FROM tasks WHERE classification = 'bouncy'`;
-    const [weeklyRes] = await sql`SELECT COUNT(*) FROM weekly_plans`;
-    const [briefRes] = await sql`SELECT COUNT(*) FROM daily_briefs`;
-    const recentTasks = await sql`SELECT description, classification, reason FROM tasks ORDER BY created_at DESC LIMIT 10`;
+    const recentTasks = await sql`SELECT description, classification, urgency, reason FROM tasks ORDER BY created_at DESC LIMIT 20`;
+    
+    // Get user profile
+    let profile = null;
+    try { [profile] = await sql`SELECT * FROM user_profiles WHERE user_id = 'default' LIMIT 1`; } catch(e) {}
+    
+    // Get QB financial data if connected
+    let financialContext = '';
+    try {
+      const qbAuth = await getQBAccessToken();
+      if(qbAuth) {
+        const invRes = await fetch(getQBBase() + '/v3/company/' + qbAuth.realmId + "/query?query=SELECT * FROM Invoice WHERE Balance > '0' MAXRESULTS 50&minorversion=65", {
+          headers: { 'Authorization': 'Bearer ' + qbAuth.token, 'Accept': 'application/json' }
+        });
+        const invData = await invRes.json();
+        const invoices = invData.QueryResponse?.Invoice || [];
+        const unpaidTotal = invoices.reduce((sum, inv) => sum + (parseFloat(inv.Balance) || 0), 0);
+        const overdueCount = invoices.filter(inv => inv.DueDate && new Date(inv.DueDate) < new Date()).length;
+        financialContext = 'Financial data: ' + invoices.length + ' unpaid invoices totaling $' + unpaidTotal.toFixed(0) + '. ' + overdueCount + ' invoices are overdue. ';
+      }
+    } catch(e) {}
+
+    // Get email stats if Gmail connected
+    let emailContext = '';
+    try {
+      const [gToken] = await sql`SELECT * FROM google_tokens WHERE user_id = 'default' LIMIT 1`;
+      if(gToken) emailContext = 'Gmail is connected. ';
+    } catch(e) {}
+
+    // Get GHL contacts count
+    let crmContext = '';
+    try {
+      if(process.env.GHL_API_KEY) {
+        const ghlData = await ghlRequest('/contacts/?locationId=' + process.env.GHL_LOCATION_ID + '&limit=1');
+        if(ghlData.meta?.total !== undefined) crmContext = 'CRM has ' + ghlData.meta.total + ' contacts. ';
+      }
+    } catch(e) {}
 
     const total = parseInt(totalRes.count) || 0;
     const crystal = parseInt(crystalRes.count) || 0;
     const bouncy = parseInt(bouncyRes.count) || 0;
-    const weekly = parseInt(weeklyRes.count) || 0;
-    const briefs = parseInt(briefRes.count) || 0;
+    const delegationRate = total > 0 ? Math.round((bouncy / total) * 100) : 0;
 
-    const taskSummary = recentTasks.length > 0
-      ? recentTasks.slice(0,5).map(t => t.classification.toUpperCase() + ': ' + t.description).join(', ')
-      : 'No tasks classified yet';
+    const profileContext = profile ? 
+      'Executive: ' + (profile.name||'') + ', ' + (profile.role||'') + (profile.industry ? ' in ' + profile.industry : '') + '. ' +
+      (profile.revenue_target ? 'Revenue target: ' + profile.revenue_target + '. ' : '') +
+      (profile.priorities ? 'Current priorities: ' + profile.priorities + '. ' : '') +
+      (profile.peak_hours ? 'Peak hours: ' + profile.peak_hours + '. ' : '') : '';
 
-    const crystalPct2 = total > 0 ? Math.round(crystal/total*100) : 0;
-    const bouncyPct2 = total > 0 ? Math.round(bouncy/total*100) : 0;
-    const prompt = 'You are the Essential EA AI performing an Operational Efficiency Audit. ' +
-      'Audit Data: Total tasks classified: ' + total + '. ' +
-      'Crystal Ball tasks: ' + crystal + ' (' + crystalPct2 + '%). ' +
-      'Bouncy Ball tasks: ' + bouncy + ' (' + bouncyPct2 + '%). ' +
-      'Priority Weeks generated: ' + weekly + '. ' +
-      'Daily Briefs generated: ' + briefs + '. ' +
-      'Recent tasks: ' + taskSummary + '. ' +
-      'Write a personalized AI Deep Dive audit analysis using the Essential EA methodology by Kristina Spencer. ' +
-      'Use Crystal Ball, Bouncy Ball, CEO Protection Protocol, and Priority Week Framework language naturally. ' +
-      'Structure your response with these sections: ' +
-      'OPERATIONAL PATTERNS DETECTED - 2-3 sentences about what the data reveals. ' +
-      'WHERE YOUR TIME IS LEAKING - Insight about Crystal Ball vs Bouncy Ball ratio. ' +
-      'YOUR BIGGEST OPPORTUNITY RIGHT NOW - The single most impactful change. ' +
-      'WHAT YOUR EA RECOMMENDS - 3 specific actions in priority order. ' +
-      'PROJECTED IMPACT - What their health score could reach in 30 days. ' +
-      'Be specific, decisive, reference actual numbers, sound like a trusted advisor.';
+    const taskSummary = recentTasks.slice(0, 10).map(t => 
+      t.classification.toUpperCase() + ': ' + t.description.substring(0, 60)
+    ).join('
+');
+
+    const bookContext = await getBookContext('operational efficiency executive performance business intelligence audit');
+
+    const prompt = 'You are an elite executive advisor analyzing an executive's operational performance. Provide a comprehensive business intelligence audit.
+
+' +
+      'EXECUTIVE PROFILE:
+' + profileContext + '
+
+' +
+      'EA USAGE DATA:
+' +
+      '- Total tasks classified: ' + total + '
+' +
+      '- Crystal Ball (executive only): ' + crystal + ' (' + (total > 0 ? Math.round(crystal/total*100) : 0) + '%)
+' +
+      '- Bouncy Ball (delegatable): ' + bouncy + ' (' + delegationRate + '%)
+' +
+      '- Delegation rate: ' + delegationRate + '%
+
+' +
+      'RECENT TASKS:
+' + taskSummary + '
+
+' +
+      financialContext + emailContext + crmContext + '
+
+' +
+      bookContext + '
+
+' +
+      'Return a JSON object with this exact structure:
+' +
+      '{
+' +
+      '  "overallScore": 85,
+' +
+      '  "scoreLabel": "High Performer",
+' +
+      '  "executiveSummary": "2-3 sentence overall assessment",
+' +
+      '  "strengths": ["strength 1", "strength 2", "strength 3"],
+' +
+      '  "criticalGaps": ["gap 1", "gap 2", "gap 3"],
+' +
+      '  "crystalBallInsights": ["key decision or risk only executive can handle 1", "insight 2"],
+' +
+      '  "financialAlerts": ["financial alert or opportunity 1", "alert 2"],
+' +
+      '  "weeklyFocus": ["top priority action for this week 1", "priority 2", "priority 3"],
+' +
+      '  "delegationOpportunities": ["specific task to delegate 1", "task 2"],
+' +
+      '  "thirtyDayPlan": ["action 1", "action 2", "action 3", "action 4", "action 5"],
+' +
+      '  "revenueOpportunities": ["revenue opportunity 1", "opportunity 2"],
+' +
+      '  "timeRecovery": "X hours per week could be recovered by..."
+' +
+      '}';
 
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5',
-      max_tokens: 800,
-      system: [
-        { type: 'text', text: 'You are the Essential EA AI - an operational intelligence platform built on the methodology from The Essential EA by Kristina Spencer. You serve real estate agents, financial advisors, insurance agents, coaches, consultants, and executives. Your tone is professional but conversational. You speak as a trusted EA advisor who protects the executive time fiercely. You always use Crystal Ball and Bouncy Ball Framework language naturally. Crystal Ball tasks are irreplaceable activities only the executive can do - if dropped they shatter permanently. Bouncy Ball tasks can and should be delegated - they bounce back. CEO Protection Protocol means the executive prime hours are sacred. Priority Week Framework means Crystal Ball tasks go in peak hours 9am to 12pm and Bouncy Balls never touch those hours.', cache_control: { type: 'ephemeral' } },
-        { type: 'text', text: 'Perform operational audits. Be specific, data-driven, and decisive. Reference actual numbers. Sound like a trusted advisor who has studied the business.' }
-      ],
+      max_tokens: 1500,
+      system: [{ type: 'text', text: METHODOLOGY_CONTEXT, cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: prompt }]
     });
 
-    const insights = response.content[0].text.trim();
-    res.json({ success: true, insights });
-  } catch (error) {
-    console.error('Audit insights error:', error.message);
-    res.status(500).json({ error: error.message, success: false });
+    let auditText = response.content[0].text.trim();
+    const audit = safeParseAI(auditText);
+    if(!audit) return res.status(500).json({ success: false, error: 'Failed to parse audit response' });
+
+    res.json({ success: true, audit, stats: { total, crystal, bouncy, delegationRate } });
+  } catch(e) {
+    console.error('Audit insights error:', e.message);
+    res.status(500).json({ success: false, error: e.message });
   }
 });
-
 app.post('/api/ea-draft', async (req, res) => {
   try {
     const { type, task, action } = req.body;
