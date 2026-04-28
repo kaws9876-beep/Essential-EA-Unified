@@ -1047,6 +1047,7 @@ function nav(name, el) {
   if(name === 'eatasklist') renderEATaskList();
   if(name === 'inbox') checkGoogleStatus();
   if(name === 'profile') loadProfile();
+  if(name === 'settings') checkSubscriptionStatus();
   if(name === 'meetings') loadMeetingsList();
 }
 async function loadAudit() {
@@ -3060,6 +3061,24 @@ async function startCheckout(plan) {
     }, 1000);
   }
 })();
+
+
+async function checkSubscriptionStatus() {
+  try {
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/subscription/status');
+    var d = await r.json();
+    var planEl = document.getElementById('current-plan');
+    if(planEl) {
+      if(d.active) {
+        var planNames = { solo: 'Solo - $79/month', founding: 'Founding Member - $67/month', blueprint: 'Blueprint - $167/month' };
+        planEl.textContent = planNames[d.plan] || d.plan;
+        planEl.style.color = '#2D6A35';
+      } else {
+        planEl.innerHTML = '<a onclick="nav(\'pricing\',null)" style="color:#C49A8A;cursor:pointer;font-weight:600">No active plan - Upgrade Now</a>';
+      }
+    }
+  } catch(e) {}
+}
 
 loadStats();
 setTimeout(loadStats, 1000);
