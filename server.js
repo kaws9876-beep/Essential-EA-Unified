@@ -3198,17 +3198,21 @@ app.get('/api/stripe/publishable-key', (req, res) => {
 const GHL_BASE = 'https://services.leadconnectorhq.com';
 
 async function ghlRequest(endpoint, method, body) {
+  // Try both v1 and v2 auth formats
+  const headers = {
+    'Authorization': 'Bearer ' + process.env.GHL_API_KEY,
+    'Content-Type': 'application/json',
+    'Version': '2021-07-28'
+  };
+  console.log('GHL request:', method || 'GET', GHL_BASE + endpoint);
   const res = await fetch(GHL_BASE + endpoint, {
     method: method || 'GET',
-    headers: {
-      'Authorization': 'Bearer ' + process.env.GHL_API_KEY,
-      'Content-Type': 'application/json',
-      'Version': '2021-07-28'
-    },
+    headers,
     body: body ? JSON.stringify(body) : undefined
   });
   const text = await res.text();
-  try { return JSON.parse(text); } catch(e) { return { error: text }; }
+  console.log('GHL response status:', res.status, 'body:', text.substring(0, 150));
+  try { return JSON.parse(text); } catch(e) { return { error: text, status: res.status }; }
 }
 
 app.get('/api/ghl/status', async (req, res) => {
