@@ -828,12 +828,25 @@ async function runClassify() {
         '<span style="font-size:32px">'+(isCrystal?'&#128302;':'&#127934;')+'</span>' +
         '<div><div style="font-family:Cormorant Garamond,serif;font-size:20px;font-weight:400">'+(isCrystal?'Crystal Ball - Executive Only':'Bouncy Ball - Delegate to EA')+'</div>' +
         '<span class="'+(isCrystal?'crystal-tag':'bouncy-tag')+'">'+c.urgency+'</span></div></div>' +
-        '<button data-text="'+(isCrystal?'Crystal Ball. ':'Bouncy Ball. ')+(c.reason||'').substring(0,150).replace(/"/g,'')+'" onclick="playVoice(this)" style="font-size:11px;padding:6px 12px;border:1px solid var(--tan);border-radius:3px;cursor:pointer;background:transparent;color:var(--mid)">&#9654; Listen</button>' +
+        '<button data-text="'+(isCrystal?'Crystal Ball. ':'Bouncy Ball. ')+(c.reason||'').substring(0,400).replace(/"/g,"'").replace(/'/g," ")+' Recommended action: '+(c.recommendedAction||'').replace(/"/g,"'").replace(/'/g," ")+'" onclick="playVoice(this)" style="font-size:11px;padding:6px 12px;border:1px solid var(--tan);border-radius:3px;cursor:pointer;background:transparent;color:var(--mid)">&#9654; Listen</button>' +
         '</div>' +
         '<div style="font-size:14px;line-height:1.7;margin-bottom:10px">'+(c.reason||'')+'</div>' +
         '<div style="font-size:13px;font-weight:600;color:var(--blk);padding:10px 14px;background:var(--warm);border-radius:4px">Recommended: '+(c.recommendedAction||'')+'</div>' +
         bookHtml +
         (c.confidence ? '<div style="font-size:11px;color:var(--mid);margin-top:10px">AI Confidence: '+c.confidence+'%</div>' : '') +
+        (isCrystal ? '' :
+          '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--tan)">' +
+          '<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:10px">EA Execution Mode</div>' +
+          (window._lastTask = task, '') +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+          '<button onclick="eaAction(\'draft-email\',window._lastTask)" style="font-size:11px;font-weight:700;padding:7px 14px;border-radius:3px;border:none;cursor:pointer;background:var(--blk);color:var(--cream)">Draft Email</button>' +
+          '<button onclick="eaAction(\'schedule\',window._lastTask)" style="font-size:11px;font-weight:700;padding:7px 14px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Schedule It</button>' +
+          '<button onclick="eaAction(\'task-list\',window._lastTask)" style="font-size:11px;font-weight:700;padding:7px 14px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Add to EA List</button>' +
+          '<button onclick="eaAction(\'generate-doc\',window._lastTask)" style="font-size:11px;font-weight:700;padding:7px 14px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Generate Doc</button>' +
+          '</div>' +
+          '<div id="ea-action-result" style="margin-top:10px;font-size:13px;line-height:1.7"></div>' +
+          '</div>'
+        ) +
         '</div>';
       loadStats();
       if(!isCrystal) loadEATasks();
@@ -1527,6 +1540,44 @@ async function readDocument(file) {
 })();
 
 // VOICE PLAYBACK
+async function eaAction(action, task) {
+  task = task || window._lastTask || '';
+  var resultEl = document.getElementById('ea-action-result');
+  if(resultEl) resultEl.innerHTML = '<div style="color:var(--mid);font-size:12px">Your EA is working on this...</div>';
+  
+  var actionMap = {
+    'draft-email': 'Draft a professional email for this task: ',
+    'schedule': 'Create a calendar plan and schedule for this task: ',
+    'task-list': 'Break this into specific actionable steps: ',
+    'generate-doc': 'Generate a professional document outline for: '
+  };
+  
+  var prompt = (actionMap[action] || 'Handle this task: ') + task;
+  
+  try {
+    var r = await fetch(RAILWAY + '/api/ea-draft', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({task: task, action: action, prompt: prompt})
+    });
+    var d = await r.json();
+    if(d.success && resultEl) {
+      resultEl.innerHTML = '<div style="background:var(--warm);border:1px solid var(--tan);border-radius:6px;padding:14px;white-space:pre-wrap;font-size:13px;line-height:1.7">' + (d.draft||d.result||'Done') + '</div>';
+      // Auto-add to EA task list
+      if(action === 'task-list') {
+        await fetch(RAILWAY + '/api/ea-tasks', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({title: task, description: d.draft||'', priority: 'normal', source: 'ea-execution'})
+        });
+        loadEATasks();
+      }
+    }
+  } catch(e) {
+    if(resultEl) resultEl.innerHTML = '<div style="color:var(--red);font-size:12px">Error: ' + e.message + '</div>';
+  }
+}
+
 async function playVoice(elOrText) {
   try {
     var text = typeof elOrText === 'string' ? decodeURIComponent(elOrText) : (elOrText.getAttribute('data-text') || '');
