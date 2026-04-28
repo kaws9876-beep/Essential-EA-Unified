@@ -1564,8 +1564,15 @@ async function eaAction(action, task) {
     });
     var d = await r.json();
     if(d.success && resultEl) {
-      resultEl.innerHTML = '<div style="background:var(--warm);border:1px solid var(--tan);border-radius:6px;padding:14px;white-space:pre-wrap;font-size:13px;line-height:1.7">' + (d.draft||d.result||'Done') + '</div>';
+      var outputText = d.output || d.draft || d.result || '';
+      if(!outputText) { resultEl.innerHTML = '<div style="color:var(--red);font-size:12px">No content returned. Check Railway logs.</div>'; return; }
+      resultEl.innerHTML = '<div style="background:var(--warm);border:1px solid var(--tan);border-radius:6px;padding:14px;white-space:pre-wrap;font-size:13px;line-height:1.7;font-family:DM Sans,sans-serif">' + outputText.replace(/\n/g,'<br>') + '</div>' +
+        '<div style="display:flex;gap:8px;margin-top:8px">' +
+        '<button onclick="copyEAResult(this)" style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Copy</button>' +
+        '</div>' +
+        '</div>';
       // Auto-add to EA task list
+
       if(action === 'task-list') {
         await fetch(RAILWAY + '/api/ea-tasks', {
           method: 'POST',
@@ -1580,28 +1587,51 @@ async function eaAction(action, task) {
   }
 }
 
+function copyEAResult(btn) {
+  var resultDiv = document.getElementById('ea-action-result');
+  if(resultDiv) {
+    var text = resultDiv.querySelector('div') ? resultDiv.querySelector('div').innerText : resultDiv.innerText;
+    navigator.clipboard.writeText(text).then(function() {
+      btn.textContent = 'Copied!';
+      setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+    });
+  }
+}
+
 async function playVoice(elOrText) {
   try {
-    var text = typeof elOrText === 'string' ? decodeURIComponent(elOrText) : (elOrText.getAttribute('data-text') || '');
-    // Clean text and limit to 500 chars for ElevenLabs
-    text = text.replace(/<[^>]+>/g, '').replace(/&[a-z]+;/g, ' ').trim();
-    if(text.length > 500) {
-      // Find a sentence break near 500 chars
-      var breakPoint = text.lastIndexOf('.', 500);
-      if(breakPoint < 200) breakPoint = 500;
-      text = text.substring(0, breakPoint + 1);
+    var text = typeof elOrText === 'string' ? decodeURIComponent(elOrText) : (elOrText.getAttribute('data-text') || elOrText.getAttribute('data-voice') || '');
+    text = text.replace(/<[^>]+>/g, '').replace(/&[a-z#0-9]+;/g, ' ').replace(/<br>/g,' ').trim();
+    if(!text) return;
+    // Split into chunks of max 400 chars at sentence boundaries
+    var chunks = [];
+    while(text.length > 0) {
+      if(text.length <= 400) { chunks.push(text); break; }
+      var cut = text.lastIndexOf('. ', 400);
+      if(cut < 50) cut = text.lastIndexOf(' ', 400);
+      if(cut < 50) cut = 400;
+      chunks.push(text.substring(0, cut + 1));
+      text = text.substring(cut + 1).trim();
     }
-    console.log('Playing voice, length:', text.length);
-    var r = await fetch(RAILWAY + '/api/speak', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({text: text})
-    });
-    if(!r.ok) { console.log('Voice API error:', r.status); return; }
-    var blob = await r.blob();
-    var url = URL.createObjectURL(blob);
-    var audio = new Audio(url);
-    audio.play().catch(function(e) { console.log('Audio play error:', e); });
+    // Play chunks sequentially
+    for(var i = 0; i < chunks.length; i++) {
+      var chunk = chunks[i].trim();
+      if(!chunk) continue;
+      var r = await fetch(RAILWAY + '/api/speak', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({text: chunk})
+      });
+      if(!r.ok) { console.log('Voice error on chunk', i, r.status); break; }
+      var blob = await r.blob();
+      var url = URL.createObjectURL(blob);
+      await new Promise(function(resolve) {
+        var audio = new Audio(url);
+        audio.onended = resolve;
+        audio.onerror = resolve;
+        audio.play().catch(resolve);
+      });
+    }
   } catch(e) { console.log('Voice error:', e.message); }
 }
 
