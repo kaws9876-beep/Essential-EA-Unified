@@ -2974,6 +2974,58 @@ app.get('/api/meetings/:id', async (req, res) => {
   }
 });
 
+
+// ============ CLERK AUTHENTICATION ============
+
+async function verifyClerkToken(req) {
+  try {
+    const authHeader = req.headers.authorization;
+    const sessionToken = req.headers['x-clerk-session-token'] || 
+                         req.cookies?.['__session'] ||
+                         (authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null);
+    
+    if(!sessionToken) return null;
+    
+    // Verify with Clerk
+    const verifyRes = await fetch('https://api.clerk.com/v1/sessions/' + sessionToken + '/verify', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + process.env.CLERK_SECRET_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if(!verifyRes.ok) return null;
+    const session = await verifyRes.json();
+    return session.user_id || null;
+  } catch(e) {
+    return null;
+  }
+}
+
+// Middleware to check auth on protected routes
+function requireAuth(req, res, next) {
+  // Skip auth in development or if no Clerk key set
+  if(!process.env.CLERK_SECRET_KEY || process.env.NODE_ENV === 'development') {
+    return next();
+  }
+  // Allow OPTIONS requests
+  if(req.method === 'OPTIONS') return next();
+  next(); // For now pass through - will enforce after testing
+}
+
+// Auth status endpoint
+app.get('/api/auth/status', async (req, res) => {
+  if(!process.env.CLERK_PUBLISHABLE_KEY) {
+    return res.json({ enabled: false, authenticated: true });
+  }
+  res.json({ 
+    enabled: true, 
+    publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
+    authenticated: false
+  });
+});
+
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });
 });
