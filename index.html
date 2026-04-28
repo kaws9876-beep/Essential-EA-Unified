@@ -430,67 +430,92 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
   <div class="content" id="content">
 
     <div class="screen active" id="screen-dashboard">
-      <div class="pg-h">Good morning, <em>Kristina.</em></div>
+      <div class="pg-h">Good morning, <em id="dash-name">Kristina.</em></div>
       <div class="pg-s">Your EA is ready. What needs your attention today?</div>
       <div class="kpi-grid">
-        <div class="kpi" onclick="nav('triage',null)" style="cursor:pointer"><div class="kv" id="k1">0</div><div class="kl">Total Tasks Analyzed</div><div class="kd up">All time</div></div>
-        <div class="kpi"><div class="kv" id="k2">0</div><div class="kl">Crystal Ball</div><div class="kd" style="color:var(--mid)">Only you can do these</div></div>
-        <div class="kpi"><div class="kv" id="k3">0</div><div class="kl">Bouncy Ball</div><div class="kd" style="color:var(--mid)">Delegate these</div></div>
-        <div class="kpi"><div class="kv" id="k4">0%</div><div class="kl">Avg AI Confidence</div><div class="kd up">Accuracy</div></div>
+        <div class="kpi" onclick="nav('triage',null)" style="cursor:pointer"><div class="kv" id="k1">0</div><div class="kl">Total Tasks Analyzed</div><div class="kd up">Click to triage</div></div>
+        <div class="kpi" onclick="nav('triage',null)" style="cursor:pointer"><div class="kv" id="k2">0</div><div class="kl">Crystal Ball</div><div class="kd" style="color:#C49A8A">Only you can do these</div></div>
+        <div class="kpi" onclick="nav('triage',null)" style="cursor:pointer"><div class="kv" id="k3">0</div><div class="kl">Bouncy Ball</div><div class="kd" style="color:#2D6A35">Delegate these</div></div>
+        <div class="kpi" onclick="nav('audit',null)" style="cursor:pointer"><div class="kv" id="k4">0%</div><div class="kl">Avg AI Confidence</div><div class="kd up">Run audit</div></div>
       </div>
       <div class="dg">
         <div class="cw">
           <div class="panel">
-            <div class="ph"><span class="pt">Today Priority Actions</span><button class="pl" onclick="nav('triage',document.querySelectorAll('.sb-item')[3])">Classify tasks</button></div>
-            <div class="pb">
-              <div class="pi"><div class="pg2">&#128302;</div><div class="pib"><div class="pit">Call Marcus Chen - listing follow-up</div><div class="pin">Crystal ball - Relationship at risk if not actioned today</div></div><div class="ptm">9:30 AM</div></div>
-              <div class="pi"><div class="pg2">&#128302;</div><div class="pib"><div class="pit">Review Q1 commission report with CFO</div><div class="pin">Crystal ball - Financial stewardship cadence</div></div><div class="ptm">2:00 PM</div></div>
-              <div class="pi"><div class="pb3">&#127934;</div><div class="pib"><div class="pit">Schedule team standup for next week</div><div class="pin">Bouncy ball - Delegated to EA</div></div><div class="ptm">EA owned</div></div>
-              <div class="pi"><div class="pb3">&#127934;</div><div class="pib"><div class="pit">Order closing gift for the Rodriguez family</div><div class="pin">Bouncy ball - Gift preferences logged</div></div><div class="ptm">EA owned</div></div>
-              <div class="pi"><div class="pg2">&#128302;</div><div class="pib"><div class="pit">Approve listing photos - 2847 Elmwood</div><div class="pin">Crystal ball - Your eye and your standard</div></div><div class="ptm">4:00 PM</div></div>
+            <div class="ph">
+              <span class="pt">Today Priority Actions</span>
+              <button class="pl" onclick="nav('triage',null)">+ Add Task</button>
+            </div>
+            <div class="pb" id="dash-priorities">
+              <div style="padding:16px;text-align:center;color:var(--mid);font-size:12px">
+                <div style="font-size:32px;margin-bottom:8px">&#128302;</div>
+                No tasks yet - <a onclick="nav('triage',null)" style="color:#C49A8A;cursor:pointer;font-weight:600">classify your first task</a>
+              </div>
             </div>
           </div>
-          <div class="ai-box">
-            <div class="ai-lbl">EA AI Insight - This week</div>
-            <div class="ai-txt">Your calendar shows <strong>6.5 hours of meeting time before 10am on Tuesday and Wednesday.</strong> Your EA recommends shifting team admin meetings to Thursday afternoon to protect your prime Crystal Ball hours.</div>
-            <div class="ai-acts">
-              <button class="abtn abtn-p" onclick="this.textContent='Approved';this.disabled=true">Approve change</button>
-              <button class="abtn abtn-g" onclick="nav('brief',document.querySelectorAll('.sb-item')[1])">Get Daily Brief</button>
+
+          <div class="panel" style="margin-top:16px">
+            <div class="ph"><span class="pt">Quick Actions</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 0">
+              <button onclick="nav('brief',null)" style="padding:10px;border:1px solid var(--tan);border-radius:6px;cursor:pointer;background:var(--warm);font-size:12px;font-weight:600;color:var(--blk);text-align:left">
+                <div style="font-size:20px;margin-bottom:4px">&#9733;</div>EA Daily Brief
+              </button>
+              <button onclick="nav('priorityweek',null)" style="padding:10px;border:1px solid var(--tan);border-radius:6px;cursor:pointer;background:var(--warm);font-size:12px;font-weight:600;color:var(--blk);text-align:left">
+                <div style="font-size:20px;margin-bottom:4px">&#128197;</div>Priority Week
+              </button>
+              <button onclick="nav('inbox',null)" style="padding:10px;border:1px solid var(--tan);border-radius:6px;cursor:pointer;background:var(--warm);font-size:12px;font-weight:600;color:var(--blk);text-align:left">
+                <div style="font-size:20px;margin-bottom:4px">&#9993;</div>Communication Hub
+              </button>
+              <button onclick="nav('meetings',null)" style="padding:10px;border:1px solid var(--tan);border-radius:6px;cursor:pointer;background:var(--warm);font-size:12px;font-weight:600;color:var(--blk);text-align:left">
+                <div style="font-size:20px;margin-bottom:4px">&#127908;</div>Meeting Recordings
+              </button>
+              <button onclick="nav('finance',null)" style="padding:10px;border:1px solid var(--tan);border-radius:6px;cursor:pointer;background:var(--warm);font-size:12px;font-weight:600;color:var(--blk);text-align:left">
+                <div style="font-size:20px;margin-bottom:4px">&#128200;</div>Financial Tracking
+              </button>
+              <button onclick="nav('audit',null)" style="padding:10px;border:1px solid var(--tan);border-radius:6px;cursor:pointer;background:var(--warm);font-size:12px;font-weight:600;color:var(--blk);text-align:left">
+                <div style="font-size:20px;margin-bottom:4px">&#128202;</div>Run Full Audit
+              </button>
             </div>
           </div>
         </div>
-        <div class="col">
+
+        <div class="rw">
           <div class="panel">
-            <div class="ph"><span class="pt">Today Schedule</span></div>
-            <div class="pb" style="padding-top:10px">
-              <div class="tl-item"><div class="tl-time">8:00</div><div class="tl-dot dot-grn"></div><div><div class="tl-n">EA Daily Brief</div><div class="tl-s">AI-generated and reviewed</div></div></div>
-              <div class="tl-item"><div class="tl-time">9:30</div><div class="tl-dot dot-gold"></div><div><div class="tl-n">Marcus Chen call</div><div class="tl-s">Crystal ball - 30 min</div></div></div>
-              <div class="tl-item"><div class="tl-time">11:00</div><div class="tl-dot dot-amb"></div><div><div class="tl-n">Listing photos review</div><div class="tl-s">2847 Elmwood - 45 min</div></div></div>
-              <div class="tl-item"><div class="tl-time">12:30</div><div class="tl-dot dot-dim"></div><div><div class="tl-n">Lunch - protected</div><div class="tl-s">Boundary block - EA enforced</div></div></div>
-              <div class="tl-item"><div class="tl-time">2:00</div><div class="tl-dot dot-gold"></div><div><div class="tl-n">CFO - Q1 review</div><div class="tl-s">Crystal ball - 60 min</div></div></div>
-              <div class="tl-item"><div class="tl-time">5:30</div><div class="tl-dot dot-dim"></div><div><div class="tl-n">Hard stop</div><div class="tl-s">CEO Protection Protocol enforced</div></div></div>
+            <div class="ph"><span class="pt">EA Status</span></div>
+            <div style="padding:12px 0">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--tan)">
+                <span style="font-size:12px;color:var(--mid)">Gmail</span>
+                <span id="dash-gmail-status" style="font-size:11px;font-weight:600;color:var(--mid)">Checking...</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--tan)">
+                <span style="font-size:12px;color:var(--mid)">Outlook</span>
+                <span id="dash-outlook-status" style="font-size:11px;font-weight:600;color:var(--mid)">Checking...</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--tan)">
+                <span style="font-size:12px;color:var(--mid)">QuickBooks</span>
+                <span id="dash-qb-status" style="font-size:11px;font-weight:600;color:var(--mid)">Checking...</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">
+                <span style="font-size:12px;color:var(--mid)">CRM</span>
+                <span id="dash-crm-status" style="font-size:11px;font-weight:600;color:var(--mid)">Checking...</span>
+              </div>
             </div>
           </div>
-          <div class="panel">
-            <div class="ph"><span class="pt">Weekly Scorecard</span></div>
-            <div class="pb">
-              <div class="ring-wrap">
-                <div class="ring">
-                  <svg width="62" height="62" viewBox="0 0 62 62"><circle cx="31" cy="31" r="25" fill="none" stroke="#E8E2D8" stroke-width="4.5"/><circle cx="31" cy="31" r="25" fill="none" stroke="#C49A8A" stroke-width="4.5" stroke-dasharray="157" stroke-dashoffset="20" stroke-linecap="round"/></svg>
-                  <div class="ring-val">87</div>
-                </div>
-                <div><div class="ring-lbl">Operational Health</div><div class="ring-sub">Up 4 pts vs last week.<br>Crystal ball protection 94%.</div></div>
-              </div>
-              <div class="m-row"><span class="m-name">Crystal balls protected</span><span class="m-val" id="sc1">-</span><div class="bar-wrap"><div class="bar" id="sb1" style="width:0%"></div></div></div>
-              <div class="m-row"><span class="m-name">Bouncy balls delegated</span><span class="m-val" id="sc2">-</span><div class="bar-wrap"><div class="bar" id="sb2" style="width:0%"></div></div></div>
-              <div class="m-row"><span class="m-name">Total tasks classified</span><span class="m-val" id="sc3">-</span><div class="bar-wrap"><div class="bar" id="sb3" style="width:0%"></div></div></div>
-              <div class="m-row"><span class="m-name">Avg confidence score</span><span class="m-val" id="sc4">-</span><div class="bar-wrap"><div class="bar" id="sb4" style="width:0%"></div></div></div>
+
+          <div class="panel" style="margin-top:16px">
+            <div class="ph"><span class="pt">Recent Tasks</span><button class="pl" onclick="nav('history',null)">View all</button></div>
+            <div id="dash-recent-tasks" style="font-size:12px;color:var(--mid);padding:8px 0">Loading...</div>
+          </div>
+
+          <div class="panel" style="margin-top:16px">
+            <div class="ph"><span class="pt">Subscription</span></div>
+            <div style="padding:8px 0">
+              <div id="dash-plan" style="font-size:13px;font-weight:600;color:#2D6A35">Loading...</div>
+              <div style="font-size:11px;color:var(--mid);margin-top:4px">Essential EA</div>
+              <button onclick="nav('pricing',null)" style="margin-top:10px;font-size:10px;font-weight:700;padding:5px 12px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Manage Plan</button>
             </div>
           </div>
         </div>
       </div>
-    </div>
-
     <div class="screen" id="screen-brief">
       <div class="pg-h2">EA Daily Brief</div>
       <div class="pg-s2">Your AI-generated morning brief. What your EA has handled and what needs your attention today.</div>
@@ -1270,6 +1295,7 @@ function nav(name, el) {
   if(name === 'inbox') checkGoogleStatus();
   if(name === 'profile') loadProfile();
   if(name === 'settings') checkSubscriptionStatus();
+  if(name === 'dashboard') loadDashboard();
   if(name === 'meetings') loadMeetingsList();
   if(name === 'crm') checkGHLStatus();
   if(name === 'finance') {
@@ -3303,6 +3329,75 @@ async function startCheckout(plan) {
 })();
 
 
+async function loadDashboard() {
+  // Load recent tasks for dashboard
+  try {
+    var r = await fetch('https://essential-ea-app-production.up.railway.app/api/stats');
+    var d = await r.json();
+    if(d.success) {
+      var k1 = document.getElementById('k1'); if(k1) k1.textContent = d.total || 0;
+      var k2 = document.getElementById('k2'); if(k2) k2.textContent = d.crystal || 0;
+      var k3 = document.getElementById('k3'); if(k3) k3.textContent = d.bouncy || 0;
+      var k4 = document.getElementById('k4'); if(k4) k4.textContent = (d.avgConfidence || 0) + '%';
+      
+      // Show recent tasks in dashboard
+      var recentEl = document.getElementById('dash-recent-tasks');
+      if(recentEl && d.recentTasks && d.recentTasks.length) {
+        recentEl.innerHTML = d.recentTasks.slice(0,5).map(function(t) {
+          return '<div style="padding:6px 0;border-bottom:1px solid var(--tan);display:flex;justify-content:space-between;align-items:center">' +
+            '<div style="font-size:11px;color:var(--blk);flex:1;margin-right:8px">' + t.description.substring(0,45) + '...</div>' +
+            '<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:2px;background:' + (t.classification==='crystal'?'rgba(196,154,138,0.2)':'rgba(45,106,53,0.15)') + ';color:' + (t.classification==='crystal'?'#C49A8A':'#2D6A35') + ';white-space:nowrap">' + t.classification + '</span>' +
+            '</div>';
+        }).join('');
+      } else if(recentEl) {
+        recentEl.innerHTML = '<div style="font-size:11px;color:var(--mid)">No tasks yet</div>';
+      }
+    }
+  } catch(e) {}
+
+  // Check integration statuses
+  try {
+    var gr = await fetch('https://essential-ea-app-production.up.railway.app/api/google/status');
+    var gd = await gr.json();
+    var gEl = document.getElementById('dash-gmail-status');
+    if(gEl) { gEl.textContent = gd.connected ? 'Connected' : 'Not connected'; gEl.style.color = gd.connected ? '#2D6A35' : '#8A3A30'; }
+  } catch(e) {}
+
+  try {
+    var mr = await fetch('https://essential-ea-app-production.up.railway.app/api/microsoft/status');
+    var md = await mr.json();
+    var mEl = document.getElementById('dash-outlook-status');
+    if(mEl) { mEl.textContent = md.connected ? 'Connected' : 'Not connected'; mEl.style.color = md.connected ? '#2D6A35' : '#8A3A30'; }
+  } catch(e) {}
+
+  try {
+    var qr = await fetch('https://essential-ea-app-production.up.railway.app/api/quickbooks/status');
+    var qd = await qr.json();
+    var qEl = document.getElementById('dash-qb-status');
+    if(qEl) { qEl.textContent = qd.connected ? 'Connected' : 'Not connected'; qEl.style.color = qd.connected ? '#2D6A35' : '#8A3A30'; }
+  } catch(e) {}
+
+  try {
+    var cr = await fetch('https://essential-ea-app-production.up.railway.app/api/ghl/status');
+    var cd = await cr.json();
+    var cEl = document.getElementById('dash-crm-status');
+    if(cEl) { cEl.textContent = cd.connected ? 'Connected' : 'Not connected'; cEl.style.color = cd.connected ? '#2D6A35' : '#8A3A30'; }
+  } catch(e) {}
+
+  // Update name from profile
+  try {
+    var pr = await fetch('https://essential-ea-app-production.up.railway.app/api/profile');
+    var pd = await pr.json();
+    if(pd.success && pd.profile && pd.profile.name) {
+      var nameEl = document.getElementById('dash-name');
+      if(nameEl) nameEl.textContent = pd.profile.name + '.';
+    }
+  } catch(e) {}
+
+  // Check subscription
+  checkSubscriptionStatus();
+}
+
 async function checkSubscriptionStatus() {
   try {
     var r = await fetch('https://essential-ea-app-production.up.railway.app/api/subscription/status');
@@ -3714,6 +3809,7 @@ function displayAuditResults(a, stats) {
 
 loadStats();
 setTimeout(loadStats, 1000);
+loadDashboard();
 loadProfile();
 setTimeout(loadStats, 3000);
 window.addEventListener('focus', loadStats);
