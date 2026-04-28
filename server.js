@@ -3348,6 +3348,201 @@ app.get('/api/ghl/pipelines', async (req, res) => {
   }
 });
 
+
+// ============ QUICKBOOKS INTEGRATION ============
+
+const QB_BASE_SANDBOX = 'https://sandbox-quickbooks.api.intuit.com';
+const QB_BASE_PRODUCTION = 'https://quickbooks.api.intuit.com';
+
+function getQBBase() {
+  return process.env.QUICKBOOKS_ENVIRONMENT === 'production' ? QB_BASE_PRODUCTION : QB_BASE_SANDBOX;
+}
+
+app.get('/auth/quickbooks', (req, res) => {
+  const params = new URLSearchParams({
+    client_id: process.env.QUICKBOOKS_CLIENT_ID,
+    redirect_uri: process.env.QUICKBOOKS_REDIRECT_URI,
+    response_type: 'code',
+    scope: 'com.intuit.quickbooks.accounting',
+    state: 'essential_ea_qb'
+  });
+  res.redirect('https://appcenter.intuit.com/connect/oauth2?' + params.toString());
+});
+
+app.get('/auth/quickbooks/callback', async (req, res) => {
+  const { code, realmId, error } = req.query;
+  if(error) return res.redirect(VERCEL + '/?qb_error=' + error);
+  if(!code) return res.redirect(VERCEL + '/?qb_error=no_code');
+  try {
+    const credentials = Buffer.from(process.env.QUICKBOOKS_CLIENT_ID + ':' + process.env.QUICKBOOKS_CLIENT_SECRET).toString('base64');
+    const tokenRes = await fetch('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Basic ' + credentials,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json'
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: process.env.QUICKBOOKS_REDIRECT_URI
+      })
+    });
+    const tokens = await tokenRes.json();
+    if(tokens.error) throw new Error(tokens.error_description || tokens.error);
+
+    // Store tokens and realmId
+    await sql`CREATE TABLE IF NOT EXISTS quickbooks_tokens (
+      id SERIAL PRIMARY KEY,
+      user_id VARCHAR(255) DEFAULT 'default' UNIQUE,
+      access_token TEXT,
+      refresh_token TEXT,
+      realm_id VARCHAR(255),
+      expiry_date BIGINT,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )`;
+    await sql`DELETE FROM quickbooks_tokens WHERE user_id = 'default'`;
+    const expiry = Date.now() + ((tokens.expires_in || 3600) * 1000);
+    await sql`INSERT INTO quickbooks_tokens (user_id, access_token, refresh_token, realm_id, expiry_date)
+      VALUES ('default', ${tokens.access_token}, ${tokens.refresh_token}, ${realmId}, ${expiry})`;
+
+    console.log('QuickBooks connected, realmId:', realmId);
+    res.redirect(VERCEL + '/?qb_connected=true');
+  } catch(e) {
+    console.error('QuickBooks OAuth error:', e.message);
+    res.redirect(VERCEL + '/?qb_error=' + encodeURIComponent(e.message));
+  }
+});
+
+async function getQBAccessToken() {
+  try {
+    const [token] = await sql`SELECT * FROM quickbooks_tokens WHERE user_id = 'default' LIMIT 1`;
+    if(!token) return null;
+    if(token.expiry_date && Date.now() > token.expiry_date - 60000) {
+      const credentials = Buffer.from(process.env.QUICKBOOKS_CLIENT_ID + ':' + process.env.QUICKBOOKS_CLIENT_SECRET).toString('base64');
+      const refreshRes = await fetch('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', {
+        method: 'POST',
+        headers: { 'Authorization': 'Basic ' + credentials, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: token.refresh_token })
+      });
+      const newTokens = await refreshRes.json();
+      if(newTokens.access_token) {
+        const newExpiry = Date.now() + ((newTokens.expires_in || 3600) * 1000);
+        await sql`UPDATE quickbooks_tokens SET access_token = ${newTokens.access_token}, expiry_date = ${newExpiry}, updated_at = NOW() WHERE user_id = 'default'`;
+        return { token: newTokens.access_token, realmId: token.realm_id };
+      }
+      return null;
+    }
+    return { token: token.access_token, realmId: token.realm_id };
+  } catch(e) { return null; }
+}
+
+app.get('/api/quickbooks/status', async (req, res) => {
+  try {
+    await sql`CREATE TABLE IF NOT EXISTS quickbooks_tokens (id SERIAL PRIMARY KEY, user_id VARCHAR(255) DEFAULT 'default' UNIQUE, access_token TEXT, refresh_token TEXT, realm_id VARCHAR(255), expiry_date BIGINT, created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW())`;
+    const [token] = await sql`SELECT realm_id, updated_at FROM quickbooks_tokens WHERE user_id = 'default' LIMIT 1`;
+    if(token) res.json({ connected: true, realmId: token.realm_id });
+    else res.json({ connected: false });
+  } catch(e) { res.json({ connected: false }); }
+});
+
+app.get('/api/quickbooks/disconnect', async (req, res) => {
+  try {
+    await sql`DELETE FROM quickbooks_tokens WHERE user_id = 'default'`;
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false }); }
+});
+
+app.get('/api/quickbooks/company', async (req, res) => {
+  try {
+    const auth = await getQBAccessToken();
+    if(!auth) return res.json({ success: false, error: 'Not connected' });
+    const r = await fetch(getQBBase() + '/v3/company/' + auth.realmId + '/companyinfo/' + auth.realmId + '?minorversion=65', {
+      headers: { 'Authorization': 'Bearer ' + auth.token, 'Accept': 'application/json' }
+    });
+    const d = await r.json();
+    res.json({ success: true, company: d.CompanyInfo });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/quickbooks/pnl', async (req, res) => {
+  try {
+    const auth = await getQBAccessToken();
+    if(!auth) return res.json({ success: false, error: 'Not connected' });
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+    const endDate = now.toISOString().split('T')[0];
+    const r = await fetch(getQBBase() + '/v3/company/' + auth.realmId + '/reports/ProfitAndLoss?start_date=' + startDate + '&end_date=' + endDate + '&minorversion=65', {
+      headers: { 'Authorization': 'Bearer ' + auth.token, 'Accept': 'application/json' }
+    });
+    const d = await r.json();
+    res.json({ success: true, report: d });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/quickbooks/invoices', async (req, res) => {
+  try {
+    const auth = await getQBAccessToken();
+    if(!auth) return res.json({ success: false, error: 'Not connected', invoices: [] });
+    const r = await fetch(getQBBase() + '/v3/company/' + auth.realmId + "/query?query=SELECT * FROM Invoice WHERE Balance > '0' ORDERBY DueDate DESC MAXRESULTS 20&minorversion=65", {
+      headers: { 'Authorization': 'Bearer ' + auth.token, 'Accept': 'application/json' }
+    });
+    const d = await r.json();
+    const invoices = d.QueryResponse?.Invoice || [];
+    res.json({ success: true, invoices });
+  } catch(e) { res.status(500).json({ success: false, error: e.message, invoices: [] }); }
+});
+
+app.get('/api/quickbooks/expenses', async (req, res) => {
+  try {
+    const auth = await getQBAccessToken();
+    if(!auth) return res.json({ success: false, error: 'Not connected', expenses: [] });
+    const r = await fetch(getQBBase() + '/v3/company/' + auth.realmId + '/query?query=SELECT * FROM Purchase ORDERBY TxnDate DESC MAXRESULTS 20&minorversion=65', {
+      headers: { 'Authorization': 'Bearer ' + auth.token, 'Accept': 'application/json' }
+    });
+    const d = await r.json();
+    const expenses = d.QueryResponse?.Purchase || [];
+    res.json({ success: true, expenses });
+  } catch(e) { res.status(500).json({ success: false, error: e.message, expenses: [] }); }
+});
+
+app.get('/api/quickbooks/summary', async (req, res) => {
+  try {
+    const auth = await getQBAccessToken();
+    if(!auth) return res.json({ success: false, error: 'Not connected' });
+    // Get invoices and expenses in parallel
+    const [invRes, expRes] = await Promise.all([
+      fetch(getQBBase() + '/v3/company/' + auth.realmId + "/query?query=SELECT * FROM Invoice WHERE Balance > '0' MAXRESULTS 50&minorversion=65", {
+        headers: { 'Authorization': 'Bearer ' + auth.token, 'Accept': 'application/json' }
+      }),
+      fetch(getQBBase() + '/v3/company/' + auth.realmId + '/query?query=SELECT * FROM Purchase MAXRESULTS 50&minorversion=65', {
+        headers: { 'Authorization': 'Bearer ' + auth.token, 'Accept': 'application/json' }
+      })
+    ]);
+    const invData = await invRes.json();
+    const expData = await expRes.json();
+    const invoices = invData.QueryResponse?.Invoice || [];
+    const expenses = expData.QueryResponse?.Purchase || [];
+    const unpaidTotal = invoices.reduce((sum, inv) => sum + (parseFloat(inv.Balance) || 0), 0);
+    const expenseTotal = expenses.reduce((sum, exp) => sum + (parseFloat(exp.TotalAmt) || 0), 0);
+    res.json({
+      success: true,
+      summary: {
+        unpaidInvoices: invoices.length,
+        unpaidTotal: unpaidTotal.toFixed(2),
+        recentExpenses: expenses.length,
+        expenseTotal: expenseTotal.toFixed(2),
+        topUnpaid: invoices.slice(0,3).map(inv => ({
+          customer: inv.CustomerRef?.name || 'Unknown',
+          amount: inv.Balance,
+          due: inv.DueDate
+        }))
+      }
+    });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });
 });
