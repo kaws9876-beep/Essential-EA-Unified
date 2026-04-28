@@ -1600,8 +1600,7 @@ app.post('/api/audit-insights', async (req, res) => {
 
     const taskSummary = recentTasks.slice(0, 10).map(t => 
       t.classification.toUpperCase() + ': ' + t.description.substring(0, 60)
-    ).join('
-');
+    ).join('\n');
 
     const bookContext = await getBookContext('operational efficiency executive performance business intelligence audit');
 
