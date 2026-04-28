@@ -3070,17 +3070,121 @@ app.get('/api/stripe/prices', (req, res) => {
   });
 });
 
-app.post('/api/stripe/webhook', async (req, res) => {
+app.post('/api/stripe/webhook', express.raw({type: 'application/json'}), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   
+  let event;
   try {
-    // For now just log and acknowledge
-    const body = req.body;
-    console.log('Stripe webhook received:', typeof body === 'string' ? body.substring(0, 100) : JSON.stringify(body).substring(0, 100));
-    res.json({ received: true });
+    // Verify webhook signature
+    if(webhookSecret && sig) {
+      // Manual signature verification without Stripe SDK
+      const crypto = await import('crypto');
+      const payload = req.body.toString('utf8');
+      const parts = sig.split(',');
+      const timestamp = parts.find(p => p.startsWith('t=')).slice(2);
+      const signatures = parts.filter(p => p.startsWith('v1=')).map(p => p.slice(3));
+      
+      const signedPayload = timestamp + '.' + payload;
+      const expectedSig = crypto.default.createHmac('sha256', webhookSecret)
+        .update(signedPayload).digest('hex');
+      
+      if(!signatures.includes(expectedSig)) {
+        console.error('Webhook signature verification failed');
+        return res.status(400).json({ error: 'Invalid signature' });
+      }
+      event = JSON.parse(payload);
+    } else {
+      event = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    }
   } catch(e) {
-    res.status(400).json({ error: e.message });
+    console.error('Webhook parse error:', e.message);
+    return res.status(400).json({ error: e.message });
+  }
+
+  console.log('Stripe webhook event:', event.type);
+
+  try {
+    // Create subscriptions table if needed
+    await sql`CREATE TABLE IF NOT EXISTS subscriptions (
+      id SERIAL PRIMARY KEY,
+      user_id VARCHAR(255) DEFAULT 'default',
+      stripe_customer_id VARCHAR(255),
+      stripe_subscription_id VARCHAR(255),
+      plan VARCHAR(100),
+      status VARCHAR(50),
+      current_period_end BIGINT,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )`;
+
+    switch(event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object;
+        console.log('Checkout completed:', session.id, 'customer:', session.customer);
+        await sql`INSERT INTO subscriptions (stripe_customer_id, stripe_subscription_id, status, updated_at)
+          VALUES (${session.customer}, ${session.subscription}, 'active', NOW())
+          ON CONFLICT (stripe_subscription_id) DO UPDATE SET
+            status = 'active', updated_at = NOW()`.catch(e => console.log('DB insert error:', e.message));
+        break;
+      }
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated': {
+        const sub = event.data.object;
+        const plan = sub.items?.data?.[0]?.price?.id || 'unknown';
+        const planName = plan === process.env.STRIPE_PRICE_SOLO ? 'solo' :
+                         plan === process.env.STRIPE_PRICE_FOUNDING ? 'founding' :
+                         plan === process.env.STRIPE_PRICE_BLUEPRINT ? 'blueprint' : 'unknown';
+        console.log('Subscription updated:', sub.id, 'status:', sub.status, 'plan:', planName);
+        await sql`INSERT INTO subscriptions (stripe_customer_id, stripe_subscription_id, plan, status, current_period_end, updated_at)
+          VALUES (${sub.customer}, ${sub.id}, ${planName}, ${sub.status}, ${sub.current_period_end}, NOW())
+          ON CONFLICT (stripe_subscription_id) DO UPDATE SET
+            plan = EXCLUDED.plan, status = EXCLUDED.status,
+            current_period_end = EXCLUDED.current_period_end, updated_at = NOW()`.catch(e => console.log('DB error:', e.message));
+        break;
+      }
+      case 'customer.subscription.deleted': {
+        const sub = event.data.object;
+        console.log('Subscription cancelled:', sub.id);
+        await sql`UPDATE subscriptions SET status = 'cancelled', updated_at = NOW()
+          WHERE stripe_subscription_id = ${sub.id}`.catch(e => console.log('DB error:', e.message));
+        break;
+      }
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object;
+        console.log('Payment succeeded:', invoice.id, 'amount:', invoice.amount_paid);
+        await sql`UPDATE subscriptions SET status = 'active', updated_at = NOW()
+          WHERE stripe_customer_id = ${invoice.customer}`.catch(e => console.log('DB error:', e.message));
+        break;
+      }
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object;
+        console.log('Payment failed:', invoice.id);
+        await sql`UPDATE subscriptions SET status = 'past_due', updated_at = NOW()
+          WHERE stripe_customer_id = ${invoice.customer}`.catch(e => console.log('DB error:', e.message));
+        break;
+      }
+      default:
+        console.log('Unhandled webhook event:', event.type);
+    }
+  } catch(e) {
+    console.error('Webhook handler error:', e.message);
+  }
+
+  res.json({ received: true });
+});
+
+app.get('/api/subscription/status', async (req, res) => {
+  try {
+    await sql`CREATE TABLE IF NOT EXISTS subscriptions (id SERIAL PRIMARY KEY, user_id VARCHAR(255) DEFAULT 'default', stripe_customer_id VARCHAR(255), stripe_subscription_id VARCHAR(255) UNIQUE, plan VARCHAR(100), status VARCHAR(50), current_period_end BIGINT, created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW())`;
+    const [sub] = await sql`SELECT * FROM subscriptions WHERE status = 'active' ORDER BY updated_at DESC LIMIT 1`;
+    if(sub) {
+      res.json({ success: true, active: true, plan: sub.plan, status: sub.status });
+    } else {
+      res.json({ success: true, active: false });
+    }
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 
