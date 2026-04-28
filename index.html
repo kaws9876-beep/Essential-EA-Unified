@@ -131,8 +131,22 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
   .hamburger{display:block}
   .dg{grid-template-columns:1fr}
   .kpi-grid{grid-template-columns:1fr 1fr}
-  .inbox-layout{grid-template-columns:1fr}
+  .inbox-layout{grid-template-columns:1fr;height:auto}
   .triage-layout{grid-template-columns:1fr}
+  .ops-grid{grid-template-columns:1fr}
+  .s-grid{grid-template-columns:1fr}
+  .topbar{padding:10px 14px;flex-wrap:wrap;gap:6px}
+  .tb-title{font-size:15px}
+  .tb-date{font-size:12px;color:var(--mid);width:100%;order:3}
+  .tb-acts{gap:6px}
+  .tbtn{font-size:10px;padding:6px 10px}
+  .screen-wrap{padding:14px}
+  .pg-h{font-size:26px}
+  .pg-h2{font-size:22px}
+  .kpi{padding:12px}
+  .kv{font-size:28px}
+  .panel{border-radius:6px}
+  .btn-primary,.btn-secondary{padding:9px 16px;font-size:11px}
 }
 </style>
 </head>
@@ -1572,14 +1586,19 @@ async function eaAction(action, task) {
         '</div>' +
         '</div>';
       // Auto-add to EA task list
-
       if(action === 'task-list') {
-        await fetch(RAILWAY + '/api/ea-tasks', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({title: task, description: d.draft||'', priority: 'normal', source: 'ea-execution'})
-        });
-        loadEATasks();
+        try {
+          var tr = await fetch(RAILWAY + '/api/ea-tasks', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({title: task.substring(0,100), description: outputText.substring(0,500), priority: 'normal', source: 'ea-execution'})
+          });
+          var td = await tr.json();
+          if(td.success) {
+            resultEl.innerHTML += '<div style="margin-top:8px;padding:8px 12px;background:rgba(45,106,53,.08);border:1px solid rgba(45,106,53,.2);border-radius:4px;font-size:12px;color:var(--green)">&#10003; Added to your EA Task List</div>';
+            loadEATasks();
+          }
+        } catch(te) { console.log('Task add error:', te.message); }
       }
     }
   } catch(e) {
