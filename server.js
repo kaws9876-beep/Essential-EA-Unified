@@ -1604,7 +1604,7 @@ app.post('/api/audit-insights', async (req, res) => {
 
     const bookContext = await getBookContext('operational efficiency executive performance business intelligence audit');
 
-    const prompt = 'You are an elite executive advisor analyzing an executive's operational performance. Provide a comprehensive business intelligence audit.
+    const prompt = 'You are an elite executive advisor analyzing an executive operational performance. Provide a comprehensive business intelligence audit.
 
 ' +
       'EXECUTIVE PROFILE:
