@@ -3192,6 +3192,153 @@ app.get('/api/stripe/publishable-key', (req, res) => {
   res.json({ key: process.env.STRIPE_PUBLISHABLE_KEY });
 });
 
+
+// ============ GO HIGH LEVEL CRM ============
+
+const GHL_BASE = 'https://services.leadconnectorhq.com';
+
+async function ghlRequest(endpoint, method, body) {
+  const res = await fetch(GHL_BASE + endpoint, {
+    method: method || 'GET',
+    headers: {
+      'Authorization': 'Bearer ' + process.env.GHL_API_KEY,
+      'Content-Type': 'application/json',
+      'Version': '2021-07-28'
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const text = await res.text();
+  try { return JSON.parse(text); } catch(e) { return { error: text }; }
+}
+
+app.get('/api/ghl/status', async (req, res) => {
+  try {
+    if(!process.env.GHL_API_KEY) return res.json({ connected: false });
+    const data = await ghlRequest('/locations/' + process.env.GHL_LOCATION_ID);
+    if(data.location) {
+      res.json({ connected: true, name: data.location.name, id: data.location.id });
+    } else {
+      res.json({ connected: false, error: data.message || 'Connection failed' });
+    }
+  } catch(e) {
+    res.json({ connected: false, error: e.message });
+  }
+});
+
+app.get('/api/ghl/contacts', async (req, res) => {
+  try {
+    const search = req.query.search || '';
+    const limit = req.query.limit || 20;
+    let endpoint = '/contacts/?locationId=' + process.env.GHL_LOCATION_ID + '&limit=' + limit;
+    if(search) endpoint += '&query=' + encodeURIComponent(search);
+    const data = await ghlRequest(endpoint);
+    res.json({ success: true, contacts: data.contacts || [], total: data.total || 0 });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/ghl/contacts', async (req, res) => {
+  try {
+    const { firstName, lastName, email, phone, tags, notes } = req.body;
+    const contact = {
+      locationId: process.env.GHL_LOCATION_ID,
+      firstName, lastName, email, phone,
+      tags: tags || ['Essential EA'],
+      source: 'The Essential EA'
+    };
+    const data = await ghlRequest('/contacts/', 'POST', contact);
+    if(data.contact) {
+      if(notes) {
+        await ghlRequest('/contacts/' + data.contact.id + '/notes', 'POST', {
+          body: notes,
+          userId: data.contact.id
+        });
+      }
+      res.json({ success: true, contact: data.contact });
+    } else {
+      res.json({ success: false, error: data.message || 'Failed to create contact' });
+    }
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/ghl/tasks', async (req, res) => {
+  try {
+    const { title, dueDate, contactId, assignedTo, description } = req.body;
+    const task = {
+      title,
+      body: description || '',
+      dueDate: dueDate || new Date(Date.now() + 24*60*60*1000).toISOString(),
+      completed: false,
+      contactId: contactId || null,
+      assignedTo: assignedTo || null
+    };
+    const endpoint = '/contacts/' + (contactId || 'none') + '/tasks';
+    const data = await ghlRequest('/locations/' + process.env.GHL_LOCATION_ID + '/tasks', 'POST', task);
+    res.json({ success: true, task: data });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/ghl/opportunities', async (req, res) => {
+  try {
+    const { title, contactId, pipelineId, stageId, monetaryValue, status } = req.body;
+    // Get pipelines first if no pipelineId
+    let pipeline = pipelineId;
+    if(!pipeline) {
+      const pipelines = await ghlRequest('/opportunities/pipelines?locationId=' + process.env.GHL_LOCATION_ID);
+      pipeline = pipelines.pipelines?.[0]?.id;
+    }
+    const opp = {
+      title,
+      contactId,
+      locationId: process.env.GHL_LOCATION_ID,
+      pipelineId: pipeline,
+      pipelineStageId: stageId || null,
+      monetaryValue: monetaryValue || 0,
+      status: status || 'open',
+      source: 'The Essential EA'
+    };
+    const data = await ghlRequest('/opportunities/', 'POST', opp);
+    res.json({ success: true, opportunity: data });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/ghl/sync-task', async (req, res) => {
+  try {
+    const { task, classification, reason, action } = req.body;
+    // When EA classifies a Bouncy Ball task, create it in GHL
+    if(classification === 'bouncy') {
+      const ghlTask = {
+        title: task,
+        body: 'EA Classification: Bouncy Ball - Delegate\nReason: ' + reason + '\nRecommended Action: ' + action,
+        dueDate: new Date(Date.now() + 24*60*60*1000).toISOString(),
+        completed: false
+      };
+      const data = await ghlRequest('/locations/' + process.env.GHL_LOCATION_ID + '/tasks', 'POST', ghlTask);
+      res.json({ success: true, synced: true, taskId: data.id });
+    } else {
+      res.json({ success: true, synced: false, reason: 'Crystal Ball tasks stay with executive' });
+    }
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.get('/api/ghl/pipelines', async (req, res) => {
+  try {
+    const data = await ghlRequest('/opportunities/pipelines?locationId=' + process.env.GHL_LOCATION_ID);
+    res.json({ success: true, pipelines: data.pipelines || [] });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });
 });
