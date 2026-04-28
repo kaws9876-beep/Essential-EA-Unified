@@ -2996,7 +2996,7 @@ app.post('/api/transcribe', async (req, res) => {
       created_at TIMESTAMP DEFAULT NOW()
     )`;
     const [saved] = await sql`INSERT INTO meeting_recordings (filename, transcript, summary, analysis)
-      VALUES (\${filename||'Recording'}, \${transcript}, \${analysisData?.summary||''}, \${JSON.stringify(analysisData)})
+      VALUES (${filename||'Recording'}, ${transcript}, ${analysisData?.summary||''}, ${JSON.stringify(analysisData)})
       RETURNING id`;
 
     res.json({
@@ -3600,6 +3600,67 @@ app.get('/api/quickbooks/summary', async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+
+
+// ============ EA TASK LIST ============
+
+app.get('/api/ea-tasks', async (req, res) => {
+  try {
+    await sql`CREATE TABLE IF NOT EXISTS ea_tasks (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT,
+      status VARCHAR(50) DEFAULT 'pending',
+      priority VARCHAR(50) DEFAULT 'normal',
+      source VARCHAR(100),
+      due_date TEXT,
+      completed_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )`;
+    const tasks = await sql`SELECT * FROM ea_tasks ORDER BY created_at DESC LIMIT 50`;
+    res.json({ success: true, tasks });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/ea-tasks', async (req, res) => {
+  try {
+    await sql`CREATE TABLE IF NOT EXISTS ea_tasks (id SERIAL PRIMARY KEY, title TEXT NOT NULL, description TEXT, status VARCHAR(50) DEFAULT 'pending', priority VARCHAR(50) DEFAULT 'normal', source VARCHAR(100), due_date TEXT, completed_at TIMESTAMP, created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW())`;
+    const { title, description, priority, source, due_date } = req.body;
+    const [task] = await sql`INSERT INTO ea_tasks (title, description, priority, source, due_date)
+      VALUES (${title}, ${description||''}, ${priority||'normal'}, ${source||'manual'}, ${due_date||''})
+      RETURNING *`;
+    res.json({ success: true, task });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.put('/api/ea-tasks/:id', async (req, res) => {
+  try {
+    const { status, title, description } = req.body;
+    const updates = [];
+    if(status) {
+      const completed = status === 'completed' ? new Date().toISOString() : null;
+      await sql`UPDATE ea_tasks SET status = ${status}, completed_at = ${completed}, updated_at = NOW() WHERE id = ${parseInt(req.params.id)}`;
+    }
+    if(title) await sql`UPDATE ea_tasks SET title = ${title}, updated_at = NOW() WHERE id = ${parseInt(req.params.id)}`;
+    res.json({ success: true });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.delete('/api/ea-tasks/:id', async (req, res) => {
+  try {
+    await sql`DELETE FROM ea_tasks WHERE id = ${parseInt(req.params.id)}`;
+    res.json({ success: true });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });
