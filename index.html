@@ -1117,6 +1117,51 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
         <div style="font-size:48px;margin-bottom:12px;opacity:0.3">&#128200;</div>
         <div style="font-size:13px">Connect QuickBooks above to see your financial data here</div>
       </div>
+
+      <!-- Connected View -->
+      <div id="qb-connected-view" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div id="qb-period" style="font-size:12px;color:var(--mid)"></div>
+          <div style="display:flex;gap:8px">
+            <button onclick="loadQBData()" style="font-size:10px;font-weight:700;padding:6px 14px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Refresh</button>
+            <button onclick="disconnectQB()" style="font-size:10px;font-weight:700;padding:6px 14px;border-radius:3px;border:1px solid rgba(138,56,48,0.3);cursor:pointer;background:transparent;color:#8A3A30">Disconnect</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+          <div class="panel" style="padding:16px;border-top:2px solid #2D6A35">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mid);margin-bottom:6px">Total Revenue</div>
+            <div id="qb-revenue" style="font-size:28px;font-weight:300;font-family:Cormorant Garamond,serif;color:#2D6A35">-</div>
+          </div>
+          <div class="panel" style="padding:16px;border-top:2px solid #8A3A30">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mid);margin-bottom:6px">Total Expenses</div>
+            <div id="qb-expenses" style="font-size:28px;font-weight:300;font-family:Cormorant Garamond,serif;color:#8A3A30">-</div>
+          </div>
+          <div class="panel" style="padding:16px;border-top:2px solid #C49A8A">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mid);margin-bottom:6px">Net Income</div>
+            <div id="qb-net" style="font-size:28px;font-weight:300;font-family:Cormorant Garamond,serif;color:#C49A8A">-</div>
+          </div>
+          <div class="panel" style="padding:16px;border-top:2px solid #C49A8A;cursor:pointer" onclick="loadQBInvoices()">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mid);margin-bottom:6px">Unpaid Invoices</div>
+            <div id="qb-unpaid" style="font-size:28px;font-weight:300;font-family:Cormorant Garamond,serif;color:#C49A8A">-</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div class="panel" style="padding:20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A">Unpaid Invoices</div>
+              <button onclick="loadQBInvoices()" style="font-size:10px;padding:4px 10px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Refresh</button>
+            </div>
+            <div id="qb-invoices-list"><div style="font-size:12px;color:var(--mid)">Click refresh to load</div></div>
+          </div>
+          <div class="panel" style="padding:20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A">Recent Expenses</div>
+              <button onclick="loadQBExpenses()" style="font-size:10px;padding:4px 10px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Refresh</button>
+            </div>
+            <div id="qb-expenses-list"><div style="font-size:12px;color:var(--mid)">Click refresh to load</div></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="screen" id="screen-settings">
