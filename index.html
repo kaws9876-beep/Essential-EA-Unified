@@ -697,311 +697,6 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
       </div>
     </div>
   </div>
-    <div class="screen" id="screen-profile">
-      <div class="pg-h">Your EA Profile</div>
-      <div class="pg-s">Your EA uses this to personalize every response. The more detail you give, the smarter your EA gets.</div>
-      <div style="max-width:680px">
-        <div class="panel" style="padding:24px;margin-bottom:16px">
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">About You</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-            <div>
-              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Your Name</label>
-              <input id="prof-name" type="text" placeholder="Kristina Spencer" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
-            </div>
-            <div>
-              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Your Role</label>
-              <input id="prof-role" type="text" placeholder="Broker - Team Lead" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
-            </div>
-            <div>
-              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Industry</label>
-              <select id="prof-industry" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
-                <option value="">Select your industry</option>
-                <option value="Real Estate">Real Estate</option>
-                <option value="Financial Advisory">Financial Advisory</option>
-                <option value="Insurance">Insurance</option>
-                <option value="Coaching/Consulting">Coaching/Consulting</option>
-                <option value="Mortgage">Mortgage</option>
-                <option value="Legal">Legal</option>
-                <option value="Healthcare">Healthcare</option>
-                <option value="Technology">Technology</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Company</label>
-              <input id="prof-company" type="text" placeholder="Operational Consulting Group" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
-            </div>
-          </div>
-        </div>
-
-        <div class="panel" style="padding:24px;margin-bottom:16px">
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">Your Business</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-            <div>
-              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Revenue Target</label>
-              <input id="prof-revenue" type="text" placeholder="e.g. $500K GCI, $1M ARR" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
-            </div>
-            <div>
-              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Team Size</label>
-              <select id="prof-team" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
-                <option value="Solo">Solo</option>
-                <option value="2-5">2-5 people</option>
-                <option value="6-15">6-15 people</option>
-                <option value="16-50">16-50 people</option>
-                <option value="50+">50+ people</option>
-              </select>
-            </div>
-          </div>
-          <div style="margin-bottom:16px">
-            <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Top Priorities Right Now</label>
-            <textarea id="prof-priorities" rows="3" placeholder="e.g. Close 3 new listings, build referral pipeline, hire transaction coordinator..." style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none;resize:vertical"></textarea>
-          </div>
-        </div>
-
-        <div class="panel" style="padding:24px;margin-bottom:16px">
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">Your Schedule</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-            <div>
-              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Peak Hours</label>
-              <input id="prof-peak" type="text" placeholder="e.g. 9am-12pm" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
-            </div>
-            <div>
-              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Working Hours</label>
-              <input id="prof-hours" type="text" placeholder="e.g. 8am-6pm" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
-            </div>
-          </div>
-          <div>
-            <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Non-Negotiable Time Blocks</label>
-            <input id="prof-blocks" type="text" placeholder="e.g. No meetings before 9am, lunch 12-1pm, hard stop 5:30pm" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
-          </div>
-        </div>
-
-        <div class="panel" style="padding:24px;margin-bottom:24px">
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">EA Preferences</div>
-          <div>
-            <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">AI Communication Tone</label>
-            <div style="display:flex;gap:8px">
-              <button class="tone-btn active" onclick="setTone(this,'professional')" style="font-size:11px;font-weight:600;padding:7px 16px;border-radius:3px;border:1px solid #C49A8A;cursor:pointer;background:#C49A8A;color:#1A1A18">Professional</button>
-              <button class="tone-btn" onclick="setTone(this,'direct')" style="font-size:11px;font-weight:600;padding:7px 16px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Direct</button>
-              <button class="tone-btn" onclick="setTone(this,'warm')" style="font-size:11px;font-weight:600;padding:7px 16px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Warm</button>
-            </div>
-          </div>
-        </div>
-
-        <div id="profile-save-status" style="display:none;margin-bottom:12px"></div>
-        <button onclick="saveProfile()" style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:12px 32px;border-radius:4px;border:none;cursor:pointer;background:#C49A8A;color:#1A1A18">Save Profile</button>
-        <div style="font-size:11px;color:var(--mid);margin-top:8px">Your EA uses this profile to personalize every response</div>
-      </div>
-    </div>
-
-
-      <!-- Compose Modal -->
-      
-      <!-- Compose Modal -->
-      
-    <div class="screen" id="screen-profile">
-      <div class="pg-h">Your EA Profile</div>
-      <div class="pg-s">Your EA uses this to personalize every response. The more detail you give, the smarter your EA gets.</div>
-      <div style="max-width:680px">
-        <div class="panel" style="padding:24px;margin-bottom:16px">
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">About You</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-            <div>
-              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Your Name</label>
-              <input id="prof-name" type="text" placeholder="Kristina Spencer" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
-            </div>
-            <div>
-              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Your Role</label>
-              <input id="prof-role" type="text" placeholder="Broker - Team Lead" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
-            </div>
-            <div>
-              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Industry</label>
-              <select id="prof-industry" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
-                <option value="">Select your industry</option>
-                <option value="Real Estate">Real Estate</option>
-                <option value="Financial Advisory">Financial Advisory</option>
-                <option value="Insurance">Insurance</option>
-                <option value="Coaching/Consulting">Coaching/Consulting</option>
-                <option value="Mortgage">Mortgage</option>
-                <option value="Legal">Legal</option>
-                <option value="Healthcare">Healthcare</option>
-                <option value="Technology">Technology</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Company</label>
-              <input id="prof-company" type="text" placeholder="Operational Consulting Group" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
-            </div>
-          </div>
-        </div>
-
-        <div class="panel" style="padding:24px;margin-bottom:16px">
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">Your Business</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-            <div>
-              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Revenue Target</label>
-              <input id="prof-revenue" type="text" placeholder="e.g. $500K GCI, $1M ARR" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
-            </div>
-            <div>
-              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Team Size</label>
-              <select id="prof-team" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
-                <option value="Solo">Solo</option>
-                <option value="2-5">2-5 people</option>
-                <option value="6-15">6-15 people</option>
-                <option value="16-50">16-50 people</option>
-                <option value="50+">50+ people</option>
-              </select>
-            </div>
-          </div>
-          <div style="margin-bottom:16px">
-            <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Top Priorities Right Now</label>
-            <textarea id="prof-priorities" rows="3" placeholder="e.g. Close 3 new listings, build referral pipeline, hire transaction coordinator..." style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none;resize:vertical"></textarea>
-          </div>
-        </div>
-
-        <div class="panel" style="padding:24px;margin-bottom:16px">
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">Your Schedule</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-            <div>
-              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Peak Hours</label>
-              <input id="prof-peak" type="text" placeholder="e.g. 9am-12pm" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
-            </div>
-            <div>
-              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Working Hours</label>
-              <input id="prof-hours" type="text" placeholder="e.g. 8am-6pm" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
-            </div>
-          </div>
-          <div>
-            <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Non-Negotiable Time Blocks</label>
-            <input id="prof-blocks" type="text" placeholder="e.g. No meetings before 9am, lunch 12-1pm, hard stop 5:30pm" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);background:white;outline:none">
-          </div>
-        </div>
-
-        <div class="panel" style="padding:24px;margin-bottom:24px">
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">EA Preferences</div>
-          <div>
-            <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">AI Communication Tone</label>
-            <div style="display:flex;gap:8px">
-              <button class="tone-btn active" onclick="setTone(this,'professional')" style="font-size:11px;font-weight:600;padding:7px 16px;border-radius:3px;border:1px solid #C49A8A;cursor:pointer;background:#C49A8A;color:#1A1A18">Professional</button>
-              <button class="tone-btn" onclick="setTone(this,'direct')" style="font-size:11px;font-weight:600;padding:7px 16px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Direct</button>
-              <button class="tone-btn" onclick="setTone(this,'warm')" style="font-size:11px;font-weight:600;padding:7px 16px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Warm</button>
-            </div>
-          </div>
-        </div>
-
-        <div id="profile-save-status" style="display:none;margin-bottom:12px"></div>
-        <button onclick="saveProfile()" style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:12px 32px;border-radius:4px;border:none;cursor:pointer;background:#C49A8A;color:#1A1A18">Save Profile</button>
-        <div style="font-size:11px;color:var(--mid);margin-top:8px">Your EA uses this profile to personalize every response</div>
-      </div>
-    </div>
-
-
-    <div class="screen" id="screen-meetings">
-      <div class="pg-h">Meeting Recordings</div>
-      <div class="pg-s">Upload any meeting recording. Your EA transcribes it, extracts Crystal Ball decisions, Bouncy Ball action items, and follow-ups.</div>
-      <div style="display:grid;grid-template-columns:340px 1fr;gap:20px;min-height:400px">
-        <!-- Left: Upload + History -->
-        <div>
-          <!-- Upload Area -->
-          <div id="meeting-upload-area" style="border:2px dashed rgba(196,154,138,.3);border-radius:8px;padding:24px;text-align:center;cursor:pointer;background:var(--warm);margin-bottom:16px;transition:all .2s" onclick="document.getElementById('meeting-file-input').click()" ondragover="event.preventDefault();this.style.borderColor='#C49A8A'" ondragleave="this.style.borderColor='rgba(196,154,138,.3)'" ondrop="event.preventDefault();handleMeetingFile(event.dataTransfer.files[0])">
-            <div style="font-size:32px;margin-bottom:8px">&#127908;</div>
-            <div style="font-size:13px;font-weight:600;color:var(--blk);margin-bottom:4px">Drop your recording here</div>
-            <div style="font-size:11px;color:var(--mid)">MP3, MP4, M4A, WAV, WEBM, OGG</div>
-            <input type="file" id="meeting-file-input" accept=".mp3,.mp4,.m4a,.wav,.webm,.ogg,.mpeg" style="display:none" onchange="handleMeetingFile(this.files[0])">
-          </div>
-
-          <!-- Record Live -->
-          <div style="padding:16px;background:var(--warm);border:1px solid var(--tan);border-radius:8px;margin-bottom:16px">
-            <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#C49A8A;margin-bottom:10px">Record Live Meeting</div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <button id="record-btn" onclick="toggleRecording()" style="font-size:11px;font-weight:700;padding:8px 16px;border-radius:4px;border:none;cursor:pointer;background:#8A3A30;color:white">&#9679; Start Recording</button>
-              <span id="record-timer" style="font-size:12px;color:var(--mid);display:none">00:00</span>
-            </div>
-            <div id="record-status" style="font-size:11px;color:var(--mid);margin-top:6px"></div>
-          </div>
-
-          <!-- Past Meetings -->
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mid);margin-bottom:8px">Past Meetings</div>
-          <div id="meetings-list" style="overflow-y:auto;max-height:300px">
-            <div style="font-size:12px;color:var(--mid);padding:8px 0">Loading meetings...</div>
-          </div>
-        </div>
-
-        <!-- Right: Analysis -->
-        <div>
-          <div id="meeting-processing" style="display:none;padding:40px;text-align:center">
-            <div class="spinner" style="margin:0 auto 16px"></div>
-            <div style="font-size:13px;font-weight:600;color:var(--blk);margin-bottom:4px">Your EA is transcribing...</div>
-            <div id="meeting-progress" style="font-size:12px;color:var(--mid)">This may take 30-60 seconds for longer recordings</div>
-          </div>
-
-          <div id="meeting-result" style="display:none">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-              <div style="font-size:16px;font-weight:600;color:var(--blk)" id="meeting-title">Meeting Analysis</div>
-              <button onclick="copyMeetingNotes()" style="font-size:10px;font-weight:700;padding:6px 14px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Copy Notes</button>
-            </div>
-
-            <!-- Summary -->
-            <div class="panel" style="padding:16px;margin-bottom:12px">
-              <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:8px">Summary</div>
-              <div id="meeting-summary" style="font-size:13px;color:var(--blk);line-height:1.6"></div>
-            </div>
-
-            <!-- Crystal Ball Items -->
-            <div class="panel" style="padding:16px;margin-bottom:12px;border-top:2px solid #C49A8A">
-              <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:8px">&#128302; Crystal Ball - Only You Can Handle These</div>
-              <div id="meeting-crystal" style="font-size:13px;color:var(--blk);line-height:1.8"></div>
-            </div>
-
-            <!-- Bouncy Ball Items -->
-            <div class="panel" style="padding:16px;margin-bottom:12px;border-top:2px solid #2D6A35">
-              <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#2D6A35;margin-bottom:8px">&#127934; Bouncy Ball - Delegate These</div>
-              <div id="meeting-bouncy" style="font-size:13px;color:var(--blk);line-height:1.8"></div>
-            </div>
-
-            <!-- Follow-ups -->
-            <div class="panel" style="padding:16px;margin-bottom:12px">
-              <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid);margin-bottom:8px">Follow-Ups</div>
-              <div id="meeting-followups" style="font-size:13px;color:var(--blk);line-height:1.8"></div>
-            </div>
-
-            <!-- Transcript -->
-            <div class="panel" style="padding:16px">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid)">Full Transcript</div>
-                <button onclick="toggleTranscript()" style="font-size:10px;padding:4px 10px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Show/Hide</button>
-              </div>
-              <div id="meeting-transcript" style="display:none;font-size:12px;color:var(--mid);line-height:1.7;max-height:300px;overflow-y:auto;white-space:pre-wrap"></div>
-            </div>
-          </div>
-
-          <div id="meeting-placeholder" style="padding:40px;text-align:center;color:var(--mid)">
-            <div style="font-size:48px;margin-bottom:12px;opacity:0.3">&#127908;</div>
-            <div style="font-size:13px">Upload a recording or record live to see your EA analysis here</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-<div id="compose-modal" style="display:none;position:fixed;bottom:20px;right:20px;width:480px;max-width:95vw;background:white;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.15);z-index:9999;border:1px solid var(--tan)">
-        <div style="padding:12px 16px;background:#2C2C2A;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:space-between">
-          <span style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#FAF8F4">New Email</span>
-          <button onclick="hideCompose()" style="background:transparent;border:none;cursor:pointer;color:rgba(250,248,244,0.5);font-size:16px">&#10005;</button>
-        </div>
-        <div style="padding:12px 16px">
-          <input id="compose-to" type="email" placeholder="To" style="width:100%;box-sizing:border-box;padding:8px 0;border:none;border-bottom:1px solid var(--tan);font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);outline:none;margin-bottom:8px">
-          <input id="compose-subject" type="text" placeholder="Subject" style="width:100%;box-sizing:border-box;padding:8px 0;border:none;border-bottom:1px solid var(--tan);font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);outline:none;margin-bottom:8px">
-          <textarea id="compose-body" rows="6" placeholder="Write your email..." style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--blk);outline:none;resize:vertical"></textarea>
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <button onclick="sendCompose()" style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:8px 20px;border-radius:4px;border:none;cursor:pointer;background:#C49A8A;color:#1A1A18">Send</button>
-            <button onclick="aiDraftCompose()" style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:8px 16px;border-radius:4px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">EA Draft</button>
-            <button onclick="hideCompose()" style="font-size:11px;font-weight:700;padding:8px 16px;border-radius:4px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid);margin-left:auto">Discard</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div class="screen" id="screen-audit">
       <div class="pg-h2">Operational Efficiency Audit</div>
       <div class="pg-s2">Your AI-powered business health report. Built on the Essential EA methodology and your real usage data.</div>
@@ -1044,6 +739,174 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
         <div class="ops-card"><div class="ops-icon">&#127873;</div><div class="ops-title">Gifting and Database</div><div class="ops-desc">Sphere touchpoints, closing gifts, relationship cadence.</div></div>
       </div>
       <div class="cs"><div class="cs-title">Full Operations Suite - Coming in Phase 3</div><div class="cs-body">Crystal Ball Triage, Priority Week, and EA Daily Brief are live now with full PostgreSQL persistence.</div></div>
+    </div>
+
+    <div class="screen" id="screen-profile">
+      <div class="pg-h">Your EA Profile</div>
+      <div class="pg-s">Your EA uses this to personalize every response. The more detail you give, the smarter your EA gets.</div>
+      <div style="max-width:680px;padding-bottom:40px">
+
+        <div class="panel" style="padding:24px;margin-bottom:16px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">About You</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Your Name</label>
+              <input id="prof-name" type="text" placeholder="Kristina Spencer" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;outline:none">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Your Role</label>
+              <input id="prof-role" type="text" placeholder="Broker - Team Lead" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;outline:none">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Industry</label>
+              <select id="prof-industry" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;outline:none">
+                <option value="">Select your industry</option>
+                <option value="Real Estate">Real Estate</option>
+                <option value="Financial Advisory">Financial Advisory</option>
+                <option value="Insurance">Insurance</option>
+                <option value="Coaching/Consulting">Coaching/Consulting</option>
+                <option value="Mortgage">Mortgage</option>
+                <option value="Legal">Legal</option>
+                <option value="Healthcare">Healthcare</option>
+                <option value="Technology">Technology</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Company</label>
+              <input id="prof-company" type="text" placeholder="Operational Consulting Group" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;outline:none">
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" style="padding:24px;margin-bottom:16px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">Your Business</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Revenue Target</label>
+              <input id="prof-revenue" type="text" placeholder="e.g. $500K GCI, $1M ARR" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;outline:none">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Team Size</label>
+              <select id="prof-team" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;outline:none">
+                <option value="Solo">Solo</option>
+                <option value="2-5">2-5 people</option>
+                <option value="6-15">6-15 people</option>
+                <option value="16-50">16-50 people</option>
+                <option value="50+">50+ people</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-bottom:16px">
+            <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Top Priorities Right Now</label>
+            <textarea id="prof-priorities" rows="3" placeholder="e.g. Close 3 new listings, build referral pipeline, hire transaction coordinator..." style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;outline:none;resize:vertical"></textarea>
+          </div>
+        </div>
+
+        <div class="panel" style="padding:24px;margin-bottom:16px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">Your Schedule</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Peak Hours</label>
+              <input id="prof-peak" type="text" placeholder="e.g. 9am-12pm" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;outline:none">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Working Hours</label>
+              <input id="prof-hours" type="text" placeholder="e.g. 8am-6pm" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;outline:none">
+            </div>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Non-Negotiable Time Blocks</label>
+            <input id="prof-blocks" type="text" placeholder="e.g. No meetings before 9am, lunch 12-1pm, hard stop 5:30pm" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-family:DM Sans,sans-serif;font-size:13px;outline:none">
+          </div>
+        </div>
+
+        <div class="panel" style="padding:24px;margin-bottom:24px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:16px">EA Preferences</div>
+          <label style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:10px">AI Communication Tone</label>
+          <div style="display:flex;gap:8px">
+            <button class="tone-btn active" onclick="setTone(this,'professional')" style="font-size:11px;font-weight:600;padding:7px 16px;border-radius:3px;border:1px solid #C49A8A;cursor:pointer;background:#C49A8A;color:#1A1A18">Professional</button>
+            <button class="tone-btn" onclick="setTone(this,'direct')" style="font-size:11px;font-weight:600;padding:7px 16px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Direct</button>
+            <button class="tone-btn" onclick="setTone(this,'warm')" style="font-size:11px;font-weight:600;padding:7px 16px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Warm</button>
+          </div>
+        </div>
+
+        <div id="profile-save-status" style="display:none;margin-bottom:12px"></div>
+        <button onclick="saveProfile()" style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:12px 32px;border-radius:4px;border:none;cursor:pointer;background:#C49A8A;color:#1A1A18">Save Profile</button>
+        <div style="font-size:11px;color:var(--mid);margin-top:8px">Your EA uses this profile to personalize every response</div>
+      </div>
+    </div>
+
+    <div class="screen" id="screen-meetings">
+      <div class="pg-h">Meeting Recordings</div>
+      <div class="pg-s">Upload any meeting recording. Your EA transcribes it and extracts Crystal Ball decisions, Bouncy Ball action items, and follow-ups.</div>
+
+      <div style="display:grid;grid-template-columns:320px 1fr;gap:20px">
+        <div>
+          <div style="border:2px dashed rgba(196,154,138,.3);border-radius:8px;padding:24px;text-align:center;cursor:pointer;background:var(--warm);margin-bottom:16px" onclick="document.getElementById('meeting-file-input').click()" ondragover="event.preventDefault()" ondrop="event.preventDefault();handleMeetingFile(event.dataTransfer.files[0])">
+            <div style="font-size:32px;margin-bottom:8px">&#127908;</div>
+            <div style="font-size:13px;font-weight:600;color:var(--blk);margin-bottom:4px">Drop your recording here</div>
+            <div style="font-size:11px;color:var(--mid)">MP3, MP4, M4A, WAV, WEBM</div>
+            <input type="file" id="meeting-file-input" accept=".mp3,.mp4,.m4a,.wav,.webm,.ogg" style="display:none" onchange="handleMeetingFile(this.files[0])">
+          </div>
+
+          <div style="padding:16px;background:var(--warm);border:1px solid var(--tan);border-radius:8px;margin-bottom:16px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#C49A8A;margin-bottom:10px">Record Live</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button id="record-btn" onclick="toggleRecording()" style="font-size:11px;font-weight:700;padding:8px 16px;border-radius:4px;border:none;cursor:pointer;background:#2C2C2A;color:white">&#9679; Start Recording</button>
+              <span id="record-timer" style="font-size:12px;color:var(--mid);display:none">00:00</span>
+            </div>
+          </div>
+
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mid);margin-bottom:8px">Past Meetings</div>
+          <div id="meetings-list">
+            <div style="font-size:12px;color:var(--mid);padding:8px 0">No recordings yet</div>
+          </div>
+        </div>
+
+        <div>
+          <div id="meeting-processing" style="display:none;padding:40px;text-align:center">
+            <div class="spinner" style="margin:0 auto 16px"></div>
+            <div style="font-size:13px;font-weight:600;color:var(--blk);margin-bottom:4px">Your EA is transcribing...</div>
+            <div id="meeting-progress" style="font-size:12px;color:var(--mid)">This may take 30-60 seconds</div>
+          </div>
+
+          <div id="meeting-result" style="display:none">
+            <div style="display:flex;justify-content:space-between;margin-bottom:16px">
+              <div style="font-size:16px;font-weight:600" id="meeting-title">Meeting Analysis</div>
+              <button onclick="copyMeetingNotes()" style="font-size:10px;font-weight:700;padding:6px 14px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Copy Notes</button>
+            </div>
+            <div class="panel" style="padding:16px;margin-bottom:12px">
+              <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:8px">Summary</div>
+              <div id="meeting-summary" style="font-size:13px;line-height:1.6"></div>
+            </div>
+            <div class="panel" style="padding:16px;margin-bottom:12px;border-top:2px solid #C49A8A">
+              <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C49A8A;margin-bottom:8px">&#128302; Crystal Ball - Only You Can Handle These</div>
+              <div id="meeting-crystal" style="font-size:13px;line-height:1.8"></div>
+            </div>
+            <div class="panel" style="padding:16px;margin-bottom:12px;border-top:2px solid #2D6A35">
+              <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#2D6A35;margin-bottom:8px">&#127934; Bouncy Ball - Delegate These</div>
+              <div id="meeting-bouncy" style="font-size:13px;line-height:1.8"></div>
+            </div>
+            <div class="panel" style="padding:16px;margin-bottom:12px">
+              <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid);margin-bottom:8px">Follow-Ups</div>
+              <div id="meeting-followups" style="font-size:13px;line-height:1.8"></div>
+            </div>
+            <div class="panel" style="padding:16px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid)">Full Transcript</div>
+                <button onclick="toggleTranscript()" style="font-size:10px;padding:4px 10px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Show/Hide</button>
+              </div>
+              <div id="meeting-transcript" style="display:none;font-size:12px;color:var(--mid);line-height:1.7;max-height:300px;overflow-y:auto;white-space:pre-wrap"></div>
+            </div>
+          </div>
+
+          <div id="meeting-placeholder" style="padding:40px;text-align:center;color:var(--mid)">
+            <div style="font-size:48px;margin-bottom:12px;opacity:0.3">&#127908;</div>
+            <div style="font-size:13px">Upload a recording or record live to see your EA analysis here</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="screen" id="screen-settings">
