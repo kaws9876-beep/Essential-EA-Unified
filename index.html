@@ -1061,49 +1061,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
       </div>
 
       <!-- Summary Cards -->
-      <div id="qb-summary" style="display:none">
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
-          <div class="kpi" style="border-top:2px solid #8A3A30">
-            <div class="kv" id="qb-unpaid-count" style="color:#8A3A30">-</div>
-            <div class="kl">Unpaid Invoices</div>
-            <div class="kd" style="color:#8A3A30" id="qb-unpaid-total"></div>
-          </div>
-          <div class="kpi" style="border-top:2px solid #2D6A35">
-            <div class="kv" id="qb-expense-count" style="color:#2D6A35">-</div>
-            <div class="kl">Recent Expenses</div>
-            <div class="kd" id="qb-expense-total"></div>
-          </div>
-          <div class="kpi" style="border-top:2px solid #C49A8A">
-            <div class="kv" id="qb-revenue" style="color:#C49A8A">-</div>
-            <div class="kl">YTD Revenue</div>
-            <div class="kd">This year</div>
-          </div>
-          <div class="kpi">
-            <div class="kv" id="qb-health">-</div>
-            <div class="kl">Financial Health</div>
-            <div class="kd" id="qb-health-label"></div>
-          </div>
-        </div>
-
-        <!-- Unpaid Invoices -->
-        <div class="panel" style="padding:20px;margin-bottom:16px">
-          <div style="display:flex;justify-content:space-between;margin-bottom:12px">
-            <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8A3A30">&#128274; Unpaid Invoices - Crystal Ball</div>
-            <button onclick="loadQBInvoices()" style="font-size:10px;padding:4px 10px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">View All</button>
-          </div>
-          <div id="qb-invoices-list">
-            <div style="font-size:12px;color:var(--mid)">Loading...</div>
-          </div>
-        </div>
-
-        <!-- Recent Expenses -->
-        <div class="panel" style="padding:20px">
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid);margin-bottom:12px">Recent Expenses</div>
-          <div id="qb-expenses-list">
-            <div style="font-size:12px;color:var(--mid)">Loading...</div>
-          </div>
-        </div>
-      </div>
+      
 
       <div id="qb-placeholder" style="padding:40px;text-align:center;color:var(--mid)">
         <div style="font-size:48px;margin-bottom:12px;opacity:0.3">&#128200;</div>
@@ -1132,7 +1090,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
             <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mid);margin-bottom:6px">Net Income</div>
             <div id="qb-net" style="font-size:28px;font-weight:300;font-family:Cormorant Garamond,serif;color:#C49A8A">-</div>
           </div>
-          <div class="panel" style="padding:16px;border-top:2px solid #C49A8A;cursor:pointer" onclick="loadQBInvoices()">
+          <div class="panel" style="padding:16px;border-top:2px solid #C49A8A">
             <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mid);margin-bottom:6px">Unpaid Invoices</div>
             <div id="qb-unpaid" style="font-size:28px;font-weight:300;font-family:Cormorant Garamond,serif;color:#C49A8A">-</div>
           </div>
