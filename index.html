@@ -1014,7 +1014,7 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#FAF8F4;color:#1A
         <div class="ops-card"><div class="ops-icon">&#128227;</div><div class="ops-title">Marketing Content</div><div class="ops-desc">AI-generated content from your brand guide.</div></div>
         <div class="ops-card"><div class="ops-icon">&#127873;</div><div class="ops-title">Gifting and Database</div><div class="ops-desc">Sphere touchpoints, closing gifts, relationship cadence.</div></div>
       </div>
-      <div class="cs"><div class="cs-title">Full Operations Suite - Coming in Phase 3</div><div class="cs-body">Crystal Ball Triage, Priority Week, and EA Daily Brief are live now with full PostgreSQL persistence.</div></div>
+      <div class="cs"><div class="cs-body">Crystal Ball Triage, Priority Week, and EA Daily Brief are live now with full PostgreSQL persistence.</div></div>
     </div>
 
     
@@ -3111,7 +3111,13 @@ async function startRecording() {
       if(timer) timer.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
     }, 1000);
   } catch(e) {
-    alert('Could not access microphone: ' + e.message);
+    var msg = e.name === 'NotAllowedError' ? 'Microphone access denied. Please allow microphone access in your browser settings.' :
+              e.name === 'NotFoundError' ? 'No microphone found. Please connect a microphone and try again.' :
+              e.name === 'NotSupportedError' ? 'Recording not supported in this browser. Please use Chrome or Edge.' :
+              'Could not access microphone: ' + e.message;
+    var status = document.getElementById('record-status');
+    if(status) status.textContent = msg;
+    alert(msg);
   }
 }
 
