@@ -1856,7 +1856,7 @@ app.post('/api/speak', async (req, res) => {
 
     const clean = text.replace(/[#*_~`]/g, '').replace(/\n\n+/g, '. ').replace(/\n/g, ' ').substring(0, 2500);
 
-    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM', {
+    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL', {
       method: 'POST',
       headers: {
         'xi-api-key': process.env.ELEVENLABS_API_KEY,
@@ -1865,8 +1865,8 @@ app.post('/api/speak', async (req, res) => {
       },
       body: JSON.stringify({
         text: clean,
-        model_id: 'eleven_turbo_v2',
-        voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: { stability: 0.75, similarity_boost: 0.85, style: 0.3, use_speaker_boost: true }
       })
     });
 
