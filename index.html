@@ -910,17 +910,28 @@ async function generateBrief() {
   try {
     var priorities = $('brief-priorities') ? $('brief-priorities').value : '';
     var context = $('brief-context') ? $('brief-context').value : '';
-    var r = await fetch(RAILWAY + '/api/daily-brief', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({priorities:priorities,context:context})});
+    var profName = $('prof-name') ? $('prof-name').value : '';
+    var profRole = $('prof-role') ? $('prof-role').value : '';
+    var r = await fetch(RAILWAY + '/api/daily-brief', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        name: profName,
+        role: profRole,
+        priorities: priorities || context,
+        date: new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})
+      })
+    });
     var d = await r.json();
     if(d.success) {
       var b = d.brief;
-      window._briefContent = d.briefText || (b ? (b.greeting||'')+' '+(b.priorities||'')+' '+(b.insight||'') : ''); var briefContent = window._briefContent || (b ? (b.greeting||'') + ' ' + (b.priorities||'') + ' ' + (b.insight||'') : JSON.stringify(b));
+      window._briefContent = d.brief || d.briefText || ''; var briefContent = window._briefContent || 'Brief generated but no content returned.';
       result.innerHTML = '<div class="panel" style="padding:24px;border-top:3px solid var(--gold)">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">' +
         '<div style="font-family:Cormorant Garamond,serif;font-size:22px;font-weight:400">Your EA Daily Brief</div>' +
         '<button id="brief-voice-btn" style="font-size:11px;padding:6px 14px;border:1px solid var(--tan);border-radius:3px;cursor:pointer;background:transparent;color:var(--mid)" onclick="playBriefVoice()">&#9654; Listen</button>' +
         '</div>' +
-        '<div style="font-size:15px;line-height:1.9;font-family:Cormorant Garamond,serif">' + briefContent + '</div>' +
+        '<div style="font-size:15px;line-height:1.9;font-family:Cormorant Garamond,serif;white-space:pre-line">' + briefContent + '</div>' +
         '</div>';
     }
   } catch(e) {
