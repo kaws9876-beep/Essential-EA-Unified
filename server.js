@@ -3044,6 +3044,18 @@ app.post('/api/transcribe', async (req, res) => {
     });
 
     const transcript = typeof transcription === 'string' ? transcription : transcription.text || '';
+    
+    // Validate transcript quality
+    if(!transcript || transcript.trim().length < 20) {
+      return res.status(400).json({ success: false, error: 'Recording too short or unclear. Please ensure microphone is working and speak clearly.' });
+    }
+    
+    // Check if transcript looks like noise/product names (less than 3 words that form sentences)
+    const words = transcript.trim().split(/\s+/);
+    const hasFullSentences = transcript.includes('.') || transcript.includes(',') || words.length > 10;
+    if(!hasFullSentences && words.length < 5) {
+      return res.status(400).json({ success: false, error: 'Could not detect clear speech. Check microphone permissions and try again in a quiet environment.' });
+    }
 
     // Analyze transcript with Claude
     const bookContext = await getBookContext('meeting action items Crystal Ball decisions follow up');
