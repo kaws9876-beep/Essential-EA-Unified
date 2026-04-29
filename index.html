@@ -341,7 +341,13 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
 <!-- HISTORY SCREEN -->
 <div class="screen" id="screen-history">
   <div class="pg-h2">Task History</div>
-  <div class="pg-s2">All tasks your EA has classified. Crystal Ball items stayed with you, Bouncy Ball items were delegated.</div>
+  <div class="pg-s2">All tasks classified. Crystal Ball stayed with you, Bouncy Ball was delegated.</div>
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <button onclick="filterHistory('all',this)" class="tbtn tbtn-p" style="font-size:10px;padding:6px 14px">All</button>
+    <button onclick="filterHistory('crystal',this)" class="tbtn tbtn-o" style="font-size:10px;padding:6px 14px">&#128302; Crystal Ball</button>
+    <button onclick="filterHistory('bouncy',this)" class="tbtn tbtn-o" style="font-size:10px;padding:6px 14px">&#127934; Bouncy Ball</button>
+    <button onclick="loadHistory()" class="tbtn tbtn-o" style="font-size:10px;padding:6px 14px">Refresh</button>
+  </div>
   <div id="history-content" style="font-size:13px;color:var(--mid)">Loading...</div>
 </div>
 
@@ -521,12 +527,17 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
 <div class="screen" id="screen-docreader">
   <div class="pg-h2">Document Reader</div>
   <div class="pg-s2">Upload any document and your EA will analyze it, summarize it, and identify action items.</div>
-  <div style="border:2px dashed rgba(196,154,138,.3);border-radius:8px;padding:40px;text-align:center;cursor:pointer;background:var(--warm);margin-bottom:16px" onclick="document.getElementById('doc-file').click()">
+  <div style="border:2px dashed rgba(196,154,138,.3);border-radius:8px;padding:40px;text-align:center;cursor:pointer;background:var(--warm);margin-bottom:16px" 
+    onclick="document.getElementById('doc-file').click()"
+    ondragover="event.preventDefault();this.style.borderColor='var(--gold)'"
+    ondragleave="this.style.borderColor='rgba(196,154,138,.3)'"
+    ondrop="event.preventDefault();this.style.borderColor='rgba(196,154,138,.3)';readDocument(event.dataTransfer.files[0])">
     <div style="font-size:36px;margin-bottom:10px">&#128196;</div>
     <div style="font-size:14px;font-weight:600;margin-bottom:4px">Drop document here or click to upload</div>
-    <div style="font-size:12px;color:var(--mid)">PDF, DOC, DOCX, TXT</div>
-    <input type="file" id="doc-file" accept=".pdf,.doc,.docx,.txt" style="display:none" onchange="readDocument(this.files[0])">
+    <div style="font-size:12px;color:var(--mid)">PDF, DOC, DOCX, TXT - up to 10MB</div>
+    <input type="file" id="doc-file" accept=".pdf,.doc,.docx,.txt,.md" style="display:none" onchange="readDocument(this.files[0])">
   </div>
+  <div id="doc-status" style="display:none;padding:10px 14px;background:rgba(196,154,138,.08);border-radius:6px;font-size:13px;margin-bottom:12px"></div>
   <div id="doc-loading" style="display:none;padding:30px;text-align:center"><div class="spinner" style="margin:0 auto 12px"></div><div style="font-size:13px;color:var(--mid)">Analyzing document...</div></div>
   <div id="doc-result" style="display:none"></div>
 </div>
@@ -844,7 +855,7 @@ async function runClassify() {
         '<span style="font-size:32px">'+(isCrystal?'&#128302;':'&#127934;')+'</span>' +
         '<div><div style="font-family:Cormorant Garamond,serif;font-size:20px;font-weight:400">'+(isCrystal?'Crystal Ball - Executive Only':'Bouncy Ball - Delegate to EA')+'</div>' +
         '<span class="'+(isCrystal?'crystal-tag':'bouncy-tag')+'">'+c.urgency+'</span></div></div>' +
-        '<button data-text="'+(isCrystal?'Crystal Ball. ':'Bouncy Ball. ')+(c.reason||'').substring(0,400).replace(/"/g,"'").replace(/'/g," ")+' Recommended action: '+(c.recommendedAction||'').replace(/"/g,"'").replace(/'/g," ")+'" onclick="playVoice(this)" style="font-size:11px;padding:6px 12px;border:1px solid var(--tan);border-radius:3px;cursor:pointer;background:transparent;color:var(--mid)">&#9654; Listen</button>' +
+        '<button onclick="playVoice(this)" data-text="'+(isCrystal?'Crystal Ball. ':'Bouncy Ball. ')+(c.reason||'').replace(/["'<>&]/g,' ').substring(0,250)+'" style="font-size:11px;padding:6px 12px;border:1px solid var(--tan);border-radius:3px;cursor:pointer;background:transparent;color:var(--mid)">&#9654; Listen</button>' +
         '</div>' +
         '<div style="font-size:14px;line-height:1.7;margin-bottom:10px">'+(c.reason||'')+'</div>' +
         '<div style="font-size:13px;font-weight:600;color:var(--blk);padding:10px 14px;background:var(--warm);border-radius:4px">Recommended: '+(c.recommendedAction||'')+'</div>' +
@@ -877,6 +888,16 @@ async function runClassify() {
 }
 
 
+function filterHistory(type, btn) {
+  document.querySelectorAll('#screen-history .tbtn').forEach(function(b) { b.className = 'tbtn tbtn-o'; b.style.fontSize='10px'; b.style.padding='6px 14px'; });
+  if(btn) { btn.className = 'tbtn tbtn-p'; btn.style.fontSize='10px'; btn.style.padding='6px 14px'; }
+  var items = document.querySelectorAll('#history-content .history-item');
+  items.forEach(function(item) {
+    if(type === 'all') item.style.display = 'block';
+    else item.style.display = item.dataset.type === type ? 'block' : 'none';
+  });
+}
+
 async function loadHistory() {
   var el = $('history-content');
   if(!el) return;
@@ -888,7 +909,7 @@ async function loadHistory() {
       el.innerHTML = d.tasks.map(function(t) {
         var isCrystal = t.classification === 'crystal';
         var date = new Date(t.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-        return '<div style="padding:12px 0;border-bottom:1px solid var(--tan);display:flex;align-items:flex-start;gap:10px">' +
+        return '<div class="history-item" data-type="'+t.classification+'" style="padding:12px 0;border-bottom:1px solid var(--tan);display:flex;align-items:flex-start;gap:10px">' +
           '<span style="font-size:18px;flex-shrink:0">'+(isCrystal?'&#128302;':'&#127934;')+'</span>' +
           '<div style="flex:1"><div style="font-size:13px;font-weight:500">'+t.description+'</div>' +
           '<div style="font-size:11px;color:var(--mid);margin-top:3px">'+t.reason+'</div></div>' +
@@ -1535,7 +1556,8 @@ async function startCheckout(plan) {
 // DOCUMENT READER
 async function readDocument(file) {
   if(!file) return;
-  var loading=$('doc-loading'),result=$('doc-result');
+  var loading=$('doc-loading'),result=$('doc-result'),status=$('doc-status');
+  if(status) { status.style.display='block'; status.innerHTML='<div style="display:flex;align-items:center;gap:8px"><div class="spinner" style="width:14px;height:14px;border-width:2px;margin:0"></div>Reading '+file.name+'...</div>'; }
   loading.style.display='block'; result.style.display='none';
   try {
     var reader=new FileReader();
