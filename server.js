@@ -1425,7 +1425,7 @@ app.post('/api/classify', async (req, res) => {
     const safeReason = (result.reason||'').substring(0,500).replace(/'/g, "''");
     const safeAction = (result.recommendedAction||'').substring(0,500).replace(/'/g, "''");
 
-    await sql\`INSERT INTO tasks (description, classification, urgency, reason, recommended_action, confidence) VALUES (\${taskDescription}, \${result.classification}, \${result.urgency}, \${safeReason}, \${safeAction}, \${result.confidence||75})\`;
+    await sql`INSERT INTO tasks (description, classification, urgency, reason, recommended_action, confidence) VALUES (${taskDescription}, ${result.classification}, ${result.urgency}, ${safeReason}, ${safeAction}, ${result.confidence||75})`;
 
     res.json({ success: true, classification: result });
   } catch (error) {
