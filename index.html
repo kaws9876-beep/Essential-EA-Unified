@@ -1679,41 +1679,54 @@ function copyEAResult(btn) {
 async function playVoice(elOrText) {
   try {
     var text = typeof elOrText === 'string' ? decodeURIComponent(elOrText) : (elOrText.getAttribute('data-text') || elOrText.getAttribute('data-voice') || '');
-    text = text.replace(/<[^>]+>/g, '').replace(/&[a-z#0-9]+;/g, ' ').replace(/<br>/g,' ')
-      .replace(/\*\*/g, '').replace(/\*/g, '').replace(/#{1,6}\s/g, '')
-      .replace(/---/g, '').replace(/\[/g,'').replace(/\]/g,'')
-      .replace(/\s+/g, ' ').trim();
+    // Clean all markdown and special chars
+    text = text
+      .replace(/<[^>]+>/g, '')
+      .replace(/&[a-z#0-9]+;/g, ' ')
+      .replace(/\*\*/g, '').replace(/\*/g, '')
+      .replace(/#{1,6}\s/g, '')
+      .replace(/---+/g, '. ')
+      .replace(/\[|\]/g, '')
+      .replace(/\n/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
     if(!text) return;
-    // Split into chunks of max 400 chars at sentence boundaries
-    var chunks = [];
-    while(text.length > 0) {
-      if(text.length <= 400) { chunks.push(text); break; }
-      var cut = text.lastIndexOf('. ', 400);
-      if(cut < 50) cut = text.lastIndexOf(' ', 400);
-      if(cut < 50) cut = 400;
-      chunks.push(text.substring(0, cut + 1));
-      text = text.substring(cut + 1).trim();
+    
+    // Find the play button and show loading state
+    var btn = typeof elOrText === 'object' ? elOrText : null;
+    if(btn) { btn._origText = btn.innerHTML; btn.innerHTML = '&#9679; ...'; btn.disabled = true; }
+    
+    // Send full text to server (server handles 2500 char limit)
+    var r = await fetch(RAILWAY + '/api/speak', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({text: text.substring(0, 2000)})
+    });
+    
+    if(btn) { btn.innerHTML = btn._origText || '&#9654; Listen'; btn.disabled = false; }
+    
+    if(!r.ok) {
+      var err = await r.json().catch(function(){return{};});
+      console.log('Voice error:', r.status, err.error);
+      return;
     }
-    // Play chunks sequentially
-    for(var i = 0; i < chunks.length; i++) {
-      var chunk = chunks[i].trim();
-      if(!chunk) continue;
-      var r = await fetch(RAILWAY + '/api/speak', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({text: chunk})
-      });
-      if(!r.ok) { console.log('Voice error on chunk', i, r.status); break; }
-      var blob = await r.blob();
-      var url = URL.createObjectURL(blob);
-      await new Promise(function(resolve) {
-        var audio = new Audio(url);
-        audio.onended = resolve;
-        audio.onerror = resolve;
-        audio.play().catch(resolve);
-      });
+    
+    var blob = await r.blob();
+    if(blob.size < 100) { console.log('Voice: empty audio returned'); return; }
+    
+    var url = URL.createObjectURL(blob);
+    // Stop any currently playing audio
+    if(window._currentAudio) { window._currentAudio.pause(); URL.revokeObjectURL(window._currentAudio.src); }
+    window._currentAudio = new Audio(url);
+    window._currentAudio.play().catch(function(e) { console.log('Audio play failed:', e.message); });
+    
+  } catch(e) { 
+    console.log('Voice error:', e.message);
+    if(typeof elOrText === 'object' && elOrText.innerHTML !== undefined) { 
+      elOrText.innerHTML = elOrText._origText || '&#9654; Listen'; 
+      elOrText.disabled = false; 
     }
-  } catch(e) { console.log('Voice error:', e.message); }
+  }
 }
 
 async function playBriefVoice() {
