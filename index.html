@@ -759,11 +759,17 @@ async function loadStats() {
     var d = await r.json();
     if(d.success) {
       var k1=$('k1'),k2=$('k2'),k3=$('k3'),k4=$('k4');
-      if(k1) k1.textContent = d.total||0;
-      if(k2) k2.textContent = d.crystal||0;
-      if(k3) k3.textContent = d.bouncy||0;
-      if(k4) k4.textContent = (d.avgConfidence||0)+'%';
-      var b = $('triage-badge'); if(b) b.textContent = d.total||0;
+      var s = d.stats || d;
+      var total = parseInt(s.totalTasks || s.total || d.total || 0);
+      var crystal = parseInt(s.crystal || d.crystal || 0);
+      var bouncy = parseInt(s.bouncy || d.bouncy || 0);
+      var avgConf = parseFloat(s.avgAccuracy || d.avgConfidence || 0);
+      var k1=$('k1'),k2=$('k2'),k3=$('k3'),k4=$('k4');
+      if(k1) k1.textContent = total;
+      if(k2) k2.textContent = crystal;
+      if(k3) k3.textContent = bouncy;
+      if(k4) k4.textContent = (avgConf < 1 ? (avgConf*100).toFixed(1) : avgConf.toFixed(1))+'%';
+      var b = $('triage-badge'); if(b) b.textContent = total;
       // Recent tasks for dashboard
       var dr = $('dash-recent');
       if(dr && d.recentTasks && d.recentTasks.length) {
@@ -860,7 +866,7 @@ async function runClassify() {
         '<div style="font-size:14px;line-height:1.7;margin-bottom:10px">'+(c.reason||'')+'</div>' +
         '<div style="font-size:13px;font-weight:600;color:var(--blk);padding:10px 14px;background:var(--warm);border-radius:4px">Recommended: '+(c.recommendedAction||'')+'</div>' +
         bookHtml +
-        (c.confidence ? '<div style="font-size:11px;color:var(--mid);margin-top:10px">AI Confidence: '+c.confidence+'%</div>' : '') +
+        (c.confidence ? '<div style="font-size:11px;color:var(--mid);margin-top:10px">AI Confidence: '+(parseFloat(c.confidence) < 1 ? (parseFloat(c.confidence)*100).toFixed(0) : parseFloat(c.confidence).toFixed(0))+'%</div>' : '') +
         (isCrystal ? '' :
           '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--tan)">' +
           '<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:10px">EA Execution Mode</div>' +
@@ -1673,7 +1679,10 @@ function copyEAResult(btn) {
 async function playVoice(elOrText) {
   try {
     var text = typeof elOrText === 'string' ? decodeURIComponent(elOrText) : (elOrText.getAttribute('data-text') || elOrText.getAttribute('data-voice') || '');
-    text = text.replace(/<[^>]+>/g, '').replace(/&[a-z#0-9]+;/g, ' ').replace(/<br>/g,' ').trim();
+    text = text.replace(/<[^>]+>/g, '').replace(/&[a-z#0-9]+;/g, ' ').replace(/<br>/g,' ')
+      .replace(/\*\*/g, '').replace(/\*/g, '').replace(/#{1,6}\s/g, '')
+      .replace(/---/g, '').replace(/\[/g,'').replace(/\]/g,'')
+      .replace(/\s+/g, ' ').trim();
     if(!text) return;
     // Split into chunks of max 400 chars at sentence boundaries
     var chunks = [];
