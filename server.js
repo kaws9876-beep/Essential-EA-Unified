@@ -1388,9 +1388,44 @@ app.post('/api/classify', async (req, res) => {
     if(content.startsWith('```')) {
       content = content.replace(/^```[a-z]*\n?/,'').replace(/\n?```$/,'').trim();
     }
-    const result = JSON.parse(content);
+    // Clean content before parsing
+    let cleanContent = content.trim();
+    // Remove any markdown
+    cleanContent = cleanContent.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+    // Extract JSON object
+    const jStart = cleanContent.indexOf('{');
+    const jEnd = cleanContent.lastIndexOf('}');
+    if(jStart !== -1 && jEnd !== -1) cleanContent = cleanContent.substring(jStart, jEnd+1);
+    // Fix common AI JSON issues - unescaped chars in string values
+    cleanContent = cleanContent
+      .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ')  // control chars
+      .replace(/\\'/g, "'");  // escaped single quotes
+    
+    let result;
+    try {
+      result = JSON.parse(cleanContent);
+    } catch(parseErr) {
+      console.error('Classify parse error:', parseErr.message, 'content:', cleanContent.substring(0,200));
+      // Extract fields manually using regex
+      const getField = (field) => {
+        const m = cleanContent.match(new RegExp('"' + field + '"\\s*:\\s*"([^"]*)"'));
+        return m ? m[1] : '';
+      };
+      result = {
+        classification: getField('classification') || (cleanContent.includes('bouncy') ? 'bouncy' : 'crystal'),
+        urgency: getField('urgency') || 'medium',
+        reason: getField('reason') || 'Unable to parse full response',
+        recommendedAction: getField('recommendedAction') || getField('recommended_action') || 'Review manually',
+        confidence: 75,
+        bookInsight: getField('bookInsight') || ''
+      };
+    }
 
-    await sql`INSERT INTO tasks (description, classification, urgency, reason, recommended_action, confidence) VALUES (${taskDescription}, ${result.classification}, ${result.urgency}, ${result.reason}, ${result.recommendedAction}, ${result.confidence})`;
+    // Sanitize for DB insert
+    const safeReason = (result.reason||'').substring(0,500).replace(/'/g, "''");
+    const safeAction = (result.recommendedAction||'').substring(0,500).replace(/'/g, "''");
+
+    await sql\`INSERT INTO tasks (description, classification, urgency, reason, recommended_action, confidence) VALUES (\${taskDescription}, \${result.classification}, \${result.urgency}, \${safeReason}, \${safeAction}, \${result.confidence||75})\`;
 
     res.json({ success: true, classification: result });
   } catch (error) {
@@ -1435,11 +1470,12 @@ app.post('/api/daily-brief', async (req, res) => {
   try {
     const { name, role, priorities, timeblocks, date } = req.body;
 
-    const prompt = 'You are the Essential EA generating a personalized Daily Brief for ' + (name || 'the executive') + ' who is a ' + (role || 'business owner') + '.\n\nToday: ' + (date || new Date().toLocaleDateString()) + '\nPriorities: ' + (priorities || 'Revenue and client relationships') + '\nProtected blocks: ' + (timeblocks || 'Hard stop at 5:30pm') + '\n\nWrite as a highly competent EA who has been working 2 hours already. Professional, warm, specific. Use Crystal Ball and Bouncy Ball language naturally.\n\nFormat:\n\nGood morning, ' + (name || 'there') + '.\n\nYOUR CRYSTAL BALL PRIORITIES TODAY\n[3 specific Crystal Ball tasks for their role]\n\nYOUR EA HAS ALREADY HANDLED\n[3-4 specific Bouncy Ball tasks completed this morning]\n\nWHAT NEEDS YOUR DECISION TODAY\n[1-2 items needing executive judgment]\n\nYOUR PROTECTED TIME TODAY\n[Their specific blocks - enforced by EA]\n\nONE THING TO REMEMBER TODAY\n[Personal insight tied to their goals]\n\nYour EA is standing by.';
+    const { context } = req.body;
+    const prompt = 'You are the Essential EA for ' + (name || 'the executive') + ', a ' + (role || 'business owner') + '. Today is ' + (date || new Date().toLocaleDateString()) + '.\n\nContext from executive: Priorities: ' + (priorities || 'Revenue and client relationships') + '. What is on their mind: ' + (context || 'General business operations') + '\n\nWrite a COMPREHENSIVE, DETAILED morning brief. Be specific, warm, and act like you have been at your desk since 6:30am. Use Crystal Ball (CEO-only decisions) and Bouncy Ball (delegate to EA) language naturally throughout.\n\nThe brief MUST include ALL of these sections in full detail:\n\n1. PERSONAL GREETING - warm, specific to their situation\n2. YOUR CRYSTAL BALL PRIORITIES TODAY - 3-4 specific items only they can do, with suggested time blocks\n3. FINANCIAL PULSE - address any financial concerns mentioned, specific numbers or context\n4. TIME MANAGEMENT ANALYSIS - how to protect their energy today, specific time blocks\n5. YOUR EA HAS ALREADY HANDLED - 4-5 specific Bouncy Ball tasks completed\n6. WHAT NEEDS YOUR DECISION - 2-3 items requiring executive judgment\n7. STRESS AND ENERGY CHECK - acknowledge what is on their mind, give a reframe\n8. YOUR ACTION PLAN - a prioritized numbered list for the day\n9. ONE INSIGHT FROM THE ESSENTIAL EA METHODOLOGY - a specific quote or principle\n\nBe exhaustive. Minimum 400 words. Reference their specific priorities and concerns directly.';
 
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5',
-      max_tokens: 600,
+      max_tokens: 1500,
       system: [
         { type: 'text', text: 'You are the Essential EA AI - an operational intelligence platform built on the methodology from The Essential EA by Kristina Spencer. You serve real estate agents, financial advisors, insurance agents, coaches, consultants, and executives. Your tone is professional but conversational. You speak as a trusted EA advisor who protects the executive time fiercely. You always use Crystal Ball and Bouncy Ball Framework language naturally. Crystal Ball tasks are irreplaceable activities only the executive can do - if dropped they shatter permanently. Bouncy Ball tasks can and should be delegated - they bounce back. CEO Protection Protocol means the executive prime hours are sacred. Priority Week Framework means Crystal Ball tasks go in peak hours 9am to 12pm and Bouncy Balls never touch those hours.', cache_control: { type: 'ephemeral' } },
         { type: 'text', text: 'Generate personalized EA Daily Briefs. Sound like a real highly competent executive assistant who has been working 2 hours already. Professional, warm, specific. Never generic.' }
