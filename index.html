@@ -888,6 +888,15 @@ async function runClassify() {
 }
 
 
+function showHistoryDetail(el) {
+  var detail = el.querySelector('.history-detail');
+  if(!detail) return;
+  var isOpen = detail.style.display !== 'none';
+  // Close all others
+  document.querySelectorAll('.history-detail').forEach(function(d) { d.style.display = 'none'; });
+  if(!isOpen) detail.style.display = 'block';
+}
+
 function filterHistory(type, btn) {
   document.querySelectorAll('#screen-history .tbtn').forEach(function(b) { b.className = 'tbtn tbtn-o'; b.style.fontSize='10px'; b.style.padding='6px 14px'; });
   if(btn) { btn.className = 'tbtn tbtn-p'; btn.style.fontSize='10px'; btn.style.padding='6px 14px'; }
@@ -909,12 +918,22 @@ async function loadHistory() {
       el.innerHTML = d.tasks.map(function(t) {
         var isCrystal = t.classification === 'crystal';
         var date = new Date(t.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-        return '<div class="history-item" data-type="'+t.classification+'" style="padding:12px 0;border-bottom:1px solid var(--tan);display:flex;align-items:flex-start;gap:10px">' +
-          '<span style="font-size:18px;flex-shrink:0">'+(isCrystal?'&#128302;':'&#127934;')+'</span>' +
-          '<div style="flex:1"><div style="font-size:13px;font-weight:500">'+t.description+'</div>' +
-          '<div style="font-size:11px;color:var(--mid);margin-top:3px">'+t.reason+'</div></div>' +
-          '<div style="text-align:right;flex-shrink:0"><span class="'+(isCrystal?'crystal-tag':'bouncy-tag')+'">'+t.classification+'</span><div style="font-size:10px;color:var(--mid);margin-top:4px">'+date+'</div></div>' +
-          '</div>';
+        var safeDesc = (t.description||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        var safeReason = (t.reason||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        var safeAction = (t.recommended_action||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return '<div class="history-item" data-type="'+t.classification+'" onclick="showHistoryDetail(this)" style="padding:12px;border:1px solid var(--tan);border-radius:6px;margin-bottom:8px;cursor:pointer;background:white">' +
+          '<div style="display:flex;align-items:flex-start;gap:10px">' +
+          '<span style="font-size:20px;flex-shrink:0">'+(isCrystal?'&#128302;':'&#127934;')+'</span>' +
+          '<div style="flex:1"><div style="font-size:13px;font-weight:600">'+safeDesc+'</div>' +
+          '<div style="font-size:12px;color:var(--mid);margin-top:4px">'+safeReason.substring(0,120)+'...</div></div>' +
+          '<div style="text-align:right;flex-shrink:0"><span class="'+(isCrystal?'crystal-tag':'bouncy-tag')+'">'+t.classification+'</span>' +
+          '<div style="font-size:10px;color:var(--mid);margin-top:4px">'+date+'</div></div></div>' +
+          '<div class="history-detail" style="display:none;margin-top:10px;padding:10px;background:var(--warm);border-radius:4px">' +
+          '<div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:6px">Full Analysis</div>' +
+          '<div style="font-size:13px;line-height:1.7;margin-bottom:6px">'+safeReason+'</div>' +
+          '<div style="font-size:12px;color:var(--mid);font-weight:600">Recommended: '+safeAction+'</div>' +
+          '<div style="font-size:11px;color:var(--mid);margin-top:4px">Urgency: '+(t.urgency||'')+'</div>' +
+          '</div></div>';
       }).join('');
     } else {
       el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--mid)"><div style="font-size:36px;margin-bottom:10px">&#128302;</div><div>No tasks classified yet</div></div>';
@@ -939,8 +958,9 @@ async function generateBrief() {
       body: JSON.stringify({
         name: profName,
         role: profRole,
-        priorities: priorities || context,
-        date: new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})
+        priorities: priorities,
+        context: context,
+        date: new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})
       })
     });
     var d = await r.json();
