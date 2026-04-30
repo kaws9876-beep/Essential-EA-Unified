@@ -4264,6 +4264,7 @@ app.post('/api/outlook/compose', async (req, res) => {
     res.status(500).json({ success: false, error: e.message });
   }
 });
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', version: '2.0', timestamp: new Date().toISOString() });
 });
