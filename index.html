@@ -904,49 +904,49 @@ async function runClassify() {
       body: JSON.stringify({taskDescription: task, task: task})
     });
     var d = await r.json();
-    console.log('Classify response:', JSON.stringify(d).substring(0, 200));
     res.style.display = 'block';
     if(!d.success) {
       res.innerHTML = '<div style="color:var(--red);font-size:13px;padding:12px">Error: '+(d.error||'Classification failed')+'</div>';
-    } else {
-      var c = d.classification;
-      var isCrystal = c.classification === 'crystal';
-      var bookHtml = c.bookInsight ? '<div style="padding:10px 14px;background:rgba(196,154,138,.08);border-left:2px solid var(--gold);border-radius:0 4px 4px 0;margin-top:12px;font-size:12px;color:var(--mid);font-style:italic;line-height:1.6">&#128218; '+c.bookInsight+'</div>' : '';
-      res.innerHTML = '<div class="panel '+(isCrystal?'result-crystal':'result-bouncy')+'" style="padding:20px;animation:fadeUp .3s ease">' +
-        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:14px;flex-wrap:wrap">' +
-        '<div style="display:flex;align-items:center;gap:10px">' +
-        '<span style="font-size:32px">'+(isCrystal?'&#128302;':'&#127934;')+'</span>' +
-        '<div><div style="font-family:Cormorant Garamond,serif;font-size:20px;font-weight:400">'+(isCrystal?'Crystal Ball - Executive Only':'Bouncy Ball - Delegate to EA')+'</div>' +
-        '<span class="'+(isCrystal?'crystal-tag':'bouncy-tag')+'">'+c.urgency+'</span></div></div>' +
-        '<button onclick="playVoice(this)" data-text="'+(isCrystal?'Crystal Ball. ':'Bouncy Ball. ')+(c.reason||'').replace(/["'<>&]/g,' ').substring(0,250)+'" style="font-size:11px;padding:6px 12px;border:1px solid var(--tan);border-radius:3px;cursor:pointer;background:transparent;color:var(--mid)">&#9654; Listen</button>' +
-        '</div>' +
-        '<div style="font-size:14px;line-height:1.7;margin-bottom:10px">'+(c.reason||'')+'</div>' +
-        '<div style="font-size:13px;font-weight:600;color:var(--blk);padding:10px 14px;background:var(--warm);border-radius:4px">Recommended: '+(c.recommendedAction||'')+'</div>' +
-        bookHtml +
-        (c.confidence ? '<div style="font-size:11px;color:var(--mid);margin-top:10px">AI Confidence: '+(parseFloat(c.confidence) < 1 ? (parseFloat(c.confidence)*100).toFixed(0) : parseFloat(c.confidence).toFixed(0))+'%</div>' : '') + +
-        (isCrystal ? '' :
-          '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--tan)">' +
-          '<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:10px">EA Execution Mode</div>' +
-          (window._lastTask = task, '') +
-          '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-          '<button onclick="eaAction(\'draft-email\',window._lastTask)" style="font-size:11px;font-weight:700;padding:7px 14px;border-radius:3px;border:none;cursor:pointer;background:var(--blk);color:var(--cream)">Draft Email</button>' +
-          '<button onclick="eaAction(\'schedule\',window._lastTask)" style="font-size:11px;font-weight:700;padding:7px 14px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Schedule It</button>' +
-          '<button onclick="eaAction(\'task-list\',window._lastTask)" style="font-size:11px;font-weight:700;padding:7px 14px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Add to EA List</button>' +
-          '<button onclick="eaAction(\'generate-doc\',window._lastTask)" style="font-size:11px;font-weight:700;padding:7px 14px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Generate Doc</button>' +
-          '</div>' +
-          '<div id="ea-action-result" style="margin-top:10px;font-size:13px;line-height:1.7"></div>' +
-          '</div>'
-        ) +
-        '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--tan);display:flex;gap:8px;align-items:center">' +
-        '<button onclick="playVoice(this)" data-text="'+(isCrystal?'Crystal Ball. ':'Bouncy Ball. ')+(c.reason||'').replace(/["'<>&]/g,' ').substring(0,300)+'" style="font-size:11px;font-weight:700;padding:8px 16px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:var(--warm);color:var(--mid)">&#9654; Listen to Analysis</button>' +
-        '<span style="font-size:11px;color:var(--mid)">ElevenLabs AI Voice</span>' +
-        '</div>' +
-        '</div>';
-      loadStats();
-      if(!isCrystal) loadEATasks();
+      return;
     }
+    var c = d.classification;
+    var isCrystal = c.classification === 'crystal';
+    var voiceText = (isCrystal ? 'Crystal Ball. Only you can do this. ' : 'Bouncy Ball. Delegate to your EA. ') + (c.reason||'').replace(/[^a-zA-Z0-9 .,!?-]/g,' ').substring(0,280) + '. Recommended action: ' + (c.recommendedAction||'').replace(/[^a-zA-Z0-9 .,!?-]/g,' ').substring(0,150);
+    var bookHtml = c.bookInsight ? '<div style="padding:10px 14px;background:rgba(196,154,138,.08);border-left:3px solid var(--gold);border-radius:0 4px 4px 0;margin-top:12px;font-size:13px;color:var(--mid);font-style:italic;line-height:1.6;font-family:Cormorant Garamond,serif">&#128218; '+c.bookInsight+'</div>' : '';
+    var confNum = parseFloat(c.confidence||0);
+    var confPct = confNum > 0 && confNum <= 1 ? Math.round(confNum*100) : (confNum > 1 ? Math.round(confNum) : 0);
+    res.innerHTML =
+      '<div class="panel '+(isCrystal?'result-crystal':'result-bouncy')+'" style="padding:20px;animation:fadeUp .3s ease">' +
+        '<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">' +
+          '<span style="font-size:36px;flex-shrink:0">'+(isCrystal?'&#128302;':'&#127934;')+'</span>' +
+          '<div style="flex:1"><div style="font-family:Cormorant Garamond,serif;font-size:22px;font-weight:400">'+(isCrystal?'Crystal Ball  -  Only You':'Bouncy Ball  -  Delegate to EA')+'</div>' +
+          '<span class="'+(isCrystal?'crystal-tag':'bouncy-tag')+'" style="margin-top:4px;display:inline-block">'+(c.urgency||'')+'</span></div>' +
+        '</div>' +
+        '<div style="font-size:14px;line-height:1.8;margin-bottom:12px;font-family:Cormorant Garamond,serif">'+(c.reason||'')+'</div>' +
+        '<div style="font-size:13px;font-weight:600;padding:12px 14px;background:var(--warm);border-radius:6px;line-height:1.6">Recommended: '+(c.recommendedAction||'')+'</div>' +
+        bookHtml +
+        (confPct > 0 ? '<div style="font-size:11px;color:var(--mid);margin-top:10px">AI Confidence: '+confPct+'%</div>' : '') +
+        (!isCrystal ?
+          '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--tan)">' +
+            '<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:10px">EA Execution Mode</div>' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' +
+              '<button onclick="window._eaAct=\'draft-email\';eaAction(window._eaAct,window._lastTask)" style="font-size:11px;font-weight:700;padding:7px 14px;border-radius:3px;border:none;cursor:pointer;background:var(--blk);color:var(--cream)">Draft Email</button>' +
+              '<button onclick="window._eaAct=\'schedule\';eaAction(window._eaAct,window._lastTask)" style="font-size:11px;font-weight:700;padding:7px 14px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Schedule It</button>' +
+              '<button onclick="window._eaAct=\'task-list\';eaAction(window._eaAct,window._lastTask)" style="font-size:11px;font-weight:700;padding:7px 14px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Add to EA List</button>' +
+              '<button onclick="window._eaAct=\'generate-doc\';eaAction(window._eaAct,window._lastTask)" style="font-size:11px;font-weight:700;padding:7px 14px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:transparent;color:var(--mid)">Generate Doc</button>' +
+            '</div>' +
+            '<div id="ea-action-result"></div>' +
+          '</div>'
+        : '') +
+        '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--tan)">' +
+          '<button onclick="playVoice(this)" data-text="'+voiceText.replace(/"/g,"'")+'" style="font-size:11px;font-weight:700;padding:8px 16px;border-radius:3px;border:1px solid var(--tan);cursor:pointer;background:var(--warm);color:var(--mid)">&#9654; Listen to Analysis</button>' +
+          '<span style="font-size:11px;color:var(--mid);margin-left:10px">ElevenLabs AI Voice</span>' +
+        '</div>' +
+      '</div>';
+    window._lastTask = task;
+    loadStats();
+    if(!isCrystal) setTimeout(loadEATasks, 1000);
   } catch(e) {
-    console.error('Classify error:', e);
     res.style.display = 'block';
     res.innerHTML = '<div style="color:var(--red);font-size:13px;padding:12px">Error: '+e.message+'</div>';
   } finally {
@@ -954,25 +954,6 @@ async function runClassify() {
   }
 }
 
-
-function showHistoryDetail(el) {
-  var detail = el.querySelector('.history-detail');
-  if(!detail) return;
-  var isOpen = detail.style.display !== 'none';
-  // Close all others
-  document.querySelectorAll('.history-detail').forEach(function(d) { d.style.display = 'none'; });
-  if(!isOpen) detail.style.display = 'block';
-}
-
-function filterHistory(type, btn) {
-  document.querySelectorAll('#screen-history .tbtn').forEach(function(b) { b.className = 'tbtn tbtn-o'; b.style.fontSize='10px'; b.style.padding='6px 14px'; });
-  if(btn) { btn.className = 'tbtn tbtn-p'; btn.style.fontSize='10px'; btn.style.padding='6px 14px'; }
-  var items = document.querySelectorAll('#history-content .history-item');
-  items.forEach(function(item) {
-    if(type === 'all') item.style.display = 'block';
-    else item.style.display = item.dataset.type === type ? 'block' : 'none';
-  });
-}
 
 async function loadHistory() {
   var el = $('history-content');
