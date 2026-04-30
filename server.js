@@ -1860,7 +1860,9 @@ app.post('/api/speak', async (req, res) => {
 
     const clean = text.replace(/[#*_~`]/g, '').replace(/\n\n+/g, '. ').replace(/\n/g, ' ').substring(0, 2500);
 
-    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/ImnfuV8oxhB7ya99oJfc', {
+    console.log('Speaking text length:', clean.length, 'chars');
+    
+    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/ImnfuV8oxhB7ya99oJfc/stream', {
       method: 'POST',
       headers: {
         'xi-api-key': process.env.ELEVENLABS_API_KEY,
@@ -1870,20 +1872,29 @@ app.post('/api/speak', async (req, res) => {
       body: JSON.stringify({
         text: clean,
         model_id: 'eleven_multilingual_v2',
-        voice_settings: { stability: 0.75, similarity_boost: 0.85, style: 0.3, use_speaker_boost: true }
+        voice_settings: { stability: 0.75, similarity_boost: 0.85, style: 0.2, use_speaker_boost: true },
+        optimize_streaming_latency: 0
       })
     });
 
     if(!response.ok) {
       const err = await response.text();
-      console.error('ElevenLabs error status:', response.status, 'body:', err);
-      return res.status(502).json({ error: 'Voice service error: ' + response.status + ' ' + err.substring(0,100) });
+      console.error('ElevenLabs error:', response.status, err.substring(0,200));
+      return res.status(502).json({ error: 'Voice error: ' + response.status + ' - ' + err.substring(0,100) });
     }
 
-    const audioBuffer = await response.arrayBuffer();
+    console.log('ElevenLabs response OK, streaming audio...');
     res.setHeader('Content-Type', 'audio/mpeg');
-    res.setHeader('Content-Length', audioBuffer.byteLength);
-    res.send(Buffer.from(audioBuffer));
+    res.setHeader('Transfer-Encoding', 'chunked');
+    
+    // Stream the audio directly to client
+    const reader = response.body.getReader();
+    while(true) {
+      const { done, value } = await reader.read();
+      if(done) break;
+      res.write(Buffer.from(value));
+    }
+    res.end();
   } catch (error) {
     console.error('Speak error:', error.message);
     res.status(500).json({ error: error.message });
