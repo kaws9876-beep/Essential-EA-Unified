@@ -1684,7 +1684,7 @@ async function loadQBInvoices() {
           '<div style="font-size:11px;color:'+(overdue?'var(--red)':'var(--mid)')+'">'+(overdue?'OVERDUE - ':'Due ')+due+'</div></div>' +
           '<div style="display:flex;align-items:center;gap:8px">' +
           '<div style="font-size:13px;font-weight:700;color:'+(overdue?'var(--red)':'var(--gold)')+'">$'+parseFloat(inv.Balance||0).toLocaleString()+'</div>' +
-          '<button onclick="markInvoicePaid(\''+inv.Id+'\',\''+parseFloat(inv.Balance||0)+'\')" style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:3px;border:none;cursor:pointer;background:var(--green);color:white">Paid</button>' +
+          '<button data-id="'+inv.Id+'" data-amt="'+parseFloat(inv.Balance||0)+'" onclick="window._paidId=this.dataset.id;window._paidAmt=this.dataset.amt;markInvoicePaid(window._paidId,window._paidAmt)" style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:3px;border:none;cursor:pointer;background:var(--green);color:white">Paid</button>' +
           '</div></div>';
       }).join('');
     } else if(d.success) { list.innerHTML='<div style="font-size:12px;color:var(--mid)">No unpaid invoices</div>'; }
