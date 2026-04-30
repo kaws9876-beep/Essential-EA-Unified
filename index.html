@@ -1330,32 +1330,34 @@ async function sendReply() {
 }
 
 async function archiveEmail() {
-  if(!_currentMsg) return;
+  if(!_currentMsg) { alert('Please select an email first'); return; }
   var endpoint = _currentProvider === 'outlook' ? '/api/outlook/archive' : '/api/gmail/archive';
   await fetch(RAILWAY + endpoint, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:_currentMsg.id})});
   if(_currentProvider === 'outlook') loadOutlook(); else loadGmail();
 }
 
 async function trashEmail() {
-  if(!_currentMsg) return;
+  if(!_currentMsg) { alert('Please select an email first'); return; }
   var endpoint = _currentProvider === 'outlook' ? '/api/outlook/trash' : '/api/gmail/trash';
   await fetch(RAILWAY + endpoint, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:_currentMsg.id})});
   if(_currentProvider === 'outlook') loadOutlook(); else loadGmail();
 }
 
 async function starEmail() {
-  if(!_currentMsg) return;
+  if(!_currentMsg) { alert('Please select an email first'); return; }
   var endpoint = _currentProvider === 'outlook' ? '/api/outlook/star' : '/api/gmail/star';
   await fetch(RAILWAY + endpoint, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:_currentMsg.id,starred:true})});
 }
 
 async function markReadEmail() {
-  if(!_currentMsg) return;
+  if(!_currentMsg) { alert('Please select an email first'); return; }
   var endpoint = _currentProvider === 'outlook' ? '/api/outlook/markread' : '/api/gmail/markread';
   await fetch(RAILWAY + endpoint, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:_currentMsg.id,read:true})});
 }
 
-function forwardEmail() { $('reply-text').value = '\n\n--- Forwarded ---\n' + (_currentMsg ? _currentMsg.body||'' : ''); replyEmail(); }
+function forwardEmail() { 
+  if(!_currentMsg) { alert('Please select an email first'); return; }
+  $('reply-text').value = '\n\n--- Forwarded ---\n' + (_currentMsg ? _currentMsg.body||'' : ''); replyEmail(); }
 
 async function disconnectGmail() {
   await fetch(RAILWAY + '/api/google/disconnect');
@@ -1371,7 +1373,7 @@ async function disconnectOutlook() {
 }
 
 async function eaDraftReply() {
-  if(!_currentMsg) return;
+  if(!_currentMsg) { alert('Please select an email first'); return; }
   try {
     var r = await fetch(RAILWAY + '/api/ea-draft', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task:'Draft a professional reply to this email',context:_currentMsg.subject+' from '+_currentMsg.from})});
     var d = await r.json();
