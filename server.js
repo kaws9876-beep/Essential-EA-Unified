@@ -1436,8 +1436,10 @@ app.post('/api/classify', async (req, res) => {
 
 app.post('/api/generate-week', async (req, res) => {
   try {
-    const { goals, revenue, timeblocks } = req.body;
-    if (!goals || !revenue || !timeblocks) return res.status(400).json({ error: 'Missing required fields', success: false });
+    const { goals, revenue, timeblocks, blocks, peak } = req.body;
+    const resolvedBlocks = timeblocks || blocks || 'Flexible schedule';
+    const resolvedRevenue = revenue || peak || 'Revenue and growth';
+    if (!goals) return res.status(400).json({ error: 'Goals required', success: false });
 
     const prompt = 'You are the Essential EA building a Priority Week. Return ONLY a JSON object, no other text. Format:\n{\n  "focus": ["Crystal Ball item 1", "Crystal Ball item 2", "Crystal Ball item 3"],\n  "days": [\n    {\n      "day": "MON",\n      "slots": [\n        {"task": "Task name", "time": "9:00 AM", "type": "crystal"},\n        {"task": "EA Task name", "type": "ea_owned"},\n        {"task": "Protected block", "time": "12:00 PM", "type": "protected"}\n      ]\n    }\n  ]\n}\nTypes: crystal, ea_owned, protected.\nBuild for goals: ' + goals + ' Revenue: ' + revenue + ' Protected blocks: ' + timeblocks + '\nInclude MON, TUE, WED, THU, FRI. Each day 2-3 slots max. Crystal Ball tasks in morning, EA tasks in afternoon.'
 
@@ -1797,8 +1799,10 @@ app.post('/api/ea-draft', async (req, res) => {
 
 app.post('/api/ea-read-doc', async (req, res) => {
   try {
-    const { filename, content, isImage } = req.body;
+    const { filename, content: docContent, document: docDocument, isImage } = req.body;
+    const content = docContent || docDocument || '';
     if(!filename) return res.status(400).json({ error: 'Filename required', success: false });
+    if(!content) return res.status(400).json({ error: 'Document content required', success: false });
 
     const ext = filename.split('.').pop().toLowerCase();
 
