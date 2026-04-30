@@ -1441,7 +1441,7 @@ app.post('/api/generate-week', async (req, res) => {
     const resolvedRevenue = revenue || peak || 'Revenue and growth';
     if (!goals) return res.status(400).json({ error: 'Goals required', success: false });
 
-    const prompt = 'You are the Essential EA building a Priority Week. Return ONLY a JSON object, no other text. Format:\n{\n  "focus": ["Crystal Ball item 1", "Crystal Ball item 2", "Crystal Ball item 3"],\n  "days": [\n    {\n      "day": "MON",\n      "slots": [\n        {"task": "Task name", "time": "9:00 AM", "type": "crystal"},\n        {"task": "EA Task name", "type": "ea_owned"},\n        {"task": "Protected block", "time": "12:00 PM", "type": "protected"}\n      ]\n    }\n  ]\n}\nTypes: crystal, ea_owned, protected.\nBuild for goals: ' + goals + ' Revenue: ' + revenue + ' Protected blocks: ' + timeblocks + '\nInclude MON, TUE, WED, THU, FRI. Each day 2-3 slots max. Crystal Ball tasks in morning, EA tasks in afternoon.'
+    const prompt = 'You are the Essential EA building a Priority Week. Return ONLY a JSON object, no other text. Format:\n{\n  "focus": ["Crystal Ball item 1", "Crystal Ball item 2", "Crystal Ball item 3"],\n  "days": [\n    {\n      "day": "MON",\n      "slots": [\n        {"task": "Task name", "time": "9:00 AM", "type": "crystal"},\n        {"task": "EA Task name", "type": "ea_owned"},\n        {"task": "Protected block", "time": "12:00 PM", "type": "protected"}\n      ]\n    }\n  ]\n}\nTypes: crystal, ea_owned, protected.\nBuild for goals: ' + goals + ' Revenue goal: ' + resolvedRevenue + ' Protected blocks: ' + resolvedBlocks + '\nInclude MON, TUE, WED, THU, FRI. Each day 2-3 slots max. Crystal Ball tasks in morning, EA tasks in afternoon.'
 
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5',
@@ -1455,7 +1455,7 @@ app.post('/api/generate-week', async (req, res) => {
 
     const plan = response.content[0].text.trim();
 
-    await sql`INSERT INTO weekly_plans (goals, revenue, timeblocks, plan) VALUES (${goals}, ${revenue}, ${timeblocks}, ${plan})`;
+    await sql`INSERT INTO weekly_plans (goals, revenue, timeblocks, plan) VALUES (${goals}, ${resolvedRevenue}, ${resolvedBlocks}, ${plan})`;
 
     let planData = null;
     try {
