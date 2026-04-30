@@ -478,7 +478,7 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
   </div>
 
   <!-- COMPOSE MODAL -->
-  <div id="compose-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:flex-end;justify-content:flex-end;padding:20px">
+  <div id="compose-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:flex-end;justify-content:flex-end;padding:20px">
     <div style="background:white;border-radius:12px 12px 0 0;width:480px;max-width:100%;box-shadow:0 -4px 30px rgba(0,0,0,.15)">
       <div style="padding:14px 16px;background:var(--blk);border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between">
         <div style="font-size:13px;font-weight:600;color:var(--cream)">New Message</div>
@@ -887,6 +887,11 @@ setTimeout(function() {
 }, 1800);
 
 const $ = id => document.getElementById(id);
+
+// Global state variables
+var _currentTab = 'inbox';
+var _currentProvider = 'gmail';
+var _currentMsg = null;
 const RAILWAY = 'https://essential-ea-app-production.up.railway.app';
 const today = new Date();
 const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -1235,6 +1240,7 @@ async function checkEmailStatus() {
 }
 
 async function loadGmail(folder) {
+  if(typeof _currentTab === 'undefined') { console.log('loadGmail called too early'); return; }
   _currentProvider = 'gmail';
   folder = folder || _currentTab;
   var list = $('msg-list');
@@ -1249,6 +1255,7 @@ async function loadGmail(folder) {
 }
 
 async function loadOutlook(folder) {
+  if(typeof _currentTab === 'undefined') { console.log('loadOutlook called too early'); return; }
   _currentProvider = 'outlook';
   folder = folder || _currentTab;
   var list = $('msg-list');
@@ -2164,7 +2171,7 @@ async function createQBExpense() {
 // ============================================================
 function openCompose(prefillTo, prefillSubject, prefillBody) {
   var modal = $('compose-modal');
-  if(modal) modal.style.display = 'flex';
+  if(modal) { modal.style.display = 'flex'; modal.style.alignItems = 'flex-end'; modal.style.justifyContent = 'flex-end'; modal.style.padding = '20px'; }
   if(prefillTo && $('compose-to')) $('compose-to').value = prefillTo;
   if(prefillSubject && $('compose-subject')) $('compose-subject').value = prefillSubject;
   if(prefillBody && $('compose-body')) $('compose-body').value = prefillBody;
@@ -2189,7 +2196,10 @@ async function sendComposedEmail() {
   if(!to || !subject || !body) { if(status) status.innerHTML = '<span style="color:var(--red)">Fill in To, Subject and Body</span>'; return; }
   if(status) status.innerHTML = '<span style="color:var(--mid)">Sending...</span>';
   try {
-    var endpoint = _currentProvider === 'outlook' ? '/api/outlook/compose' : '/api/gmail/compose';
+    // Check which provider is actually connected
+    var useOutlook = document.getElementById('outlook-connected-banner') && 
+                     document.getElementById('outlook-connected-banner').style.display !== 'none';
+    var endpoint = (useOutlook && _currentProvider === 'outlook') ? '/api/outlook/compose' : '/api/gmail/compose';
     var r = await fetch(RAILWAY + endpoint, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
@@ -2230,6 +2240,28 @@ async function eaGenerateEmailBody() {
 }
 
 // Also update nav to load calendar
+
+// ============================================================
+// HISTORY FUNCTIONS
+// ============================================================
+function showHistoryDetail(el) {
+  var detail = el.querySelector('.history-detail');
+  if(!detail) return;
+  var isOpen = detail.style.display !== 'none';
+  document.querySelectorAll('.history-detail').forEach(function(d) { d.style.display = 'none'; });
+  if(!isOpen) detail.style.display = 'block';
+}
+
+function filterHistory(type, btn) {
+  document.querySelectorAll('#screen-history .tbtn').forEach(function(b) {
+    b.className = 'tbtn tbtn-o'; b.style.fontSize='10px'; b.style.padding='6px 14px';
+  });
+  if(btn) { btn.className = 'tbtn tbtn-p'; btn.style.fontSize='10px'; btn.style.padding='6px 14px'; }
+  var items = document.querySelectorAll('#history-content .history-item');
+  items.forEach(function(item) {
+    item.style.display = (type === 'all' || item.dataset.type === type) ? 'block' : 'none';
+  });
+}
 
 // INIT
 loadStats();
