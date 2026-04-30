@@ -1789,25 +1789,48 @@ async function playVoice(elOrText) {
 
     if(window._currentAudio) {
       window._currentAudio.pause();
+      window._currentAudio.src = '';
       try { URL.revokeObjectURL(window._currentAudio._url); } catch(e) {}
+      window._currentAudio = null;
     }
 
-    var audio = new Audio(url);
+    var audio = new Audio();
     audio._url = url;
     window._currentAudio = audio;
 
-    // Restore button when done
+    // IMPORTANT: Set src AFTER attaching all event handlers
+    audio.preload = 'auto';
+    
     audio.onended = function() {
+      console.log('Audio playback complete');
       if(btn) { btn.innerHTML = btn._origText || '&#9654; Listen'; btn.disabled = false; }
       try { URL.revokeObjectURL(url); } catch(e) {}
     };
     audio.onerror = function(e) {
-      console.log('Audio playback error:', e);
+      console.log('Audio error:', audio.error && audio.error.code);
       if(btn) { btn.innerHTML = btn._origText || '&#9654; Listen'; btn.disabled = false; }
     };
+    audio.oncanplaythrough = function() {
+      console.log('Audio ready, duration:', audio.duration, 's');
+    };
 
+    // Set src last to trigger loading
+    audio.src = url;
+    audio.load();
+    
     if(btn) { btn.innerHTML = '&#9646;&#9646; Playing...'; }
-    await audio.play();
+    
+    // Wait for enough data then play
+    await new Promise(function(resolve, reject) {
+      audio.oncanplay = function() { resolve(); };
+      audio.onerror = function() { reject(new Error('Audio load failed')); };
+      setTimeout(resolve, 3000); // fallback
+    });
+    
+    audio.play().catch(function(e) {
+      console.log('Play failed:', e.message);
+      if(btn) { btn.innerHTML = btn._origText || '&#9654; Listen'; btn.disabled = false; }
+    });
 
   } catch(e) {
     console.log('Voice error:', e.message);
