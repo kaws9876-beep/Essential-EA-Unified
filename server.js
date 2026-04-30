@@ -1860,7 +1860,7 @@ app.post('/api/speak', async (req, res) => {
 
     const clean = text.replace(/[#*_~`]/g, '').replace(/\n\n+/g, '. ').replace(/\n/g, ' ').substring(0, 2500);
 
-    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL', {
+    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/ImnfuV8oxhB7ya99oJfc', {
       method: 'POST',
       headers: {
         'xi-api-key': process.env.ELEVENLABS_API_KEY,
