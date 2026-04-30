@@ -1,6 +1,6 @@
 {
   "name": "essential-ea",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "AI-powered Executive Assistant for brokers and executives",
   "main": "server.js",
