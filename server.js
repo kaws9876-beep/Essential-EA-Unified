@@ -4054,5 +4054,7 @@ app.listen(PORT, '0.0.0.0', async () => {
 process.on('SIGTERM', () => {
   server.close(() => process.exit(0));
 });
-
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', version: '2.0' });
+});
 export default app;
