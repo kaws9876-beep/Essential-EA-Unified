@@ -1858,49 +1858,72 @@ app.post('/api/speak', async (req, res) => {
     if(!text) return res.status(400).json({ error: 'Text required' });
     if(!process.env.ELEVENLABS_API_KEY) return res.status(503).json({ error: 'Voice not configured' });
 
-    const clean = text.replace(/[#*_~`]/g, '').replace(/\n\n+/g, '. ').replace(/\n/g, ' ').substring(0, 2500);
+    const clean = text
+      .replace(/[#*_~`]/g, '')
+      .replace(/\n\n+/g, '. ')
+      .replace(/\n/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, 2500);
 
-    console.log('Speaking text length:', clean.length, 'chars');
-    
-    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/ImnfuV8oxhB7ya99oJfc/stream', {
-      method: 'POST',
-      headers: {
-        'xi-api-key': process.env.ELEVENLABS_API_KEY,
-        'Content-Type': 'application/json',
-        'Accept': 'audio/mpeg'
-      },
-      body: JSON.stringify({
-        text: clean,
-        model_id: 'eleven_multilingual_v2',
-        voice_settings: { stability: 0.75, similarity_boost: 0.85, style: 0.2, use_speaker_boost: true },
-        optimize_streaming_latency: 0
-      })
-    });
+    console.log('ElevenLabs request: chars=', clean.length);
 
-    if(!response.ok) {
-      const err = await response.text();
-      console.error('ElevenLabs error:', response.status, err.substring(0,200));
-      return res.status(502).json({ error: 'Voice error: ' + response.status + ' - ' + err.substring(0,100) });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
+    try {
+      const elResponse = await fetch(
+        'https://api.elevenlabs.io/v1/text-to-speech/ImnfuV8oxhB7ya99oJfc',
+        {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'xi-api-key': process.env.ELEVENLABS_API_KEY,
+            'Content-Type': 'application/json',
+            'Accept': 'audio/mpeg'
+          },
+          body: JSON.stringify({
+            text: clean,
+            model_id: 'eleven_multilingual_v2',
+            voice_settings: {
+              stability: 0.7,
+              similarity_boost: 0.8,
+              style: 0.1,
+              use_speaker_boost: true
+            }
+          })
+        }
+      );
+      clearTimeout(timeout);
+
+      if(!elResponse.ok) {
+        const errText = await elResponse.text();
+        console.error('ElevenLabs error:', elResponse.status, errText.substring(0, 300));
+        return res.status(502).json({ error: 'Voice error ' + elResponse.status + ': ' + errText.substring(0, 150) });
+      }
+
+      const audioBuffer = await elResponse.arrayBuffer();
+      console.log('ElevenLabs audio received:', audioBuffer.byteLength, 'bytes');
+
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Content-Length', audioBuffer.byteLength);
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.send(Buffer.from(audioBuffer));
+
+    } catch(fetchErr) {
+      clearTimeout(timeout);
+      if(fetchErr.name === 'AbortError') {
+        return res.status(504).json({ error: 'Voice generation timed out' });
+      }
+      throw fetchErr;
     }
 
-    console.log('ElevenLabs response OK, streaming audio...');
-    res.setHeader('Content-Type', 'audio/mpeg');
-    res.setHeader('Transfer-Encoding', 'chunked');
-    
-    // Stream the audio directly to client
-    const reader = response.body.getReader();
-    while(true) {
-      const { done, value } = await reader.read();
-      if(done) break;
-      res.write(Buffer.from(value));
-    }
-    res.end();
   } catch (error) {
     console.error('Speak error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
-
 app.get('/api/speak', async (req, res) => {
   try {
     const text = req.query.text;
@@ -3775,7 +3798,240 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });
 });
 
-const server = app.listen(PORT, '0.0.0.0', async () => {
+const server = app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    services: {
+      database: 'connected',
+      anthropic: process.env.ANTHROPIC_API_KEY ? 'configured' : 'missing',
+      elevenlabs: process.env.ELEVENLABS_API_KEY ? 'configured' : 'missing',
+      pinecone: process.env.PINECONE_API_KEY ? 'configured' : 'missing'
+    }
+  });
+});
+
+
+// ============================================================
+// QUICKBOOKS WRITE OPERATIONS
+// ============================================================
+
+app.post('/api/quickbooks/create-invoice', async (req, res) => {
+  try {
+    const { customerName, customerEmail, items, dueDate, memo } = req.body;
+    const [tokens] = await sql`SELECT * FROM quickbooks_tokens WHERE id = 1`;
+    if(!tokens) return res.status(401).json({ success: false, error: 'QuickBooks not connected' });
+
+    const line = (items || [{ description: 'Services', amount: 0 }]).map((item, i) => ({
+      DetailType: 'SalesItemLineDetail',
+      Amount: parseFloat(item.amount || 0),
+      Description: item.description || 'Services',
+      SalesItemLineDetail: { Qty: item.qty || 1, UnitPrice: parseFloat(item.amount || 0) }
+    }));
+
+    const invoice = {
+      Line: line,
+      CustomerRef: { name: customerName || 'Client' },
+      DueDate: dueDate || new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
+      PrivateNote: memo || ''
+    };
+
+    const baseUrl = process.env.QUICKBOOKS_ENVIRONMENT === 'sandbox'
+      ? 'https://sandbox-quickbooks.api.intuit.com'
+      : 'https://quickbooks.api.intuit.com';
+
+    const r = await fetch(`${baseUrl}/v3/company/${tokens.realm_id}/invoice`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${tokens.access_token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ Invoice: invoice })
+    });
+    const d = await r.json();
+    if(!r.ok) return res.status(400).json({ success: false, error: JSON.stringify(d) });
+    res.json({ success: true, invoice: d.Invoice });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/quickbooks/mark-paid', async (req, res) => {
+  try {
+    const { invoiceId, amount, paymentMethod } = req.body;
+    const [tokens] = await sql`SELECT * FROM quickbooks_tokens WHERE id = 1`;
+    if(!tokens) return res.status(401).json({ success: false, error: 'QuickBooks not connected' });
+
+    const baseUrl = process.env.QUICKBOOKS_ENVIRONMENT === 'sandbox'
+      ? 'https://sandbox-quickbooks.api.intuit.com'
+      : 'https://quickbooks.api.intuit.com';
+
+    const payment = {
+      TotalAmt: parseFloat(amount || 0),
+      CustomerRef: { value: '1' },
+      Line: [{ Amount: parseFloat(amount || 0), LinkedTxn: [{ TxnId: invoiceId, TxnType: 'Invoice' }] }]
+    };
+
+    const r = await fetch(`${baseUrl}/v3/company/${tokens.realm_id}/payment`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${tokens.access_token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ Payment: payment })
+    });
+    const d = await r.json();
+    if(!r.ok) return res.status(400).json({ success: false, error: JSON.stringify(d) });
+    res.json({ success: true, payment: d.Payment });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/quickbooks/create-expense', async (req, res) => {
+  try {
+    const { vendorName, amount, category, memo, date } = req.body;
+    const [tokens] = await sql`SELECT * FROM quickbooks_tokens WHERE id = 1`;
+    if(!tokens) return res.status(401).json({ success: false, error: 'QuickBooks not connected' });
+
+    const baseUrl = process.env.QUICKBOOKS_ENVIRONMENT === 'sandbox'
+      ? 'https://sandbox-quickbooks.api.intuit.com'
+      : 'https://quickbooks.api.intuit.com';
+
+    const expense = {
+      PaymentType: 'Cash',
+      TxnDate: date || new Date().toISOString().split('T')[0],
+      PrivateNote: memo || '',
+      Line: [{
+        DetailType: 'AccountBasedExpenseLineDetail',
+        Amount: parseFloat(amount || 0),
+        Description: category || 'General Expense',
+        AccountBasedExpenseLineDetail: { AccountRef: { name: category || 'Miscellaneous' } }
+      }]
+    };
+
+    const r = await fetch(`${baseUrl}/v3/company/${tokens.realm_id}/purchase`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${tokens.access_token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ Purchase: expense })
+    });
+    const d = await r.json();
+    if(!r.ok) return res.status(400).json({ success: false, error: JSON.stringify(d) });
+    res.json({ success: true, expense: d.Purchase });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ============================================================
+// CALENDAR - BLOCK CRYSTAL BALL TIME
+// ============================================================
+
+app.post('/api/calendar/block-crystal', async (req, res) => {
+  try {
+    const { date, startTime, endTime, title } = req.body;
+    const [gTokens] = await sql`SELECT * FROM google_tokens WHERE user_id = 'default'`;
+    if(!gTokens) return res.status(401).json({ success: false, error: 'Google Calendar not connected' });
+
+    const { google } = await import('googleapis');
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      process.env.GOOGLE_REDIRECT_URI
+    );
+    oauth2Client.setCredentials({
+      access_token: gTokens.access_token,
+      refresh_token: gTokens.refresh_token
+    });
+
+    const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+    const eventDate = date || new Date().toISOString().split('T')[0];
+
+    const event = await calendar.events.insert({
+      calendarId: 'primary',
+      resource: {
+        summary: title || 'Crystal Ball Crystal Ball Time - Focus Block',
+        description: 'Protected executive focus time. No meetings, no interruptions. Crystal Ball only.',
+        start: { dateTime: `${eventDate}T${startTime || '09:00:00'}`, timeZone: 'America/Chicago' },
+        end: { dateTime: `${eventDate}T${endTime || '12:00:00'}`, timeZone: 'America/Chicago' },
+        colorId: '11',
+        reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 15 }] }
+      }
+    });
+    res.json({ success: true, event: event.data });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ============================================================
+// EMAIL - COMPOSE NEW (already have /api/gmail/send for replies)
+// ============================================================
+
+app.post('/api/gmail/compose', async (req, res) => {
+  try {
+    const { to, subject, body, cc, bcc } = req.body;
+    if(!to || !subject || !body) return res.status(400).json({ success: false, error: 'To, subject and body required' });
+
+    const [tokens] = await sql`SELECT * FROM google_tokens WHERE user_id = 'default'`;
+    if(!tokens) return res.status(401).json({ success: false, error: 'Gmail not connected' });
+
+    const { google } = await import('googleapis');
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECT_URI
+    );
+    oauth2Client.setCredentials({ access_token: tokens.access_token, refresh_token: tokens.refresh_token });
+    const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+    const ccLine = cc ? `Cc: ${cc}\r\n` : '';
+    const bccLine = bcc ? `Bcc: ${bcc}\r\n` : '';
+    const raw = Buffer.from(
+      `To: ${to}\r\nSubject: ${subject}\r\n${ccLine}${bccLine}Content-Type: text/plain; charset=utf-8\r\n\r\n${body}`
+    ).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+    const r = await gmail.users.messages.send({ userId: 'me', resource: { raw } });
+    res.json({ success: true, messageId: r.data.id });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/outlook/compose', async (req, res) => {
+  try {
+    const { to, subject, body, cc } = req.body;
+    if(!to || !subject || !body) return res.status(400).json({ success: false, error: 'To, subject and body required' });
+
+    const [tokens] = await sql`SELECT * FROM microsoft_tokens WHERE user_id = 'default'`;
+    if(!tokens) return res.status(401).json({ success: false, error: 'Outlook not connected' });
+
+    const r = await fetch('https://graph.microsoft.com/v1.0/me/sendMail', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${tokens.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: {
+          subject,
+          body: { contentType: 'Text', content: body },
+          toRecipients: [{ emailAddress: { address: to } }],
+          ccRecipients: cc ? [{ emailAddress: { address: cc } }] : []
+        }
+      })
+    });
+    if(!r.ok) { const e = await r.text(); return res.status(400).json({ success: false, error: e }); }
+    res.json({ success: true });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err.message);
+  res.status(500).json({ error: 'Something went wrong', detail: err.message });
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled promise rejection:', reason);
+});
+
+app.listen(PORT, '0.0.0.0', async () => {
   await initDB();
   console.log('\nEssential EA is running on port ' + PORT);
 });
