@@ -2397,14 +2397,29 @@ app.get('/api/calendar/events', async (req, res) => {
 
 app.post('/api/calendar/create', async (req, res) => {
   try {
-    const { summary, start, end, description, location, attendees } = req.body;
+    const { summary, start, end, description, location, attendees, title, date, startTime, endTime } = req.body;
     const accessToken = await getGoogleAccessToken();
-    if(!accessToken) return res.json({ success: false, error: 'Not connected' });
+    if(!accessToken) return res.json({ success: false, error: 'Not connected to Google Calendar. Please reconnect Gmail.' });
+    
+    // Handle both formats: {summary,start,end} or {title,date,startTime,endTime}
+    const eventTitle = summary || title || 'New Event';
+    const eventDate = date || new Date().toISOString().split('T')[0];
+    const eventStart = start || `${eventDate}T${(startTime||'09:00:00').replace(/^(\d{2}:\d{2})$/, '$1:00')}`;
+    const eventEnd = end || `${eventDate}T${(endTime||'10:00:00').replace(/^(\d{2}:\d{2})$/, '$1:00')}`;
+    
+    // Ensure proper ISO format with seconds
+    const formatDT = (dt) => {
+      if(dt.includes('T') && dt.split('T')[1].length === 5) return dt + ':00';
+      return dt;
+    };
+    
     const event = {
-      summary, description: description || '', location: location || '',
-      start: { dateTime: start, timeZone: 'America/Chicago' },
-      end: { dateTime: end, timeZone: 'America/Chicago' },
-      attendees: (attendees || []).map(e => ({ email: e }))
+      summary: eventTitle,
+      description: description || '',
+      location: location || '',
+      start: { dateTime: formatDT(eventStart), timeZone: 'America/Chicago' },
+      end: { dateTime: formatDT(eventEnd), timeZone: 'America/Chicago' },
+      attendees: (attendees || []).filter(Boolean).map(e => ({ email: e.trim() }))
     };
     const r = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
       method: 'POST', headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
@@ -3819,7 +3834,7 @@ const server = app.get('/health', (req, res) => {
 app.post('/api/quickbooks/create-invoice', async (req, res) => {
   try {
     const { customerName, customerEmail, items, dueDate, memo } = req.body;
-    const [tokens] = await sql`SELECT * FROM quickbooks_tokens WHERE id = 1`;
+    const [tokens] = await sql`SELECT * FROM quickbooks_tokens WHERE user_id = 'default' LIMIT 1`;
     if(!tokens) return res.status(401).json({ success: false, error: 'QuickBooks not connected' });
 
     const line = (items || [{ description: 'Services', amount: 0 }]).map((item, i) => ({
@@ -3860,7 +3875,7 @@ app.post('/api/quickbooks/create-invoice', async (req, res) => {
 app.post('/api/quickbooks/mark-paid', async (req, res) => {
   try {
     const { invoiceId, amount, paymentMethod } = req.body;
-    const [tokens] = await sql`SELECT * FROM quickbooks_tokens WHERE id = 1`;
+    const [tokens] = await sql`SELECT * FROM quickbooks_tokens WHERE user_id = 'default' LIMIT 1`;
     if(!tokens) return res.status(401).json({ success: false, error: 'QuickBooks not connected' });
 
     const baseUrl = process.env.QUICKBOOKS_ENVIRONMENT === 'sandbox'
@@ -3889,7 +3904,7 @@ app.post('/api/quickbooks/mark-paid', async (req, res) => {
 app.post('/api/quickbooks/create-expense', async (req, res) => {
   try {
     const { vendorName, amount, category, memo, date } = req.body;
-    const [tokens] = await sql`SELECT * FROM quickbooks_tokens WHERE id = 1`;
+    const [tokens] = await sql`SELECT * FROM quickbooks_tokens WHERE user_id = 'default' LIMIT 1`;
     if(!tokens) return res.status(401).json({ success: false, error: 'QuickBooks not connected' });
 
     const baseUrl = process.env.QUICKBOOKS_ENVIRONMENT === 'sandbox'
@@ -3971,24 +3986,21 @@ app.post('/api/gmail/compose', async (req, res) => {
     const { to, subject, body, cc, bcc } = req.body;
     if(!to || !subject || !body) return res.status(400).json({ success: false, error: 'To, subject and body required' });
 
-    const [tokens] = await sql`SELECT * FROM google_tokens WHERE user_id = 'default'`;
-    if(!tokens) return res.status(401).json({ success: false, error: 'Gmail not connected' });
+    const accessToken = await getGoogleAccessToken();
+    if(!accessToken) return res.status(401).json({ success: false, error: 'Gmail not connected. Please reconnect in Communication Hub.' });
 
-    const { google } = await import('googleapis');
-    const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECT_URI
-    );
-    oauth2Client.setCredentials({ access_token: tokens.access_token, refresh_token: tokens.refresh_token });
-    const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+    const ccLine = cc ? `Cc: ${cc}\n` : '';
+    const email = [`To: ${to}`, `Subject: ${subject}`, ccLine ? ccLine.trim() : '', 'Content-Type: text/plain; charset=utf-8', '', body].filter(l => l !== '').join('\n');
+    const encoded = Buffer.from(email).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-    const ccLine = cc ? `Cc: ${cc}\r\n` : '';
-    const bccLine = bcc ? `Bcc: ${bcc}\r\n` : '';
-    const raw = Buffer.from(
-      `To: ${to}\r\nSubject: ${subject}\r\n${ccLine}${bccLine}Content-Type: text/plain; charset=utf-8\r\n\r\n${body}`
-    ).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-
-    const r = await gmail.users.messages.send({ userId: 'me', resource: { raw } });
-    res.json({ success: true, messageId: r.data.id });
+    const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw: encoded })
+    });
+    const d = await r.json();
+    if(!r.ok) return res.status(400).json({ success: false, error: d.error?.message || 'Send failed' });
+    res.json({ success: true, messageId: d.id });
   } catch(e) {
     res.status(500).json({ success: false, error: e.message });
   }
@@ -3999,12 +4011,12 @@ app.post('/api/outlook/compose', async (req, res) => {
     const { to, subject, body, cc } = req.body;
     if(!to || !subject || !body) return res.status(400).json({ success: false, error: 'To, subject and body required' });
 
-    const [tokens] = await sql`SELECT * FROM microsoft_tokens WHERE user_id = 'default'`;
-    if(!tokens) return res.status(401).json({ success: false, error: 'Outlook not connected' });
+    const accessToken = await getMicrosoftAccessToken();
+    if(!accessToken) return res.status(401).json({ success: false, error: 'Outlook not connected. Please reconnect in Communication Hub.' });
 
     const r = await fetch('https://graph.microsoft.com/v1.0/me/sendMail', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${tokens.access_token}`, 'Content-Type': 'application/json' },
+      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: {
           subject,
@@ -4014,7 +4026,10 @@ app.post('/api/outlook/compose', async (req, res) => {
         }
       })
     });
-    if(!r.ok) { const e = await r.text(); return res.status(400).json({ success: false, error: e }); }
+    if(!r.ok) {
+      const errText = await r.text();
+      return res.status(400).json({ success: false, error: errText.substring(0,200) });
+    }
     res.json({ success: true });
   } catch(e) {
     res.status(500).json({ success: false, error: e.message });
