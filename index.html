@@ -124,29 +124,86 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
 /* MOBILE */
 .hamburger{display:none;background:none;border:none;cursor:pointer;font-size:20px;padding:4px}
 @media(max-width:768px){
-  .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:300;transition:transform .25s}
+  /* SIDEBAR */
+  .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:300;transition:transform .25s;width:220px;min-width:220px}
   .sidebar.open{transform:translateX(0)}
   .overlay{display:none}
   .overlay.show{display:block}
   .hamburger{display:block}
-  .dg{grid-template-columns:1fr}
-  .kpi-grid{grid-template-columns:1fr 1fr}
-  .inbox-layout{grid-template-columns:1fr;height:auto}
-  .triage-layout{grid-template-columns:1fr}
-  .ops-grid{grid-template-columns:1fr}
-  .s-grid{grid-template-columns:1fr}
-  .topbar{padding:10px 14px;flex-wrap:wrap;gap:6px}
-  .tb-title{font-size:15px}
-  .tb-date{font-size:12px;color:var(--mid);width:100%;order:3}
-  .tb-acts{gap:6px}
-  .tbtn{font-size:10px;padding:6px 10px}
-  .screen-wrap{padding:14px}
-  .pg-h{font-size:26px}
-  .pg-h2{font-size:22px}
-  .kpi{padding:12px}
-  .kv{font-size:28px}
+  
+  /* TOPBAR */
+  .topbar{padding:10px 12px;flex-wrap:nowrap;gap:8px}
+  .tb-title{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+  .tb-date{display:none}
+  .tb-acts{gap:6px;flex-shrink:0}
+  .tbtn{font-size:9px;padding:6px 8px;letter-spacing:.05em}
+  
+  /* SCREENS */
+  .screen-wrap{padding:12px}
+  .pg-h{font-size:24px;margin-bottom:4px}
+  .pg-h2{font-size:20px;margin-bottom:4px}
+  .pg-s,.pg-s2{font-size:12px;margin-bottom:14px}
+  
+  /* GRIDS - all single column on mobile */
+  .dg{grid-template-columns:1fr;gap:12px}
+  .kpi-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .triage-layout{grid-template-columns:1fr;gap:12px}
+  .ops-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .s-grid{grid-template-columns:1fr 1fr;gap:10px}
+  
+  /* KPI CARDS */
+  .kpi{padding:10px 12px}
+  .kv{font-size:26px}
+  .kl{font-size:9px}
+  
+  /* PANELS */
   .panel{border-radius:6px}
-  .btn-primary,.btn-secondary{padding:9px 16px;font-size:11px}
+  .ph{padding:10px 12px}
+  
+  /* BUTTONS */
+  .btn-primary,.btn-secondary{padding:10px 16px;font-size:11px;width:100%}
+  
+  /* INBOX */
+  .inbox-layout{grid-template-columns:1fr;height:auto;min-height:400px}
+  .inbox-list{max-height:300px;overflow-y:auto}
+  .inbox-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .inbox-tab{padding:8px 10px;font-size:10px;white-space:nowrap}
+  
+  /* PRICING - stack cards vertically */
+  #screen-pricing > div{grid-template-columns:1fr !important;max-width:100% !important;gap:12px}
+  
+  /* MEETINGS */
+  #screen-meetings > div{grid-template-columns:1fr !important}
+  
+  /* FINANCE */
+  #qb-connected-view > div:last-child{grid-template-columns:1fr !important}
+  #screen-finance .kpi-grid{grid-template-columns:1fr 1fr}
+  
+  /* CRM */
+  #screen-crm > div{grid-template-columns:1fr !important}
+  
+  /* AUDIT */
+  #audit-results > div:first-child{grid-template-columns:1fr !important}
+  #audit-results > div:nth-child(3){grid-template-columns:1fr !important}
+  #audit-30day{grid-template-columns:1fr !important}
+  
+  /* SETTINGS */
+  #screen-settings .s-grid{grid-template-columns:1fr 1fr}
+  
+  /* PROFILE */
+  #screen-profile > div > .panel > div > div{grid-template-columns:1fr !important}
+  
+  /* EA TASK LIST */
+  #ea-add-form > div:last-child{flex-wrap:wrap}
+  
+  /* EA EXECUTION BUTTONS */
+  .triage-layout > div > .panel + .panel div[style*="flex"]{flex-wrap:wrap}
+  
+  /* SPLASH SCREEN */
+  #ea-splash div:first-child > div:first-child{font-size:28px !important}
+  
+  /* HISTORY */
+  .history-item > div{flex-wrap:wrap}
 }
 </style>
 </head>
@@ -996,21 +1053,30 @@ async function generateWeek() {
     var r = await fetch(RAILWAY + '/api/generate-week', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({goals:$('pw-goals').value,blocks:$('pw-blocks').value,peak:$('pw-peak').value})});
     var d = await r.json();
     if(d.success) {
-      var plan = d.plan;
-      var html = '<div class="panel" style="padding:20px">';
-      html += '<div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Your Priority Week</div>';
-      if(plan && plan.days) {
-        plan.days.forEach(function(day) {
-          html += '<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--tan);padding-bottom:6px;margin-bottom:8px">'+day.day+'</div>';
-          if(day.crystal && day.crystal.length) {
-            day.crystal.forEach(function(item) {
-              html += '<div style="padding:6px 0;display:flex;gap:8px;align-items:flex-start"><span style="color:var(--gold);font-size:14px">&#128302;</span><div><div style="font-size:13px">'+item.task+'</div><div style="font-size:11px;color:var(--mid)">'+item.time+'</div></div></div>';
+      var planData = d.planData;
+      var planText = d.plan || '';
+      var html = '<div class="panel" style="padding:20px;border-top:3px solid var(--gold)">';
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">';
+      html += '<div style="font-family:Cormorant Garamond,serif;font-size:22px;font-weight:400">Your Priority Week</div>';
+      html += '<button onclick="playVoice(this)" data-text="Your priority week is ready. ' + planText.replace(/["'<>&]/g,' ').substring(0,200) + '" style="font-size:10px;padding:5px 12px;border:1px solid var(--tan);border-radius:3px;cursor:pointer;background:transparent;color:var(--mid)">&#9654; Listen</button>';
+      html += '</div>';
+      if(planData && planData.days && planData.days.length) {
+        planData.days.forEach(function(day) {
+          html += '<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--tan);padding-bottom:6px;margin-bottom:8px;color:var(--blk)">'+day.day+'</div>';
+          if(day.slots && day.slots.length) {
+            day.slots.forEach(function(slot) {
+              var isCrystal = slot.type === 'crystal';
+              html += '<div style="padding:6px 0;display:flex;gap:8px;align-items:flex-start">';
+              html += '<span style="font-size:14px;flex-shrink:0">'+(isCrystal?'&#128302;':'&#127934;')+'</span>';
+              html += '<div><div style="font-size:13px;font-weight:'+(isCrystal?'600':'400')+'">'+(slot.task||'')+'</div>';
+              html += '<div style="font-size:11px;color:var(--mid)">'+(slot.time||'')+(slot.duration?' &bull; '+slot.duration:'')+'</div></div></div>';
             });
           }
           html += '</div>';
         });
       } else {
-        html += '<div style="font-size:13px;line-height:1.7">' + (d.planText||'Plan generated') + '</div>';
+        // Plain text fallback - render with line breaks
+        html += '<div style="font-size:14px;line-height:1.9;font-family:Cormorant Garamond,serif;white-space:pre-line">' + planText + '</div>';
       }
       html += '</div>';
       result.innerHTML = html;
