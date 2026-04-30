@@ -246,6 +246,7 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
   <div class="sb-item" onclick="nav('triage',this)"><span class="sb-icon">&#10046;</span>Crystal Ball Triage<span class="sb-badge" id="triage-badge">0</span></div>
   <div class="sb-item" onclick="nav('inbox',this)"><span class="sb-icon">&#9993;</span>Communication<span class="sb-badge" id="inbox-badge">0</span></div>
   <div class="sb-item" onclick="nav('history',this)"><span class="sb-icon">&#9679;</span>History</div>
+  <div class="sb-item" onclick="nav('calendar',this)"><span class="sb-icon">&#128197;</span>Calendar</div>
   <div class="sb-item" onclick="nav('docreader',this)"><span class="sb-icon">&#9634;</span>Document Reader</div>
   <div class="sb-item" onclick="nav('meetings',this)"><span class="sb-icon">&#127908;</span>Meeting Recordings</div>
   <div class="sb-item" onclick="nav('eatasklist',this)"><span class="sb-icon">&#10003;</span>EA Task List<span class="sb-badge" id="tasks-badge">0</span></div>
@@ -456,6 +457,7 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
     </div>
     <div class="inbox-detail">
       <div class="inbox-actions">
+        <button class="ia-btn primary" onclick="openCompose()" style="background:var(--blk);color:var(--cream);border-color:var(--blk)">+ Compose</button>
         <button class="ia-btn primary" onclick="replyEmail()">Reply</button>
         <button class="ia-btn" onclick="forwardEmail()">Forward</button>
         <button class="ia-btn" onclick="starEmail()">&#9733; Star</button>
@@ -470,6 +472,29 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
         <div style="display:flex;gap:8px;margin-top:8px">
           <button class="btn-primary" onclick="sendReply()" style="padding:7px 18px">Send</button>
           <button class="btn-secondary" onclick="document.getElementById('reply-area').style.display='none'" style="padding:7px 14px">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPOSE MODAL -->
+  <div id="compose-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:flex-end;justify-content:flex-end;padding:20px">
+    <div style="background:white;border-radius:12px 12px 0 0;width:480px;max-width:100%;box-shadow:0 -4px 30px rgba(0,0,0,.15)">
+      <div style="padding:14px 16px;background:var(--blk);border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:13px;font-weight:600;color:var(--cream)">New Message</div>
+        <button onclick="closeCompose()" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:18px">&times;</button>
+      </div>
+      <div style="padding:14px 16px">
+        <input id="compose-to" type="email" placeholder="To..." style="width:100%;padding:8px 0;border:none;border-bottom:1px solid var(--tan);font-size:13px;outline:none;margin-bottom:8px">
+        <input id="compose-cc" type="email" placeholder="Cc..." style="width:100%;padding:8px 0;border:none;border-bottom:1px solid var(--tan);font-size:13px;outline:none;margin-bottom:8px">
+        <input id="compose-subject" type="text" placeholder="Subject..." style="width:100%;padding:8px 0;border:none;border-bottom:1px solid var(--tan);font-size:13px;outline:none;margin-bottom:8px">
+        <textarea id="compose-body" rows="8" placeholder="Write your message..." style="width:100%;padding:8px 0;border:none;font-size:13px;outline:none;resize:none;font-family:DM Sans,sans-serif"></textarea>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--tan)">
+          <div style="display:flex;gap:8px">
+            <button onclick="sendComposedEmail()" class="btn-primary" style="padding:8px 20px">Send</button>
+            <button onclick="eaGenerateEmailBody()" class="btn-secondary" style="padding:8px 14px;font-size:10px">EA Draft</button>
+          </div>
+          <div id="compose-status" style="font-size:11px;color:var(--mid)"></div>
         </div>
       </div>
     </div>
@@ -723,10 +748,46 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
       <div class="panel" style="padding:18px">
         <div style="display:flex;justify-content:space-between;margin-bottom:12px"><div style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)">Unpaid Invoices</div><button onclick="loadQBInvoices()" class="btn-secondary" style="font-size:10px;padding:4px 10px">Refresh</button></div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <button onclick="showQBCreateInvoice()" class="btn-primary" style="font-size:10px;padding:6px 14px">+ New Invoice</button>
+        </div>
+        <div id="qb-create-invoice-form" style="display:none;background:var(--warm);border:1px solid var(--tan);border-radius:6px;padding:14px;margin-bottom:12px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:10px">Create Invoice</div>
+          <input id="qb-inv-customer" type="text" placeholder="Customer name..." style="width:100%;padding:7px 10px;border:1px solid var(--tan);border-radius:4px;font-size:12px;outline:none;margin-bottom:8px">
+          <input id="qb-inv-email" type="email" placeholder="Customer email..." style="width:100%;padding:7px 10px;border:1px solid var(--tan);border-radius:4px;font-size:12px;outline:none;margin-bottom:8px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+            <input id="qb-inv-desc" type="text" placeholder="Description..." style="padding:7px 10px;border:1px solid var(--tan);border-radius:4px;font-size:12px;outline:none">
+            <input id="qb-inv-amount" type="number" placeholder="Amount $..." style="padding:7px 10px;border:1px solid var(--tan);border-radius:4px;font-size:12px;outline:none">
+          </div>
+          <input id="qb-inv-due" type="date" style="width:100%;padding:7px 10px;border:1px solid var(--tan);border-radius:4px;font-size:12px;outline:none;margin-bottom:8px">
+          <div style="display:flex;gap:8px">
+            <button onclick="createQBInvoice()" class="btn-primary" style="font-size:10px;padding:6px 14px">Create Invoice</button>
+            <button onclick="$('qb-create-invoice-form').style.display='none'" class="btn-secondary" style="font-size:10px;padding:6px 14px">Cancel</button>
+          </div>
+          <div id="qb-inv-status" style="margin-top:6px;font-size:11px"></div>
+        </div>
         <div id="qb-invoices-list"><div style="font-size:12px;color:var(--mid)">Click refresh to load</div></div>
       </div>
       <div class="panel" style="padding:18px">
         <div style="display:flex;justify-content:space-between;margin-bottom:12px"><div style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)">Recent Expenses</div><button onclick="loadQBExpenses()" class="btn-secondary" style="font-size:10px;padding:4px 10px">Refresh</button></div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <button onclick="showQBCreateExpense()" class="btn-primary" style="font-size:10px;padding:6px 14px">+ Log Expense</button>
+        </div>
+        <div id="qb-create-expense-form" style="display:none;background:var(--warm);border:1px solid var(--tan);border-radius:6px;padding:14px;margin-bottom:12px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:10px">Log Expense</div>
+          <input id="qb-exp-vendor" type="text" placeholder="Vendor name..." style="width:100%;padding:7px 10px;border:1px solid var(--tan);border-radius:4px;font-size:12px;outline:none;margin-bottom:8px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+            <input id="qb-exp-amount" type="number" placeholder="Amount $..." style="padding:7px 10px;border:1px solid var(--tan);border-radius:4px;font-size:12px;outline:none">
+            <input id="qb-exp-category" type="text" placeholder="Category..." style="padding:7px 10px;border:1px solid var(--tan);border-radius:4px;font-size:12px;outline:none">
+          </div>
+          <input id="qb-exp-date" type="date" style="width:100%;padding:7px 10px;border:1px solid var(--tan);border-radius:4px;font-size:12px;outline:none;margin-bottom:8px">
+          <input id="qb-exp-memo" type="text" placeholder="Memo..." style="width:100%;padding:7px 10px;border:1px solid var(--tan);border-radius:4px;font-size:12px;outline:none;margin-bottom:8px">
+          <div style="display:flex;gap:8px">
+            <button onclick="createQBExpense()" class="btn-primary" style="font-size:10px;padding:6px 14px">Log Expense</button>
+            <button onclick="$('qb-create-expense-form').style.display='none'" class="btn-secondary" style="font-size:10px;padding:6px 14px">Cancel</button>
+          </div>
+          <div id="qb-exp-status" style="margin-top:6px;font-size:11px"></div>
+        </div>
         <div id="qb-expenses-list"><div style="font-size:12px;color:var(--mid)">Click refresh to load</div></div>
       </div>
     </div>
@@ -734,6 +795,63 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
 </div>
 
 <!-- SETTINGS SCREEN -->
+<div class="screen" id="screen-calendar">
+  <div class="pg-h">Calendar</div>
+  <div class="pg-s">Your schedule at a glance. Block Crystal Ball time and create events.</div>
+  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+    <button class="btn-primary" onclick="showCreateEvent()">+ Create Event</button>
+    <button class="btn-secondary" onclick="blockCrystalTime()">Block Crystal Ball Time</button>
+    <button class="btn-secondary" onclick="loadCalendarEvents()">Refresh</button>
+    <select id="cal-provider" onchange="loadCalendarEvents()" style="font-size:12px;padding:7px 12px;border:1px solid var(--tan);border-radius:4px;background:white;outline:none">
+      <option value="google">Google Calendar</option>
+      <option value="outlook">Outlook Calendar</option>
+    </select>
+  </div>
+  
+  <!-- Create Event Form -->
+  <div id="cal-create-form" style="display:none;background:var(--warm);border:1px solid var(--tan);border-radius:8px;padding:20px;margin-bottom:16px">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">New Event</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--mid);display:block;margin-bottom:4px">Title</label>
+      <input id="cal-title" type="text" placeholder="Event title..." style="width:100%;padding:8px 10px;border:1px solid var(--tan);border-radius:4px;font-size:13px;outline:none"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--mid);display:block;margin-bottom:4px">Date</label>
+      <input id="cal-date" type="date" style="width:100%;padding:8px 10px;border:1px solid var(--tan);border-radius:4px;font-size:13px;outline:none"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--mid);display:block;margin-bottom:4px">Start Time</label>
+      <input id="cal-start" type="time" value="09:00" style="width:100%;padding:8px 10px;border:1px solid var(--tan);border-radius:4px;font-size:13px;outline:none"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--mid);display:block;margin-bottom:4px">End Time</label>
+      <input id="cal-end" type="time" value="10:00" style="width:100%;padding:8px 10px;border:1px solid var(--tan);border-radius:4px;font-size:13px;outline:none"></div>
+    </div>
+    <input id="cal-attendees" type="text" placeholder="Attendee emails (comma separated)..." style="width:100%;padding:8px 10px;border:1px solid var(--tan);border-radius:4px;font-size:13px;outline:none;margin-bottom:10px">
+    <textarea id="cal-desc" rows="2" placeholder="Description..." style="width:100%;padding:8px 10px;border:1px solid var(--tan);border-radius:4px;font-size:13px;outline:none;resize:vertical;margin-bottom:12px"></textarea>
+    <div style="display:flex;gap:8px">
+      <button class="btn-primary" onclick="createCalEvent()">Create Event</button>
+      <button class="btn-secondary" onclick="$('cal-create-form').style.display='none'">Cancel</button>
+    </div>
+    <div id="cal-create-status" style="margin-top:8px;font-size:12px"></div>
+  </div>
+
+  <!-- Block Crystal Ball -->
+  <div id="cal-block-form" style="display:none;background:rgba(196,154,138,.06);border:1px solid rgba(196,154,138,.2);border-radius:8px;padding:20px;margin-bottom:16px">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">Block Crystal Ball Time</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--mid);display:block;margin-bottom:4px">Date</label>
+      <input id="block-date" type="date" style="width:100%;padding:8px 10px;border:1px solid var(--tan);border-radius:4px;font-size:13px;outline:none"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--mid);display:block;margin-bottom:4px">Start</label>
+      <input id="block-start" type="time" value="09:00" style="width:100%;padding:8px 10px;border:1px solid var(--tan);border-radius:4px;font-size:13px;outline:none"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--mid);display:block;margin-bottom:4px">End</label>
+      <input id="block-end" type="time" value="12:00" style="width:100%;padding:8px 10px;border:1px solid var(--tan);border-radius:4px;font-size:13px;outline:none"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-primary" onclick="saveBlockCrystal()">Block This Time</button>
+      <button class="btn-secondary" onclick="$('cal-block-form').style.display='none'">Cancel</button>
+    </div>
+    <div id="block-status" style="margin-top:8px;font-size:12px"></div>
+  </div>
+
+  <div id="cal-loading" style="display:none;padding:30px;text-align:center"><div class="spinner" style="margin:0 auto 12px"></div><div style="font-size:13px;color:var(--mid)">Loading calendar...</div></div>
+  <div id="cal-events"></div>
+</div>
+
 <div class="screen" id="screen-settings">
   <div class="pg-h2">Settings</div>
   <div class="pg-s2">Manage your account, preferences, and integrations.</div>
@@ -803,6 +921,7 @@ function nav(name, el) {
   if(name === 'eatasklist') loadEATasks();
   if(name === 'crm') checkGHLStatus();
   if(name === 'finance') checkQBStatus();
+  if(name === 'calendar') loadCalendarEvents();
   if(name === 'settings') checkSubscriptionStatus();
   if(name === 'audit') {}
 }
@@ -1554,7 +1673,10 @@ async function loadQBInvoices() {
         return '<div style="padding:8px 0;border-bottom:1px solid var(--tan);display:flex;justify-content:space-between;align-items:center">' +
           '<div><div style="font-size:12px;font-weight:600">'+(inv.CustomerRef?.name||'Customer')+'</div>' +
           '<div style="font-size:11px;color:'+(overdue?'var(--red)':'var(--mid)')+'">'+(overdue?'OVERDUE - ':'Due ')+due+'</div></div>' +
-          '<div style="font-size:13px;font-weight:700;color:'+(overdue?'var(--red)':'var(--gold)')+'">$'+parseFloat(inv.Balance||0).toLocaleString()+'</div></div>';
+          '<div style="display:flex;align-items:center;gap:8px">' +
+          '<div style="font-size:13px;font-weight:700;color:'+(overdue?'var(--red)':'var(--gold)')+'">$'+parseFloat(inv.Balance||0).toLocaleString()+'</div>' +
+          '<button onclick="markInvoicePaid(\''+inv.Id+'\',\''+parseFloat(inv.Balance||0)+'\')" style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:3px;border:none;cursor:pointer;background:var(--green);color:white">Paid</button>' +
+          '</div></div>';
       }).join('');
     } else if(d.success) { list.innerHTML='<div style="font-size:12px;color:var(--mid)">No unpaid invoices</div>'; }
     else { list.innerHTML='<div style="font-size:12px;color:var(--red)">Error: '+(d.error||'Failed')+'</div>'; }
@@ -1759,6 +1881,10 @@ async function playVoice(elOrText) {
     var btn = typeof elOrText === 'object' ? elOrText : null;
     if(btn) { btn._origText = btn.innerHTML; btn.innerHTML = '&#9679; Loading...'; btn.disabled = true; }
 
+    // Stop any current playback
+    if(window._currentSource) { try { window._currentSource.stop(); } catch(e) {} window._currentSource = null; }
+    if(window._currentAudio) { window._currentAudio.pause(); window._currentAudio = null; }
+
     var r = await fetch(RAILWAY + '/api/speak', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -1774,42 +1900,51 @@ async function playVoice(elOrText) {
 
     var arrayBuf = await r.arrayBuffer();
     console.log('Audio received:', arrayBuf.byteLength, 'bytes');
-
     if(arrayBuf.byteLength < 500) {
-      console.log('Audio too small');
       if(btn) { btn.innerHTML = btn._origText || '&#9654; Listen'; btn.disabled = false; }
       return;
     }
 
-    // Stop any current audio
-    if(window._currentSource) {
-      try { window._currentSource.stop(); } catch(e) {}
-    }
-
-    // Use Web Audio API for reliable full playback
-    if(!window._audioCtx || window._audioCtx.state === 'closed') {
-      window._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if(window._audioCtx.state === 'suspended') {
-      await window._audioCtx.resume();
-    }
-
-    var audioBuffer = await window._audioCtx.decodeAudioData(arrayBuf.slice(0));
-    console.log('Audio decoded, duration:', audioBuffer.duration.toFixed(1), 'seconds');
-
-    var source = window._audioCtx.createBufferSource();
-    source.buffer = audioBuffer;
-    source.connect(window._audioCtx.destination);
-    window._currentSource = source;
-
     if(btn) { btn.innerHTML = '&#9646;&#9646; Playing...'; }
 
-    source.onended = function() {
-      console.log('Playback complete');
-      if(btn) { btn.innerHTML = btn._origText || '&#9654; Listen'; btn.disabled = false; }
-    };
+    // Try Web Audio API first (most reliable for full playback)
+    try {
+      if(!window._audioCtx || window._audioCtx.state === 'closed') {
+        window._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if(window._audioCtx.state === 'suspended') await window._audioCtx.resume();
 
-    source.start(0);
+      var audioBuffer = await window._audioCtx.decodeAudioData(arrayBuf.slice(0));
+      console.log('Audio duration:', audioBuffer.duration.toFixed(1), 's');
+
+      var source = window._audioCtx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(window._audioCtx.destination);
+      window._currentSource = source;
+
+      source.onended = function() {
+        console.log('Playback complete');
+        if(btn) { btn.innerHTML = btn._origText || '&#9654; Listen'; btn.disabled = false; }
+      };
+      source.start(0);
+
+    } catch(webAudioErr) {
+      // Fallback to HTML Audio for Safari
+      console.log('Web Audio failed, using HTML Audio:', webAudioErr.message);
+      var blob = new Blob([arrayBuf], {type: 'audio/mpeg'});
+      var url = URL.createObjectURL(blob);
+      var audio = new Audio();
+      window._currentAudio = audio;
+      audio.onended = function() {
+        if(btn) { btn.innerHTML = btn._origText || '&#9654; Listen'; btn.disabled = false; }
+        URL.revokeObjectURL(url);
+      };
+      audio.onerror = function() {
+        if(btn) { btn.innerHTML = btn._origText || '&#9654; Listen'; btn.disabled = false; }
+      };
+      audio.src = url;
+      audio.play().catch(function(e) { console.log('Fallback play error:', e.message); });
+    }
 
   } catch(e) {
     console.log('Voice error:', e.message);
@@ -1822,6 +1957,279 @@ async function playVoice(elOrText) {
 async function playBriefVoice() {
   if(window._briefContent) await playVoice(window._briefContent.substring(0,300));
 }
+
+// ============================================================
+// CALENDAR FUNCTIONS
+// ============================================================
+async function loadCalendarEvents() {
+  var el = $('cal-events'), loading = $('cal-loading');
+  if(!el) return;
+  loading.style.display = 'block'; el.innerHTML = '';
+  var provider = $('cal-provider') ? $('cal-provider').value : 'google';
+  try {
+    var url = provider === 'outlook' ? RAILWAY + '/api/outlook/calendar' : RAILWAY + '/api/calendar/events';
+    var r = await fetch(url);
+    var d = await r.json();
+    loading.style.display = 'none';
+    if(!d.success && !d.events) {
+      el.innerHTML = '<div style="padding:20px;font-size:13px;color:var(--mid)">Connect Google Calendar to see your events. Your Google account is already linked - calendar access may need to be re-authorized.</div>';
+      return;
+    }
+    var events = d.events || d.items || [];
+    if(!events.length) { el.innerHTML = '<div style="padding:20px;font-size:13px;color:var(--mid)">No upcoming events found.</div>'; return; }
+    // Group by date
+    var byDate = {};
+    events.forEach(function(ev) {
+      var dateStr = ev.start && (ev.start.dateTime || ev.start.date || ev.start);
+      var date = dateStr ? new Date(dateStr).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) : 'Unknown';
+      if(!byDate[date]) byDate[date] = [];
+      byDate[date].push(ev);
+    });
+    var html = '';
+    Object.keys(byDate).forEach(function(date) {
+      html += '<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--tan)">'+date+'</div>';
+      byDate[date].forEach(function(ev) {
+        var startTime = ev.start && ev.start.dateTime ? new Date(ev.start.dateTime).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : 'All day';
+        var endTime = ev.end && ev.end.dateTime ? new Date(ev.end.dateTime).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : '';
+        var isCrystal = ev.colorId === '11' || (ev.summary||'').includes('Crystal Ball');
+        html += '<div style="padding:10px 14px;background:white;border:1px solid var(--tan);border-radius:6px;margin-bottom:6px;border-left:3px solid '+(isCrystal?'var(--gold)':'var(--tan)')+'">';
+        html += '<div style="display:flex;align-items:center;justify-content:space-between">';
+        html += '<div><div style="font-size:13px;font-weight:600">'+(ev.summary||ev.subject||'Event')+'</div>';
+        html += '<div style="font-size:11px;color:var(--mid);margin-top:2px">'+startTime+(endTime?' - '+endTime:'')+'</div></div>';
+        html += '<div style="display:flex;gap:6px">';
+        if(ev.hangoutLink||ev.onlineMeeting) html += '<a href="'+(ev.hangoutLink||ev.onlineMeeting.joinUrl)+'" target="_blank" style="font-size:10px;font-weight:700;padding:4px 10px;border-radius:3px;border:none;cursor:pointer;background:var(--green);color:white;text-decoration:none">Join</a>';
+        html += '</div></div></div>';
+      });
+      html += '</div>';
+    });
+    el.innerHTML = html;
+  } catch(e) {
+    loading.style.display = 'none';
+    el.innerHTML = '<div style="padding:20px;font-size:13px;color:var(--red)">Error: '+e.message+'</div>';
+  }
+}
+
+function showCreateEvent() {
+  var f = $('cal-create-form');
+  if(f) { f.style.display = f.style.display === 'none' ? 'block' : 'none'; }
+  var d = $('cal-date');
+  if(d) d.value = new Date().toISOString().split('T')[0];
+}
+
+function blockCrystalTime() {
+  var f = $('cal-block-form');
+  if(f) { f.style.display = f.style.display === 'none' ? 'block' : 'none'; }
+  var d = $('block-date');
+  if(d) d.value = new Date().toISOString().split('T')[0];
+}
+
+async function createCalEvent() {
+  var status = $('cal-create-status');
+  if(status) status.innerHTML = '<span style="color:var(--mid)">Creating...</span>';
+  try {
+    var attendees = $('cal-attendees').value.split(',').map(function(e){return e.trim();}).filter(Boolean);
+    var r = await fetch(RAILWAY + '/api/calendar/create', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        title: $('cal-title').value,
+        date: $('cal-date').value,
+        startTime: $('cal-start').value + ':00',
+        endTime: $('cal-end').value + ':00',
+        description: $('cal-desc').value,
+        attendees: attendees
+      })
+    });
+    var d = await r.json();
+    if(d.success) {
+      if(status) status.innerHTML = '<span style="color:var(--green)">Event created!</span>';
+      setTimeout(function() { $('cal-create-form').style.display='none'; loadCalendarEvents(); }, 1500);
+    } else {
+      if(status) status.innerHTML = '<span style="color:var(--red)">Error: '+(d.error||'Failed')+'</span>';
+    }
+  } catch(e) {
+    if(status) status.innerHTML = '<span style="color:var(--red)">Error: '+e.message+'</span>';
+  }
+}
+
+async function saveBlockCrystal() {
+  var status = $('block-status');
+  if(status) status.innerHTML = '<span style="color:var(--mid)">Blocking time...</span>';
+  try {
+    var r = await fetch(RAILWAY + '/api/calendar/block-crystal', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        date: $('block-date').value,
+        startTime: $('block-start').value + ':00',
+        endTime: $('block-end').value + ':00'
+      })
+    });
+    var d = await r.json();
+    if(d.success) {
+      if(status) status.innerHTML = '<span style="color:var(--green)">Crystal Ball time blocked!</span>';
+      setTimeout(function() { $('cal-block-form').style.display='none'; loadCalendarEvents(); }, 1500);
+    } else {
+      if(status) status.innerHTML = '<span style="color:var(--red)">Error: '+(d.error||'Failed')+'</span>';
+    }
+  } catch(e) {
+    if(status) status.innerHTML = '<span style="color:var(--red)">Error: '+e.message+'</span>';
+  }
+}
+
+// ============================================================
+// QUICKBOOKS WRITE FUNCTIONS
+// ============================================================
+function showQBCreateInvoice() {
+  var f = $('qb-create-invoice-form');
+  if(f) f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+function showQBCreateExpense() {
+  var f = $('qb-create-expense-form');
+  if(f) f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+async function createQBInvoice() {
+  var status = $('qb-inv-status');
+  if(status) status.innerHTML = '<span style="color:var(--mid)">Creating invoice...</span>';
+  try {
+    var r = await fetch(RAILWAY + '/api/quickbooks/create-invoice', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        customerName: $('qb-inv-customer').value,
+        customerEmail: $('qb-inv-email').value,
+        items: [{ description: $('qb-inv-desc').value, amount: $('qb-inv-amount').value }],
+        dueDate: $('qb-inv-due').value
+      })
+    });
+    var d = await r.json();
+    if(d.success) {
+      if(status) status.innerHTML = '<span style="color:var(--green)">Invoice created!</span>';
+      $('qb-inv-customer').value=''; $('qb-inv-email').value=''; $('qb-inv-desc').value=''; $('qb-inv-amount').value='';
+      setTimeout(function() { $('qb-create-invoice-form').style.display='none'; loadQBInvoices(); loadQBData(); }, 1500);
+    } else {
+      if(status) status.innerHTML = '<span style="color:var(--red)">Error: '+(d.error||'Failed')+'</span>';
+    }
+  } catch(e) {
+    if(status) status.innerHTML = '<span style="color:var(--red)">Error: '+e.message+'</span>';
+  }
+}
+
+async function markInvoicePaid(invoiceId, amount) {
+  if(!confirm('Mark this invoice as paid for $'+amount+'?')) return;
+  try {
+    var r = await fetch(RAILWAY + '/api/quickbooks/mark-paid', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ invoiceId: invoiceId, amount: amount })
+    });
+    var d = await r.json();
+    if(d.success) { alert('Invoice marked as paid!'); loadQBInvoices(); loadQBData(); }
+    else { alert('Error: '+(d.error||'Failed')); }
+  } catch(e) { alert('Error: '+e.message); }
+}
+
+async function createQBExpense() {
+  var status = $('qb-exp-status');
+  if(status) status.innerHTML = '<span style="color:var(--mid)">Logging expense...</span>';
+  try {
+    var r = await fetch(RAILWAY + '/api/quickbooks/create-expense', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        vendorName: $('qb-exp-vendor').value,
+        amount: $('qb-exp-amount').value,
+        category: $('qb-exp-category').value,
+        date: $('qb-exp-date').value,
+        memo: $('qb-exp-memo').value
+      })
+    });
+    var d = await r.json();
+    if(d.success) {
+      if(status) status.innerHTML = '<span style="color:var(--green)">Expense logged!</span>';
+      $('qb-exp-vendor').value=''; $('qb-exp-amount').value=''; $('qb-exp-category').value='';
+      setTimeout(function() { $('qb-create-expense-form').style.display='none'; loadQBExpenses(); loadQBData(); }, 1500);
+    } else {
+      if(status) status.innerHTML = '<span style="color:var(--red)">Error: '+(d.error||'Failed')+'</span>';
+    }
+  } catch(e) {
+    if(status) status.innerHTML = '<span style="color:var(--red)">Error: '+e.message+'</span>';
+  }
+}
+
+// ============================================================
+// EMAIL COMPOSE FUNCTIONS
+// ============================================================
+function openCompose(prefillTo, prefillSubject, prefillBody) {
+  var modal = $('compose-modal');
+  if(modal) modal.style.display = 'flex';
+  if(prefillTo && $('compose-to')) $('compose-to').value = prefillTo;
+  if(prefillSubject && $('compose-subject')) $('compose-subject').value = prefillSubject;
+  if(prefillBody && $('compose-body')) $('compose-body').value = prefillBody;
+  if($('compose-to')) $('compose-to').focus();
+}
+
+function closeCompose() {
+  var modal = $('compose-modal');
+  if(modal) modal.style.display = 'none';
+  if($('compose-to')) $('compose-to').value = '';
+  if($('compose-cc')) $('compose-cc').value = '';
+  if($('compose-subject')) $('compose-subject').value = '';
+  if($('compose-body')) $('compose-body').value = '';
+  if($('compose-status')) $('compose-status').textContent = '';
+}
+
+async function sendComposedEmail() {
+  var to = $('compose-to').value.trim();
+  var subject = $('compose-subject').value.trim();
+  var body = $('compose-body').value.trim();
+  var status = $('compose-status');
+  if(!to || !subject || !body) { if(status) status.innerHTML = '<span style="color:var(--red)">Fill in To, Subject and Body</span>'; return; }
+  if(status) status.innerHTML = '<span style="color:var(--mid)">Sending...</span>';
+  try {
+    var endpoint = _currentProvider === 'outlook' ? '/api/outlook/compose' : '/api/gmail/compose';
+    var r = await fetch(RAILWAY + endpoint, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ to: to, subject: subject, body: body, cc: $('compose-cc').value })
+    });
+    var d = await r.json();
+    if(d.success) {
+      if(status) status.innerHTML = '<span style="color:var(--green)">Sent!</span>';
+      setTimeout(closeCompose, 1500);
+    } else {
+      if(status) status.innerHTML = '<span style="color:var(--red)">Error: '+(d.error||'Failed')+'</span>';
+    }
+  } catch(e) {
+    if(status) status.innerHTML = '<span style="color:var(--red)">Error: '+e.message+'</span>';
+  }
+}
+
+async function eaGenerateEmailBody() {
+  var subject = $('compose-subject').value;
+  var to = $('compose-to').value;
+  if(!subject) { alert('Add a subject first so the EA knows what to write'); return; }
+  var status = $('compose-status');
+  if(status) status.innerHTML = '<span style="color:var(--mid)">EA drafting...</span>';
+  try {
+    var r = await fetch(RAILWAY + '/api/ea-draft', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ task: subject, action: 'draft-email', context: 'To: '+to+' Subject: '+subject })
+    });
+    var d = await r.json();
+    if(d.success && $('compose-body')) {
+      $('compose-body').value = d.output || d.draft || '';
+      if(status) status.innerHTML = '<span style="color:var(--green)">Draft ready - review and send</span>';
+    }
+  } catch(e) {
+    if(status) status.innerHTML = '<span style="color:var(--red)">Error: '+e.message+'</span>';
+  }
+}
+
+// Also update nav to load calendar
 
 // INIT
 loadStats();
