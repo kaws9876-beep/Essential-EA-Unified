@@ -1744,7 +1744,6 @@ function copyEAResult(btn) {
 async function playVoice(elOrText) {
   try {
     var text = typeof elOrText === 'string' ? decodeURIComponent(elOrText) : (elOrText.getAttribute('data-text') || elOrText.getAttribute('data-voice') || '');
-    // Clean all markdown and special chars
     text = text
       .replace(/<[^>]+>/g, '')
       .replace(/&[a-z#0-9]+;/g, ' ')
@@ -1756,40 +1755,65 @@ async function playVoice(elOrText) {
       .replace(/\s+/g, ' ')
       .trim();
     if(!text) return;
-    
-    // Find the play button and show loading state
+
     var btn = typeof elOrText === 'object' ? elOrText : null;
-    if(btn) { btn._origText = btn.innerHTML; btn.innerHTML = '&#9679; ...'; btn.disabled = true; }
-    
-    // Send full text to server (server handles 2500 char limit)
+    if(btn) { btn._origText = btn.innerHTML; btn.innerHTML = '&#9679; Loading...'; btn.disabled = true; }
+
+    // Use arraybuffer to ensure FULL audio is received before playing
     var r = await fetch(RAILWAY + '/api/speak', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({text: text.substring(0, 2000)})
+      body: JSON.stringify({text: text.substring(0, 2500)})
     });
-    
-    if(btn) { btn.innerHTML = btn._origText || '&#9654; Listen'; btn.disabled = false; }
-    
+
     if(!r.ok) {
-      var err = await r.json().catch(function(){return{};});
-      console.log('Voice error:', r.status, err.error);
+      var errData = await r.json().catch(function(){return{};});
+      console.log('Voice error:', r.status, errData.error);
+      if(btn) { btn.innerHTML = btn._origText || '&#9654; Listen'; btn.disabled = false; }
       return;
     }
+
+    // Read as ArrayBuffer - waits for COMPLETE audio before playing
+    var arrayBuf = await r.arrayBuffer();
+    console.log('Audio received:', arrayBuf.byteLength, 'bytes');
     
-    var blob = await r.blob();
-    if(blob.size < 100) { console.log('Voice: empty audio returned'); return; }
-    
-    var url = URL.createObjectURL(blob);
-    // Stop any currently playing audio
-    if(window._currentAudio) { window._currentAudio.pause(); URL.revokeObjectURL(window._currentAudio.src); }
-    window._currentAudio = new Audio(url);
-    window._currentAudio.play().catch(function(e) { console.log('Audio play failed:', e.message); });
-    
-  } catch(e) { 
+    if(arrayBuf.byteLength < 500) {
+      console.log('Audio too small - likely an error');
+      if(btn) { btn.innerHTML = btn._origText || '&#9654; Listen'; btn.disabled = false; }
+      return;
+    }
+
+    // Convert to blob and play
+    var audioBlob = new Blob([arrayBuf], {type: 'audio/mpeg'});
+    var url = URL.createObjectURL(audioBlob);
+
+    if(window._currentAudio) {
+      window._currentAudio.pause();
+      try { URL.revokeObjectURL(window._currentAudio._url); } catch(e) {}
+    }
+
+    var audio = new Audio(url);
+    audio._url = url;
+    window._currentAudio = audio;
+
+    // Restore button when done
+    audio.onended = function() {
+      if(btn) { btn.innerHTML = btn._origText || '&#9654; Listen'; btn.disabled = false; }
+      try { URL.revokeObjectURL(url); } catch(e) {}
+    };
+    audio.onerror = function(e) {
+      console.log('Audio playback error:', e);
+      if(btn) { btn.innerHTML = btn._origText || '&#9654; Listen'; btn.disabled = false; }
+    };
+
+    if(btn) { btn.innerHTML = '&#9646;&#9646; Playing...'; }
+    await audio.play();
+
+  } catch(e) {
     console.log('Voice error:', e.message);
-    if(typeof elOrText === 'object' && elOrText.innerHTML !== undefined) { 
-      elOrText.innerHTML = elOrText._origText || '&#9654; Listen'; 
-      elOrText.disabled = false; 
+    if(typeof elOrText === 'object' && elOrText && elOrText.innerHTML !== undefined) {
+      elOrText.innerHTML = elOrText._origText || '&#9654; Listen';
+      elOrText.disabled = false;
     }
   }
 }
