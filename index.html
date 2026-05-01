@@ -1377,7 +1377,15 @@ async function eaDraftReply() {
   try {
     var r = await fetch(RAILWAY + '/api/ea-draft', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task:'Draft a professional reply to this email',context:_currentMsg.subject+' from '+_currentMsg.from})});
     var d = await r.json();
-    if(d.success) { $('reply-text').value = d.draft||''; $('reply-area').style.display = 'block'; }
+    console.log('EA draft reply response:', d.success, d.output||d.draft||'empty');
+    if(d.success) {
+      var draftText = d.output || d.draft || d.result || '';
+      if($('reply-text')) $('reply-text').value = draftText;
+      if($('reply-area')) $('reply-area').style.display = 'block';
+      if(!draftText) alert('EA draft returned empty - check Railway logs');
+    } else {
+      alert('EA draft error: ' + (d.error||'Unknown error'));
+    }
   } catch(e) { alert('Error: '+e.message); }
 }
 
@@ -2268,7 +2276,7 @@ async function sendComposedEmail() {
     // Check which provider is actually connected
     var useOutlook = document.getElementById('outlook-connected-banner') && 
                      document.getElementById('outlook-connected-banner').style.display !== 'none';
-    var endpoint = (useOutlook && _currentProvider === 'outlook') ? '/api/outlook/send' : '/api/gmail/compose';
+    var endpoint = (useOutlook && _currentProvider === 'outlook') ? '/api/outlook/send' : '/api/gmail/send';
     var r = await fetch(RAILWAY + endpoint, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
@@ -2300,7 +2308,9 @@ async function eaGenerateEmailBody() {
     });
     var d = await r.json();
     if(d.success && $('compose-body')) {
-      $('compose-body').value = d.output || d.draft || '';
+      var bodyText = d.output || d.draft || d.result || '';
+      $('compose-body').value = bodyText;
+      if(!bodyText) if(status) status.innerHTML = '<span style="color:var(--red)">EA returned empty draft</span>';
       if(status) status.innerHTML = '<span style="color:var(--green)">Draft ready - review and send</span>';
     }
   } catch(e) {
