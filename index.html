@@ -1670,27 +1670,43 @@ async function loadQBData() {
 }
 
 async function loadQBInvoices() {
-  var list=$('qb-invoices-list'); if(!list) return;
-  list.innerHTML='<div style="font-size:12px;color:var(--mid)">Loading...</div>';
+  var list = $('qb-invoices-list');
+  if(!list) return;
+  list.innerHTML = '<div style="font-size:12px;color:var(--mid)">Loading...</div>';
   try {
-    var r=await fetch(RAILWAY+'/api/quickbooks/invoices');
-    var d=await r.json();
-    if(d.success&&d.invoices.length) {
-      list.innerHTML=d.invoices.map(function(inv){
-        var due=inv.DueDate?new Date(inv.DueDate).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
-        var overdue=inv.DueDate&&new Date(inv.DueDate)<new Date();
-        return '<div style="padding:8px 0;border-bottom:1px solid var(--tan);display:flex;justify-content:space-between;align-items:center">' +
-          '<div><div style="font-size:12px;font-weight:600">'+(inv.CustomerRef?.name||'Customer')+'</div>' +
-          '<div style="font-size:11px;color:'+(overdue?'var(--red)':'var(--mid)')+'">'+(overdue?'OVERDUE - ':'Due ')+due+'</div></div>' +
-          '<div style="display:flex;align-items:center;gap:8px">' +
-          '<div style="font-size:13px;font-weight:700;color:'+(overdue?'var(--red)':'var(--gold)')+'">$'+parseFloat(inv.Balance||0).toLocaleString()+'</div>' +
-          '<button data-id="'+inv.Id+'" data-amt="'+parseFloat(inv.Balance||0)+'" onclick="window._paidId=this.dataset.id;window._paidAmt=this.dataset.amt;markInvoicePaid(window._paidId,window._paidAmt)" style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:3px;border:none;cursor:pointer;background:var(--green);color:white">Paid</button>' +
-          '</div></div>';
-      }).join('');
-    } else if(d.success) { list.innerHTML='<div style="font-size:12px;color:var(--mid)">No unpaid invoices</div>'; }
-    else { list.innerHTML='<div style="font-size:12px;color:var(--red)">Error: '+(d.error||'Failed')+'</div>'; }
-  } catch(e) { list.innerHTML='<div style="font-size:12px;color:var(--red)">Error: '+e.message+'</div>'; }
+    var r = await fetch(RAILWAY + '/api/quickbooks/invoices');
+    var d = await r.json();
+    if(d.success && d.invoices && d.invoices.length) {
+      var html = '';
+      d.invoices.forEach(function(inv) {
+        var due = inv.DueDate ? new Date(inv.DueDate).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+        var overdue = inv.DueDate && new Date(inv.DueDate) < new Date();
+        var balance = parseFloat(inv.Balance||0);
+        var custName = (inv.CustomerRef && inv.CustomerRef.name) ? inv.CustomerRef.name : 'Customer';
+        html += '<div style="padding:8px 0;border-bottom:1px solid var(--tan)">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+        html += '<div>';
+        html += '<div style="font-size:12px;font-weight:600">' + custName + '</div>';
+        html += '<div style="font-size:11px;color:' + (overdue ? 'var(--red)' : 'var(--mid)') + '">' + (overdue ? 'OVERDUE - ' : 'Due ') + due + '</div>';
+        html += '</div>';
+        html += '<div style="display:flex;align-items:center;gap:8px">';
+        html += '<div style="font-size:13px;font-weight:700;color:' + (overdue ? 'var(--red)' : 'var(--gold)') + '">$' + balance.toLocaleString() + '</div>';
+        if(inv.Id) {
+          html += '<button data-invid="' + inv.Id + '" data-invamt="' + balance + '" onclick="var b=this;markInvoicePaid(b.dataset.invid,b.dataset.invamt)" style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:3px;border:none;cursor:pointer;background:var(--green);color:white">Paid</button>';
+        }
+        html += '</div></div></div>';
+      });
+      list.innerHTML = html;
+    } else if(d.success) {
+      list.innerHTML = '<div style="font-size:12px;color:var(--mid)">No unpaid invoices</div>';
+    } else {
+      list.innerHTML = '<div style="font-size:12px;color:var(--red)">Error: ' + (d.error||'Failed') + '</div>';
+    }
+  } catch(e) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--red)">Error: ' + e.message + '</div>';
+  }
 }
+
 
 async function loadQBExpenses() {
   var list=$('qb-expenses-list'); if(!list) return;
@@ -2088,13 +2104,15 @@ async function saveBlockCrystal() {
   var status = $('block-status');
   if(status) status.innerHTML = '<span style="color:var(--mid)">Blocking time...</span>';
   try {
-    var r = await fetch(RAILWAY + '/api/calendar/block-crystal', {
+    var r = await fetch(RAILWAY + '/api/calendar/create', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
+        title: 'Crystal Ball Time - Focus Block',
         date: $('block-date').value,
         startTime: $('block-start').value + ':00',
-        endTime: $('block-end').value + ':00'
+        endTime: $('block-end').value + ':00',
+        description: 'Protected executive focus time. No meetings, no interruptions.'
       })
     });
     var d = await r.json();
@@ -2124,23 +2142,49 @@ function showQBCreateExpense() {
 
 async function createQBInvoice() {
   var status = $('qb-inv-status');
+  var customer = $('qb-inv-customer').value;
+  var email = $('qb-inv-email').value;
+  var desc = $('qb-inv-desc').value;
+  var amount = $('qb-inv-amount').value;
+  var due = $('qb-inv-due').value;
+  if(!customer || !amount) { if(status) status.innerHTML = '<span style="color:var(--red)">Customer name and amount required</span>'; return; }
   if(status) status.innerHTML = '<span style="color:var(--mid)">Creating invoice...</span>';
   try {
     var r = await fetch(RAILWAY + '/api/quickbooks/create-invoice', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
-        customerName: $('qb-inv-customer').value,
-        customerEmail: $('qb-inv-email').value,
-        items: [{ description: $('qb-inv-desc').value, amount: $('qb-inv-amount').value }],
-        dueDate: $('qb-inv-due').value
+        customerName: customer,
+        customerEmail: email,
+        items: [{ description: desc || 'Services', amount: amount }],
+        dueDate: due
       })
     });
     var d = await r.json();
     if(d.success) {
-      if(status) status.innerHTML = '<span style="color:var(--green)">Invoice created!</span>';
+      if(status) status.innerHTML = '<span style="color:var(--green)">Invoice created in QuickBooks!</span>';
       $('qb-inv-customer').value=''; $('qb-inv-email').value=''; $('qb-inv-desc').value=''; $('qb-inv-amount').value='';
       setTimeout(function() { $('qb-create-invoice-form').style.display='none'; loadQBInvoices(); loadQBData(); }, 1500);
+    } else if(r.status === 404) {
+      // Route not available yet - use EA to draft invoice
+      if(status) status.innerHTML = '<span style="color:var(--mid)">Generating invoice draft...</span>';
+      var ea = await fetch(RAILWAY + '/api/ea-draft', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          task: 'Create a professional invoice for ' + customer + ' for ' + desc + ' - Amount: $' + amount + ' - Due: ' + due,
+          action: 'generate-doc'
+        })
+      });
+      var ed = await ea.json();
+      if(ed.success) {
+        if(status) status.innerHTML = '<span style="color:var(--green)">Invoice draft ready - copy and send manually</span>';
+        var resultDiv = document.createElement('div');
+        resultDiv.style.cssText = 'margin-top:10px;padding:12px;background:white;border:1px solid var(--tan);border-radius:6px;font-size:12px;white-space:pre-wrap;max-height:200px;overflow-y:auto';
+        resultDiv.textContent = ed.output || ed.draft || '';
+        var form = $('qb-create-invoice-form');
+        if(form) form.appendChild(resultDiv);
+      }
     } else {
       if(status) status.innerHTML = '<span style="color:var(--red)">Error: '+(d.error||'Failed')+'</span>';
     }
@@ -2224,7 +2268,7 @@ async function sendComposedEmail() {
     // Check which provider is actually connected
     var useOutlook = document.getElementById('outlook-connected-banner') && 
                      document.getElementById('outlook-connected-banner').style.display !== 'none';
-    var endpoint = (useOutlook && _currentProvider === 'outlook') ? '/api/outlook/compose' : '/api/gmail/compose';
+    var endpoint = (useOutlook && _currentProvider === 'outlook') ? '/api/outlook/send' : '/api/gmail/compose';
     var r = await fetch(RAILWAY + endpoint, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
