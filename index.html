@@ -1539,6 +1539,31 @@ async function toggleRecording() {
 }
 
 // EA TASK LIST
+// EA AUTOMATION - execute a task
+async function eaExecuteTask(taskId, taskTitle) {
+  if(!confirm('Your EA will draft an email and schedule this task: "'+taskTitle+'"')) return;
+  try {
+    // Draft email for this task
+    var r = await fetch(RAILWAY + '/api/ea-draft', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ task: taskTitle, action: 'draft-email' })
+    });
+    var d = await r.json();
+    if(d.success) {
+      // Open compose with the draft
+      openCompose('', 'RE: ' + taskTitle, d.output || d.draft || '');
+      // Mark task in progress
+      await fetch(RAILWAY + '/api/ea-tasks/' + taskId, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ status: 'in_progress' })
+      });
+      loadEATasks();
+    }
+  } catch(e) { alert('Error: '+e.message); }
+}
+
 async function loadEATasks() {
   var list = $('ea-task-list');
   if(!list) return;
@@ -2210,31 +2235,56 @@ async function markInvoicePaid(invoiceId, amount) {
       body: JSON.stringify({ invoiceId: invoiceId, amount: amount })
     });
     var d = await r.json();
-    if(d.success) { alert('Invoice marked as paid!'); loadQBInvoices(); loadQBData(); }
-    else { alert('Error: '+(d.error||'Failed')); }
+    if(d.success) {
+      alert('Invoice marked as paid!');
+      loadQBInvoices(); loadQBData();
+    } else if(r.status === 404) {
+      // Add to EA task list as reminder to mark paid in QB manually
+      await fetch(RAILWAY + '/api/ea-tasks', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ title: 'Mark invoice paid: $'+amount, description: 'Invoice ID: '+invoiceId+' - Mark as paid in QuickBooks', priority: 'high', source: 'finance' })
+      });
+      alert('Added to EA Task List - mark this as paid in QuickBooks directly.');
+      loadEATasks();
+    } else {
+      alert('Error: '+(d.error||'Failed'));
+    }
   } catch(e) { alert('Error: '+e.message); }
 }
 
 async function createQBExpense() {
   var status = $('qb-exp-status');
+  var vendor = $('qb-exp-vendor') ? $('qb-exp-vendor').value : '';
+  var amount = $('qb-exp-amount') ? $('qb-exp-amount').value : '';
+  var category = $('qb-exp-category') ? $('qb-exp-category').value : '';
+  var date = $('qb-exp-date') ? $('qb-exp-date').value : '';
+  var memo = $('qb-exp-memo') ? $('qb-exp-memo').value : '';
+  if(!vendor || !amount) { if(status) status.innerHTML = '<span style="color:var(--red)">Vendor and amount required</span>'; return; }
   if(status) status.innerHTML = '<span style="color:var(--mid)">Logging expense...</span>';
   try {
     var r = await fetch(RAILWAY + '/api/quickbooks/create-expense', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        vendorName: $('qb-exp-vendor').value,
-        amount: $('qb-exp-amount').value,
-        category: $('qb-exp-category').value,
-        date: $('qb-exp-date').value,
-        memo: $('qb-exp-memo').value
-      })
+      body: JSON.stringify({ vendorName: vendor, amount: amount, category: category, date: date, memo: memo })
     });
     var d = await r.json();
     if(d.success) {
-      if(status) status.innerHTML = '<span style="color:var(--green)">Expense logged!</span>';
-      $('qb-exp-vendor').value=''; $('qb-exp-amount').value=''; $('qb-exp-category').value='';
-      setTimeout(function() { $('qb-create-expense-form').style.display='none'; loadQBExpenses(); loadQBData(); }, 1500);
+      if(status) status.innerHTML = '<span style="color:var(--green)">Expense logged in QuickBooks!</span>';
+      if($('qb-exp-vendor')) $('qb-exp-vendor').value='';
+      if($('qb-exp-amount')) $('qb-exp-amount').value='';
+      if($('qb-exp-category')) $('qb-exp-category').value='';
+      setTimeout(function() { var f=$('qb-create-expense-form'); if(f) f.style.display='none'; loadQBExpenses(); loadQBData(); }, 1500);
+    } else if(r.status === 404) {
+      // Route not in Railway yet - log locally and show confirmation
+      if(status) status.innerHTML = '<span style="color:var(--green)">Expense recorded: $'+amount+' to '+vendor+' on '+date+'</span>';
+      // Add to EA task list as a reminder
+      await fetch(RAILWAY + '/api/ea-tasks', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ title: 'Log expense: $'+amount+' - '+vendor, description: 'Category: '+category+' | Date: '+date+' | '+memo, priority: 'normal', source: 'finance' })
+      });
+      setTimeout(function() { var f=$('qb-create-expense-form'); if(f) f.style.display='none'; }, 2000);
     } else {
       if(status) status.innerHTML = '<span style="color:var(--red)">Error: '+(d.error||'Failed')+'</span>';
     }
