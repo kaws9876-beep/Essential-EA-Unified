@@ -1577,28 +1577,38 @@ async function loadEATasks() {
       var pending = d.tasks.filter(function(t) { return t.status !== 'completed'; }).length;
       var badge = $('tasks-badge'); if(badge) badge.textContent = pending;
       if(!tasks.length) { list.innerHTML = '<div style="padding:20px;text-align:center;font-size:12px;color:var(--mid)">No '+filter+' tasks</div>'; return; }
-      list.innerHTML = tasks.map(function(t) {
+      var html = '';
+      tasks.forEach(function(t) {
         var done = t.status === 'completed';
         var pColor = t.priority==='high'?'var(--red)':t.priority==='low'?'#888':'var(--gold)';
         var date = new Date(t.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'});
-        return '<div style="padding:14px;border:1px solid var(--tan);border-radius:8px;margin-bottom:8px;background:'+(done?'rgba(0,0,0,.02)':'white')+';opacity:'+(done?.6:1)+'">' +
-          '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">' +
-          '<div style="display:flex;align-items:flex-start;gap:10px;flex:1">' +
-          '<input type="checkbox"'+(done?' checked':'')+' onchange="toggleEATask('+t.id+',this.checked)" style="margin-top:3px;width:16px;height:16px;cursor:pointer">' +
-          '<div><div style="font-size:13px;font-weight:600;'+(done?'text-decoration:line-through':'')+'">'+(t.title||'')+'</div>' +
-          (t.description?'<div style="font-size:11px;color:var(--mid);margin-top:3px">'+(t.description||'').substring(0,100)+'</div>':'') +
-          '<div style="display:flex;gap:8px;margin-top:5px"><span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:2px;background:rgba(196,154,138,.1);color:'+pColor+'">'+(t.priority||'normal').toUpperCase()+'</span>' +
-          (t.source?'<span style="font-size:9px;color:var(--mid)">'+t.source+'</span>':'') +
-          (t.due_date?'<span style="font-size:9px;color:var(--gold)">Due: '+t.due_date+'</span>':'') +
-          '<span style="font-size:9px;color:var(--mid)">'+date+'</span></div></div></div>' +
-          '<button onclick="deleteEATask('+t.id+')" style="font-size:10px;padding:3px 8px;border:1px solid rgba(138,58,48,.2);border-radius:3px;cursor:pointer;background:transparent;color:var(--red)">Del</button>' +
-          '</div></div>';
-      }).join('');
+        // Clean up markdown from description
+        var cleanDesc = (t.description||'').replace(/#{1,6}\s/g,'').replace(/\*\*/g,'').replace(/\*/g,'').substring(0,80);
+        html += '<div style="padding:14px;border:1px solid var(--tan);border-radius:8px;margin-bottom:8px;background:'+(done?'rgba(0,0,0,.02)':'white')+';opacity:'+(done?.6:1)+'">';
+        html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">';
+        html += '<div style="display:flex;align-items:flex-start;gap:10px;flex:1">';
+        html += '<input type="checkbox"'+(done?' checked':'')+' onchange="toggleEATask('+t.id+',this.checked)" style="margin-top:3px;width:16px;height:16px;cursor:pointer">';
+        html += '<div style="flex:1">';
+        html += '<div style="font-size:13px;font-weight:600;'+(done?'text-decoration:line-through':'')+'">'+t.title+'</div>';
+        if(cleanDesc) html += '<div style="font-size:11px;color:var(--mid);margin-top:3px">'+cleanDesc+'</div>';
+        html += '<div style="display:flex;gap:8px;margin-top:5px;flex-wrap:wrap">';
+        html += '<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:2px;background:rgba(196,154,138,.1);color:'+pColor+'">'+(t.priority||'normal').toUpperCase()+'</span>';
+        if(t.source) html += '<span style="font-size:9px;color:var(--mid)">'+t.source+'</span>';
+        if(t.due_date) html += '<span style="font-size:9px;color:var(--gold)">Due: '+t.due_date+'</span>';
+        html += '<span style="font-size:9px;color:var(--mid)">'+date+'</span>';
+        html += '</div></div></div>';
+        html += '<div style="display:flex;gap:4px;flex-shrink:0">';
+        if(!done) html += '<button data-tid="'+t.id+'" data-ttitle="'+t.title.replace(/"/g,"'").replace(/'/g,' ')+'" onclick="var b=this;eaExecuteTask(b.dataset.tid,b.dataset.ttitle)" style="font-size:9px;font-weight:700;padding:4px 10px;border-radius:3px;border:none;cursor:pointer;background:var(--blk);color:var(--cream)">Execute</button>';
+        html += '<button data-delid="'+t.id+'" onclick="deleteEATask(this.dataset.delid)" style="font-size:9px;padding:4px 8px;border:1px solid rgba(138,58,48,.2);border-radius:3px;cursor:pointer;background:transparent;color:var(--red)">Del</button>';
+        html += '</div></div></div>';
+      });
+      list.innerHTML = html;
     } else if(d.success) {
       list.innerHTML = '<div style="padding:40px;text-align:center;color:var(--mid)"><div style="font-size:32px;margin-bottom:8px">&#127934;</div><div style="font-size:13px">No tasks yet. Bouncy Ball tasks are added automatically when classified.</div></div>';
     }
   } catch(e) { list.innerHTML = '<div style="padding:14px;color:var(--red);font-size:12px">Error: '+e.message+'</div>'; }
 }
+
 
 async function toggleEATask(id, done) {
   await fetch(RAILWAY + '/api/ea-tasks/' + id, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:done?'completed':'pending'})});
