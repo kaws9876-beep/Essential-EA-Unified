@@ -205,6 +205,10 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
   /* HISTORY */
   .history-item > div{flex-wrap:wrap}
 }
+.mic-btn{background:none;border:1px solid var(--tan);border-radius:50%;width:36px;height:36px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:16px;color:var(--mid);transition:all .2s;flex-shrink:0}
+.mic-btn:hover{border-color:var(--gold);color:var(--gold)}
+.mic-btn.listening{border-color:var(--red);color:var(--red);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
 </style>
 </head>
 <body>
@@ -345,7 +349,11 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
     <textarea id="brief-priorities" rows="2" placeholder="e.g. Close the Henderson deal, prepare for 2pm team call..." style="width:100%;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-size:13px;outline:none;resize:vertical;margin-bottom:12px;font-family:DM Sans,sans-serif"></textarea>
     <label style="font-size:11px;font-weight:600;color:var(--mid);display:block;margin-bottom:6px">What is on your mind?</label>
     <textarea id="brief-context" rows="2" placeholder="e.g. Worried about the Q2 numbers, need to follow up on 3 proposals..." style="width:100%;padding:9px 12px;border:1px solid var(--tan);border-radius:4px;font-size:13px;outline:none;resize:vertical;margin-bottom:14px;font-family:DM Sans,sans-serif"></textarea>
+    <div style="display:flex;align-items:center;gap:10px">
     <button class="btn-primary" onclick="generateBrief()" id="brief-btn">Generate My EA Daily Brief</button>
+    <button class="mic-btn" onclick="startVoiceInput('brief-context','brief-btn')" id="mic-brief" title="Speak your context">&#127908;</button>
+    <span id="mic-brief-status" style="font-size:11px;color:var(--mid)"></span>
+  </div>
   </div>
   <div id="brief-loading" style="display:none;padding:40px;text-align:center"><div class="spinner" style="margin:0 auto 12px"></div><div style="font-size:13px;color:var(--mid)">Your EA is preparing your brief...</div></div>
   <div id="brief-result" style="margin-top:4px"></div>
@@ -383,7 +391,11 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
     <div>
       <div class="panel" style="padding:20px;margin-bottom:16px">
         <textarea id="task-input" class="task-input" placeholder="Describe a task, decision, email, meeting, or anything on your plate..."></textarea>
-        <button class="btn-primary" onclick="runClassify()" id="classify-btn" style="margin-top:12px">Classify Task</button>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:12px">
+        <button class="btn-primary" onclick="runClassify()" id="classify-btn">Classify Task</button>
+        <button class="mic-btn" onclick="startVoiceInput('task-input','classify-btn')" id="mic-triage" title="Speak your task">&#127908;</button>
+        <span id="mic-triage-status" style="font-size:11px;color:var(--mid)"></span>
+      </div>
       </div>
       <div id="classify-result" style="display:none"></div>
     </div>
@@ -488,7 +500,10 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
         <input id="compose-to" type="email" placeholder="To..." style="width:100%;padding:8px 0;border:none;border-bottom:1px solid var(--tan);font-size:13px;outline:none;margin-bottom:8px">
         <input id="compose-cc" type="email" placeholder="Cc..." style="width:100%;padding:8px 0;border:none;border-bottom:1px solid var(--tan);font-size:13px;outline:none;margin-bottom:8px">
         <input id="compose-subject" type="text" placeholder="Subject..." style="width:100%;padding:8px 0;border:none;border-bottom:1px solid var(--tan);font-size:13px;outline:none;margin-bottom:8px">
-        <textarea id="compose-body" rows="8" placeholder="Write your message..." style="width:100%;padding:8px 0;border:none;font-size:13px;outline:none;resize:none;font-family:DM Sans,sans-serif"></textarea>
+        <div style="position:relative">
+        <textarea id="compose-body" rows="8" placeholder="Write your message... or speak it" style="width:100%;padding:8px 0;border:none;font-size:13px;outline:none;resize:none;font-family:DM Sans,sans-serif"></textarea>
+        <button class="mic-btn" onclick="startVoiceInput('compose-body',null)" style="position:absolute;bottom:4px;right:4px;background:var(--cream)" title="Speak message">&#127908;</button>
+      </div>
         <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--tan)">
           <div style="display:flex;gap:8px">
             <button onclick="sendComposedEmail()" class="btn-primary" style="padding:8px 20px">Send</button>
@@ -636,7 +651,10 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
     <button class="btn-secondary" onclick="loadEATasks()" style="font-size:11px;padding:7px 14px">Refresh</button>
   </div>
   <div id="ea-add-form" style="display:none;background:var(--warm);border:1px solid var(--tan);border-radius:8px;padding:16px;margin-bottom:16px">
-    <input id="ea-task-title" type="text" placeholder="Task title..." style="width:100%;padding:8px 12px;border:1px solid var(--tan);border-radius:4px;font-size:13px;margin-bottom:8px;outline:none">
+    <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+    <input id="ea-task-title" type="text" placeholder="Task title... or speak it" style="flex:1;padding:8px 12px;border:1px solid var(--tan);border-radius:4px;font-size:13px;outline:none">
+    <button class="mic-btn" onclick="startVoiceInput('ea-task-title',null)" id="mic-task" title="Speak task">&#127908;</button>
+  </div>
     <textarea id="ea-task-desc" rows="2" placeholder="Description..." style="width:100%;padding:8px 12px;border:1px solid var(--tan);border-radius:4px;font-size:13px;margin-bottom:8px;outline:none;resize:vertical"></textarea>
     <div style="display:flex;gap:8px">
       <select id="ea-task-priority" style="font-size:12px;padding:7px 10px;border:1px solid var(--tan);border-radius:4px;background:white;outline:none"><option value="normal">Normal</option><option value="high">High</option><option value="low">Low</option></select>
@@ -2400,6 +2418,83 @@ function filterHistory(type, btn) {
   items.forEach(function(item) {
     item.style.display = (type === 'all' || item.dataset.type === type) ? 'block' : 'none';
   });
+}
+
+// ============================================================
+// VOICE INPUT - Web Speech API
+// ============================================================
+function startVoiceInput(targetId, btnId) {
+  var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SpeechRecognition) {
+    alert('Voice input is not supported in this browser. Try Chrome or Safari.');
+    return;
+  }
+  
+  var targetEl = $(targetId);
+  var micBtn = document.querySelector('[onclick*="' + targetId + '"]');
+  var statusEl = null;
+  if(targetId === 'task-input') statusEl = $('mic-triage-status');
+  if(targetId === 'brief-context') statusEl = $('mic-brief-status');
+  
+  if(!targetEl) return;
+  
+  // If already listening, stop
+  if(window._currentRecognition) {
+    window._currentRecognition.stop();
+    window._currentRecognition = null;
+    if(micBtn) micBtn.classList.remove('listening');
+    if(statusEl) statusEl.textContent = '';
+    return;
+  }
+  
+  var recognition = new SpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+  window._currentRecognition = recognition;
+  
+  if(micBtn) micBtn.classList.add('listening');
+  if(statusEl) statusEl.textContent = 'Listening...';
+  
+  var finalTranscript = targetEl.value || '';
+  var startLen = finalTranscript.length;
+  
+  recognition.onresult = function(event) {
+    var interim = '';
+    var final = '';
+    for(var i = event.resultIndex; i < event.results.length; i++) {
+      if(event.results[i].isFinal) {
+        final += event.results[i][0].transcript;
+      } else {
+        interim += event.results[i][0].transcript;
+      }
+    }
+    if(final) finalTranscript += (finalTranscript ? ' ' : '') + final;
+    targetEl.value = finalTranscript + (interim ? ' ' + interim : '');
+    if(statusEl) statusEl.textContent = interim ? 'Hearing: ' + interim.substring(0,30) + '...' : 'Listening...';
+  };
+  
+  recognition.onerror = function(e) {
+    console.log('Speech error:', e.error);
+    if(micBtn) micBtn.classList.remove('listening');
+    if(statusEl) statusEl.textContent = e.error === 'no-speech' ? 'No speech detected' : 'Error: ' + e.error;
+    window._currentRecognition = null;
+    setTimeout(function() { if(statusEl) statusEl.textContent = ''; }, 3000);
+  };
+  
+  recognition.onend = function() {
+    if(micBtn) micBtn.classList.remove('listening');
+    if(statusEl) {
+      var added = targetEl.value.length - startLen;
+      statusEl.textContent = added > 0 ? 'Got it!' : 'Done';
+      setTimeout(function() { statusEl.textContent = ''; }, 2000);
+    }
+    window._currentRecognition = null;
+    // Auto-focus the field
+    targetEl.focus();
+  };
+  
+  recognition.start();
 }
 
 // INIT
