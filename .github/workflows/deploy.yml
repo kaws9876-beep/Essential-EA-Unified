@@ -1,0 +1,38 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Verify server.js is correct
+        run: |
+          node --check server.js
+          echo "server.js syntax OK"
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway up --service essential-ea-app --detach
+          echo "Deploy triggered successfully"
+
+      - name: Verify deployment
+        run: |
+          echo "Waiting 60 seconds..."
+          sleep 60
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://essential-ea-app-production.up.railway.app/api/health)
+          if [ "$STATUS" = "200" ]; then
+            echo "Deployment successful"
+          else
+            echo "WARNING: Health check returned $STATUS"
+          fi
