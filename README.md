@@ -1,4 +1,4 @@
-# The Essential EA — Unified Full-Stack Application
+# The Essential EA — Unified Full-Stack Application 
 
 A beautifully designed, AI-powered executive assistant app for brokers and high-performing professionals. Built with Express + React in a single, unified deployment.
 
