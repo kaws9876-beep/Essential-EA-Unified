@@ -1406,6 +1406,54 @@ app.get('/api/automation/test', (req, res) => {
   res.json({ success: true, message: 'Automation engine is running' });
 });
 
+// ============================================================
+// AUTOMATION ENGINE ROUTES
+// ============================================================
+
+app.get('/api/automation/jobs', async (req, res) => {
+  try {
+    const jobs = await sql`SELECT * FROM automation_jobs ORDER BY created_at DESC`;
+    res.json({ success: true, jobs });
+  } catch (e) {
+    console.error('Automation jobs error:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/automation/jobs', async (req, res) => {
+  try {
+    const { name, trigger_type, interval_minutes, action_type, action_config } = req.body;
+    if (!name || !action_type) return res.status(400).json({ success: false, error: 'name and action_type are required' });
+    const [job] = await sql`INSERT INTO automation_jobs (name, trigger_type, interval_minutes, action_type, action_config) VALUES (${name}, ${trigger_type || 'interval'}, ${interval_minutes || 60}, ${action_type}, ${JSON.stringify(action_config || {})}) RETURNING *`;
+    res.json({ success: true, job });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/automation/jobs/:id/run', async (req, res) => {
+  try {
+    const jobId = parseInt(req.params.id);
+    const [job] = await sql`SELECT * FROM automation_jobs WHERE id = ${jobId}`;
+    if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
+    let logStatus = 'success', logResult = '';
+    try {
+      const result = await executeAutomationJob(job);
+      logResult = JSON.stringify(result);
+    } catch (e) {
+      logStatus = 'error';
+      logResult = e.message;
+    }
+    const nextRun = new Date(Date.now() + (job.interval_minutes || 60) * 60 * 1000);
+    await sql`UPDATE automation_jobs SET last_run_at = NOW(), next_run_at = ${nextRun.toISOString()}, run_count = run_count + 1 WHERE id = ${jobId}`;
+    await sql`INSERT INTO automation_logs (job_id, user_id, status, result) VALUES (${jobId}, ${job.user_id}, ${logStatus}, ${logResult})`;
+    res.json({ success: logStatus === 'success', status: logStatus, result: logResult });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+
 app.post('/api/classify', async (req, res) => {
   try {
     const { taskDescription } = req.body;
@@ -4359,52 +4407,6 @@ async function runDueAutomationJobs() {
 setInterval(runDueAutomationJobs, 60 * 1000);
 
 
-// ============================================================
-// AUTOMATION ENGINE ROUTES
-// ============================================================
-
-app.get('/api/automation/jobs', async (req, res) => {
-  try {
-    const jobs = await sql`SELECT * FROM automation_jobs ORDER BY created_at DESC`;
-    res.json({ success: true, jobs });
-  } catch (e) {
-    console.error('Automation jobs error:', e.message);
-    res.status(500).json({ success: false, error: e.message });
-  }
-});
-
-app.post('/api/automation/jobs', async (req, res) => {
-  try {
-    const { name, trigger_type, interval_minutes, action_type, action_config } = req.body;
-    if (!name || !action_type) return res.status(400).json({ success: false, error: 'name and action_type are required' });
-    const [job] = await sql`INSERT INTO automation_jobs (name, trigger_type, interval_minutes, action_type, action_config) VALUES (${name}, ${trigger_type || 'interval'}, ${interval_minutes || 60}, ${action_type}, ${JSON.stringify(action_config || {})}) RETURNING *`;
-    res.json({ success: true, job });
-  } catch (e) {
-    res.status(500).json({ success: false, error: e.message });
-  }
-});
-
-app.post('/api/automation/jobs/:id/run', async (req, res) => {
-  try {
-    const jobId = parseInt(req.params.id);
-    const [job] = await sql`SELECT * FROM automation_jobs WHERE id = ${jobId}`;
-    if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
-    let logStatus = 'success', logResult = '';
-    try {
-      const result = await executeAutomationJob(job);
-      logResult = JSON.stringify(result);
-    } catch (e) {
-      logStatus = 'error';
-      logResult = e.message;
-    }
-    const nextRun = new Date(Date.now() + (job.interval_minutes || 60) * 60 * 1000);
-    await sql`UPDATE automation_jobs SET last_run_at = NOW(), next_run_at = ${nextRun.toISOString()}, run_count = run_count + 1 WHERE id = ${jobId}`;
-    await sql`INSERT INTO automation_logs (job_id, user_id, status, result) VALUES (${jobId}, ${job.user_id}, ${logStatus}, ${logResult})`;
-    res.json({ success: logStatus === 'success', status: logStatus, result: logResult });
-  } catch (e) {
-    res.status(500).json({ success: false, error: e.message });
-  }
-});
 
 // Global error handler
 app.use((err, req, res, next) => {
