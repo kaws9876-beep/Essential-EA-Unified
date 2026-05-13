@@ -4240,7 +4240,7 @@ app.post('/api/outlook/forward', async (req, res) => {
 app.post('/api/quickbooks/mark-paid-v2', async (req, res) => {
   try {
     const { invoiceId, amount, customerRef } = req.body;
-    const [tokens] = await sql\`SELECT * FROM quickbooks_tokens WHERE user_id = 'default' LIMIT 1\`;
+    const [tokens] = await sql`SELECT * FROM quickbooks_tokens WHERE user_id = 'default' LIMIT 1`;
     if(!tokens) return res.status(401).json({ success: false, error: 'QuickBooks not connected' });
     const baseUrl = process.env.QUICKBOOKS_ENVIRONMENT === 'sandbox'
       ? 'https://sandbox-quickbooks.api.intuit.com'
@@ -4250,7 +4250,7 @@ app.post('/api/quickbooks/mark-paid-v2', async (req, res) => {
       CustomerRef: customerRef || { value: '1' },
       Line: [{ Amount: parseFloat(amount||0), LinkedTxn: [{ TxnId: invoiceId, TxnType: 'Invoice' }] }]
     };
-    const r = await fetch(\`\${baseUrl}/v3/company/\${tokens.realm_id}/payment\`, {
+    const r = await fetch(`\${baseUrl}/v3/company/\${tokens.realm_id}/payment`, {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + tokens.access_token, 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ Payment: payment })
@@ -4265,7 +4265,7 @@ app.post('/api/quickbooks/mark-paid-v2', async (req, res) => {
 app.post('/api/quickbooks/create-expense-v2', async (req, res) => {
   try {
     const { vendorName, amount, category, memo, date } = req.body;
-    const [tokens] = await sql\`SELECT * FROM quickbooks_tokens WHERE user_id = 'default' LIMIT 1\`;
+    const [tokens] = await sql`SELECT * FROM quickbooks_tokens WHERE user_id = 'default' LIMIT 1`;
     if(!tokens) return res.status(401).json({ success: false, error: 'QuickBooks not connected' });
     const baseUrl = process.env.QUICKBOOKS_ENVIRONMENT === 'sandbox'
       ? 'https://sandbox-quickbooks.api.intuit.com'
@@ -4282,7 +4282,7 @@ app.post('/api/quickbooks/create-expense-v2', async (req, res) => {
         AccountBasedExpenseLineDetail: { AccountRef: { name: category || 'Miscellaneous' } }
       }]
     };
-    const r = await fetch(\`\${baseUrl}/v3/company/\${tokens.realm_id}/purchase\`, {
+    const r = await fetch(`\${baseUrl}/v3/company/\${tokens.realm_id}/purchase`, {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + tokens.access_token, 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ Purchase: purchase })
