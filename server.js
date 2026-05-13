@@ -4365,9 +4365,10 @@ setInterval(runDueAutomationJobs, 60 * 1000);
 
 app.get('/api/automation/jobs', async (req, res) => {
   try {
-    const jobs = await sql`SELECT j.*, (SELECT json_agg(l ORDER BY l.ran_at DESC) FROM (SELECT * FROM automation_logs WHERE job_id = j.id ORDER BY ran_at DESC LIMIT 5) l) AS recent_logs FROM automation_jobs j ORDER BY j.created_at DESC`;
+    const jobs = await sql`SELECT * FROM automation_jobs ORDER BY created_at DESC`;
     res.json({ success: true, jobs });
   } catch (e) {
+    console.error('Automation jobs error:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });
