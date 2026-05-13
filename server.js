@@ -180,7 +180,7 @@ async function initDB() {
   }
 }
 
-console.log('\nStarting Essential EA...');
+console.log('\nStarting Essential EA v2.1-automation...');
 console.log('PORT:', PORT);
 console.log('Anthropic Key:', process.env.ANTHROPIC_API_KEY ? 'Set' : 'Missing');
 console.log('OpenAI Key (Whisper):', process.env.OPENAI_API_KEY ? 'Set' : 'Missing');
@@ -1399,7 +1399,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', version: '2.1-automation', timestamp: new Date().toISOString() });
 });
 
 app.post('/api/classify', async (req, res) => {
