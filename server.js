@@ -1402,6 +1402,10 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', version: '2.1-automation', timestamp: new Date().toISOString() });
 });
 
+app.get('/api/automation/test', (req, res) => {
+  res.json({ success: true, message: 'Automation engine is running' });
+});
+
 app.post('/api/classify', async (req, res) => {
   try {
     const { taskDescription } = req.body;
