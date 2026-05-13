@@ -5,6 +5,7 @@ import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import Anthropic from '@anthropic-ai/sdk';
+import { ClerkExpressWithAuth } from '@clerk/clerk-sdk-node';
 import { Pinecone } from '@pinecone-database/pinecone';
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
@@ -183,6 +184,10 @@ async function initDB() {
 console.log('\nStarting Essential EA v2.1-automation...');
 console.log('PORT:', PORT);
 console.log('Anthropic Key:', process.env.ANTHROPIC_API_KEY ? 'Set' : 'Missing');
+console.log('Clerk Secret Key:', process.env.CLERK_SECRET_KEY ? 'Set' : 'Missing  -  auth disabled');
+if (!process.env.CLERK_SECRET_KEY) {
+  console.warn('WARNING: CLERK_SECRET_KEY not set. All /api routes are unprotected.');
+}
 console.log('OpenAI Key (Whisper):', process.env.OPENAI_API_KEY ? 'Set' : 'Missing');
 console.log('ElevenLabs Key:', process.env.ELEVENLABS_API_KEY ? 'Set' : 'Missing');
 console.log('Database:', process.env.DATABASE_URL ? 'Connected' : 'Missing');
@@ -190,6 +195,24 @@ console.log('Database:', process.env.DATABASE_URL ? 'Connected' : 'Missing');
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cors());
+
+// Attach req.auth for all requests (does not block unauthenticated requests)
+app.use(ClerkExpressWithAuth());
+
+// Enforce authentication on /api routes except health, stripe webhook, and auth endpoints
+app.use('/api', (req, res, next) => {
+  const path = req.path;
+  if (
+    path === '/health' ||
+    path === '/stripe/webhook' ||
+    path.startsWith('/auth')
+  ) return next();
+  if (!process.env.CLERK_SECRET_KEY) return next();
+  if (!req.auth?.userId) {
+    return res.status(401).json({ error: 'Unauthorized', success: false });
+  }
+  next();
+});
 
 const html = `<!DOCTYPE html>
 <html lang="en">
@@ -1404,6 +1427,31 @@ app.get('/api/health', (req, res) => {
 
 app.get('/api/automation/test', (req, res) => {
   res.json({ success: true, message: 'Automation engine is running' });
+});
+
+// Auth status endpoint
+app.get('/api/auth/status', async (req, res) => {
+  res.json({
+    enabled: !!process.env.CLERK_SECRET_KEY,
+    authenticated: !!(req.auth?.userId),
+    userId: req.auth?.userId || null
+  });
+});
+
+// Current user profile
+app.get('/api/me', async (req, res) => {
+  try {
+    const userId = req.auth?.userId || 'default';
+    const [profile] = await sql`SELECT * FROM user_profiles WHERE user_id = ${userId} LIMIT 1`;
+    res.json({
+      success: true,
+      userId,
+      profile: profile || null,
+      clerkUserId: req.auth?.userId || null
+    });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
 });
 
 // ============================================================
