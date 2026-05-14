@@ -265,6 +265,7 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
 
   <div class="sb-section">Settings</div>
   <div class="sb-item" onclick="nav('profile',this)"><span class="sb-icon">&#9881;</span>Preferences</div>
+  <div class="sb-item" onclick="nav('writing',this)"><span class="sb-icon">&#9997;</span>Writing Hub</div>
   <div class="sb-item" onclick="nav('settings',this)"><span class="sb-icon">&#9711;</span>Account</div>
   <div class="sb-item" onclick="nav('pricing',this)"><span class="sb-icon">&#128176;</span>Upgrade Plan</div>
   <div class="sb-item" onclick="nav('crm',this)"><span class="sb-icon">&#128101;</span>CRM</div>
@@ -986,6 +987,92 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
   </div>
 </div>
 
+<div class="screen" id="screen-writing">
+  <div class="pg-h">Writing Hub</div>
+  <div class="pg-s">AI-powered content for any industry. Social posts, proposals, newsletters, follow-ups, case studies, and more.</div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="panel">
+        <div class="ph"><span class="pt">Content Type</span></div>
+        <div style="padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px" id="write-type-grid">
+          <button class="write-type-btn active" data-type="social-post" onclick="selectWriteType(this)" style="padding:10px;border:1px solid var(--gold);border-radius:6px;background:rgba(196,154,138,.1);font-size:12px;cursor:pointer;font-weight:600">&#128247; Social Post</button>
+          <button class="write-type-btn" data-type="listing-description" onclick="selectWriteType(this)" style="padding:10px;border:1px solid var(--tan);border-radius:6px;background:transparent;font-size:12px;cursor:pointer">&#127968; Description</button>
+          <button class="write-type-btn" data-type="proposal" onclick="selectWriteType(this)" style="padding:10px;border:1px solid var(--tan);border-radius:6px;background:transparent;font-size:12px;cursor:pointer">&#128196; Proposal</button>
+          <button class="write-type-btn" data-type="newsletter" onclick="selectWriteType(this)" style="padding:10px;border:1px solid var(--tan);border-radius:6px;background:transparent;font-size:12px;cursor:pointer">&#128139; Newsletter</button>
+          <button class="write-type-btn" data-type="follow-up" onclick="selectWriteType(this)" style="padding:10px;border:1px solid var(--tan);border-radius:6px;background:transparent;font-size:12px;cursor:pointer">&#128172; Follow-Up</button>
+          <button class="write-type-btn" data-type="thank-you" onclick="selectWriteType(this)" style="padding:10px;border:1px solid var(--tan);border-radius:6px;background:transparent;font-size:12px;cursor:pointer">&#128140; Thank You</button>
+          <button class="write-type-btn" data-type="bio" onclick="selectWriteType(this)" style="padding:10px;border:1px solid var(--tan);border-radius:6px;background:transparent;font-size:12px;cursor:pointer">&#128100; Bio</button>
+          <button class="write-type-btn" data-type="case-study" onclick="selectWriteType(this)" style="padding:10px;border:1px solid var(--tan);border-radius:6px;background:transparent;font-size:12px;cursor:pointer">&#127942; Case Study</button>
+          <button class="write-type-btn" data-type="email-sequence" onclick="selectWriteType(this)" style="padding:10px;border:1px solid var(--tan);border-radius:6px;background:transparent;font-size:12px;cursor:pointer;grid-column:span 2">&#128139; Email Sequence</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><span class="pt">Context</span></div>
+        <div style="padding:14px">
+          <textarea id="write-context" placeholder="Describe what you need... e.g. consulting firm helping SaaS companies reduce churn, targeting VP of Customer Success, warm professional tone" style="width:100%;height:120px;border:1px solid var(--tan);border-radius:6px;padding:10px 12px;font-size:13px;font-family:DM Sans,sans-serif;resize:vertical;outline:none;background:var(--cream)"></textarea>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><span class="pt">Options</span></div>
+        <div style="padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mid);margin-bottom:6px">Tone</div>
+            <select id="write-tone" style="width:100%;padding:8px 10px;border:1px solid var(--tan);border-radius:4px;font-size:13px;background:var(--cream);outline:none">
+              <option>Professional</option>
+              <option>Warm</option>
+              <option>Direct</option>
+              <option>Enthusiastic</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mid);margin-bottom:6px">Length</div>
+            <select id="write-length" style="width:100%;padding:8px 10px;border:1px solid var(--tan);border-radius:4px;font-size:13px;background:var(--cream);outline:none">
+              <option value="short">Short</option>
+              <option value="medium" selected>Medium</option>
+              <option value="long">Long</option>
+            </select>
+          </div>
+          <div style="grid-column:span 2">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mid);margin-bottom:6px">Audience (optional)</div>
+            <input id="write-audience" type="text" placeholder="e.g. first-time buyers, luxury clients..." style="width:100%;padding:8px 10px;border:1px solid var(--tan);border-radius:4px;font-size:13px;background:var(--cream);outline:none">
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="generateWriting()" id="write-btn" style="width:100%;padding:13px;font-size:12px;letter-spacing:.1em">&#9997; Generate Content</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="panel" style="flex:1">
+        <div class="ph" style="justify-content:space-between">
+          <span class="pt" id="write-output-label">Output</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn-secondary" onclick="copyWriting()" style="font-size:10px;padding:5px 12px">Copy</button>
+            <button class="btn-secondary" onclick="emailWriting()" style="font-size:10px;padding:5px 12px">Send via Email</button>
+          </div>
+        </div>
+        <div style="padding:14px">
+          <div id="write-loading" style="display:none;padding:30px;text-align:center"><div class="spinner" style="margin:0 auto 12px"></div><div style="font-size:13px;color:var(--mid)">Writing your content...</div></div>
+          <div id="write-output" style="font-size:13.5px;line-height:1.75;white-space:pre-wrap;min-height:200px;color:var(--blk)">Your generated content will appear here. Select a content type and add context to get started.</div>
+          <div id="write-error" style="display:none;color:var(--red);font-size:13px;padding:8px 0"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><span class="pt">Quick Tips</span></div>
+        <div style="padding:14px;font-size:12px;color:var(--mid);line-height:1.65">
+          <div style="margin-bottom:6px">&#128161; <strong>More context = better output.</strong> Include industry, audience, goals, and key details.</div>
+          <div style="margin-bottom:6px">&#128161; <strong>Tone matters.</strong> Warm for past clients. Direct for investors.</div>
+          <div>&#128161; <strong>Iterate fast.</strong> Click Generate again for a fresh version.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="screen" id="screen-settings">
   <div class="pg-h2">Settings</div>
   <div class="pg-s2">Manage your account, preferences, and integrations.</div>
@@ -1030,7 +1117,7 @@ const RAILWAY = 'https://essential-ea-app-production.up.railway.app';
 const today = new Date();
 const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const titles = {dashboard:'Good morning, <em>Kristina.</em>',brief:'EA Daily Brief',priorityweek:'Priority Week Generator',triage:'Crystal Ball Triage',inbox:'Communication Hub',history:'Task History',audit:'Operational Efficiency Audit',docreader:'Document Reader',eatasklist:'EA Task List',meetings:'Meeting Recordings',operations:'Operations',pricing:'Choose Your Plan',profile:'Your EA Profile',crm:'CRM - Go High Level',finance:'Financial Tracking',settings:'Settings',login:'Welcome',automation:'Automation Control Center'};
+const titles = {dashboard:'Good morning, <em>Kristina.</em>',brief:'EA Daily Brief',priorityweek:'Priority Week Generator',triage:'Crystal Ball Triage',inbox:'Communication Hub',history:'Task History',audit:'Operational Efficiency Audit',docreader:'Document Reader',eatasklist:'EA Task List',meetings:'Meeting Recordings',operations:'Operations',pricing:'Choose Your Plan',profile:'Your EA Profile',crm:'CRM - Go High Level',finance:'Financial Tracking',settings:'Settings',login:'Welcome',writing:'Writing Hub',automation:'Automation Control Center'};
 
 // Date
 $('tbd').textContent = days[today.getDay()] + ', ' + months[today.getMonth()] + ' ' + today.getDate() + ', ' + today.getFullYear();
@@ -2798,6 +2885,96 @@ function startVoiceInput(targetId, btnId) {
   };
   
   recognition.start();
+}
+
+// ============================================================
+// WRITING HUB
+// ============================================================
+var _writeType = 'social-post';
+
+function selectWriteType(btn) {
+  document.querySelectorAll('.write-type-btn').forEach(function(b) {
+    b.style.border = '1px solid var(--tan)';
+    b.style.background = 'transparent';
+    b.style.fontWeight = '400';
+  });
+  btn.style.border = '1px solid var(--gold)';
+  btn.style.background = 'rgba(196,154,138,.1)';
+  btn.style.fontWeight = '600';
+  _writeType = btn.dataset.type;
+  var label = $('write-output-label');
+  var labels = {'social-post':'Social Post','listing-description':'Description','proposal':'Proposal','newsletter':'Newsletter','follow-up':'Follow-Up','thank-you':'Thank You','bio':'Bio','case-study':'Case Study','email-sequence':'Email Sequence'};
+  if(label) label.textContent = labels[_writeType] || 'Output';
+}
+
+async function generateWriting() {
+  var ctx = $('write-context') ? $('write-context').value.trim() : '';
+  if(!ctx) { alert('Please add some context first'); return; }
+  var btn = $('write-btn');
+  var loading = $('write-loading');
+  var output = $('write-output');
+  var error = $('write-error');
+  btn.disabled = true; btn.textContent = 'Writing...';
+  if(loading) loading.style.display = 'block';
+  if(output) output.style.display = 'none';
+  if(error) error.style.display = 'none';
+  try {
+    var r = await fetch(RAILWAY + '/api/write/' + _writeType, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        context: ctx,
+        tone: $('write-tone') ? $('write-tone').value : 'Professional',
+        length: $('write-length') ? $('write-length').value : 'medium',
+        audience: $('write-audience') ? $('write-audience').value : ''
+      })
+    });
+    var d = await r.json();
+    if(loading) loading.style.display = 'none';
+    if(output) output.style.display = 'block';
+    if(d.success) {
+      if(output) output.textContent = d.content;
+    } else {
+      if(error) { error.textContent = 'Error: ' + (d.error||'Failed'); error.style.display = 'block'; }
+    }
+  } catch(e) {
+    if(loading) loading.style.display = 'none';
+    if(error) { error.textContent = 'Error: ' + e.message; error.style.display = 'block'; }
+  } finally {
+    btn.disabled = false; btn.textContent = '&#9997; Generate Content';
+    if(output) output.style.display = 'block';
+  }
+}
+
+function copyWriting() {
+  var output = $('write-output');
+  if(!output || !output.textContent || output.textContent.includes('will appear here')) {
+    alert('Generate some content first');
+    return;
+  }
+  navigator.clipboard.writeText(output.textContent).then(function() {
+    showToast('Copied to clipboard!');
+  }).catch(function() {
+    // Fallback
+    var ta = document.createElement('textarea');
+    ta.value = output.textContent;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Copied!');
+  });
+}
+
+function emailWriting() {
+  var output = $('write-output');
+  if(!output || !output.textContent || output.textContent.includes('will appear here')) {
+    alert('Generate some content first');
+    return;
+  }
+  var labels = {'social-post':'Social Post','listing-description':'Listing Description','proposal':'Proposal','newsletter':'Newsletter','follow-up':'Follow-Up','thank-you':'Thank You','bio':'Agent Bio'};
+  openCompose('', labels[_writeType] || 'Content', output.textContent);
+  nav('inbox', null);
 }
 
 // ============================================================
