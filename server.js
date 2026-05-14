@@ -1499,7 +1499,7 @@ app.post('/api/write/:type', async (req, res) => {
     }
     const prompt = WRITING_PROMPTS[type](context.trim(), tone, length, audience);
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5',
       max_tokens: 1200,
       system: 'You are the Essential EA Writing Hub - an expert content generator for real estate agents, financial advisors, and executives. Write polished, human content that converts. Never use placeholder text. Never explain what you are doing - just write the content.',
       messages: [{ role: 'user', content: prompt }]
@@ -4503,7 +4503,7 @@ async function executeAutomationJob(job) {
     const tasks = await sql`SELECT title, status, priority FROM ea_tasks ORDER BY created_at DESC LIMIT 20`;
     const context = tasks.map(t => `- [${t.status}] ${t.title}`).join('\n');
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5',
       max_tokens: 512,
       messages: [{ role: 'user', content: prompt + '\n\nTask context:\n' + context }]
     });
