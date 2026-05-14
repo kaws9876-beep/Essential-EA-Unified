@@ -199,19 +199,16 @@ app.use(cors());
 // Attach req.auth for all requests (does not block unauthenticated requests)
 app.use(ClerkExpressWithAuth());
 
-// Enforce authentication on /api routes except health, stripe webhook, and auth endpoints
+// Auth enforcement - currently in soft mode (logs but does not block)
+// Full enforcement enabled after Clerk frontend SDK is integrated
 app.use('/api', (req, res, next) => {
   const path = req.path;
-  if (
-    path === '/health' ||
-    path === '/stripe/webhook' ||
-    path.startsWith('/auth')
-  ) return next();
   if (!process.env.CLERK_SECRET_KEY) return next();
   if (!req.auth?.userId) {
-    return res.status(401).json({ error: 'Unauthorized', success: false });
+    // Log unauthenticated requests but allow through for now
+    console.log('Unauthenticated request to:', path, '- allowed in soft mode');
   }
-  next();
+  return next();
 });
 
 const html = `<!DOCTYPE html>
