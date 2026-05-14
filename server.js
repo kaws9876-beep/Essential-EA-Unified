@@ -4456,6 +4456,94 @@ setInterval(runDueAutomationJobs, 60 * 1000);
 
 
 
+
+// ============================================================
+// WRITING HUB
+// ============================================================
+
+const WRITING_PROMPTS = {
+  'social-post': (ctx, tone, length, audience) =>
+    `You are an expert social media strategist for executives and business owners across all industries. Write a ${length || 'medium'}-length social media post.
+Tone: ${tone || 'Professional'}. Target audience: ${audience || 'clients, prospects, and professional network'}.
+Context/topic: ${ctx}
+Rules: No generic filler phrases. Lead with a strong hook. End with a clear call to action. Use line breaks for readability. No hashtag spam - max 3 relevant hashtags if appropriate. Adapt language to the industry context provided.`,
+
+  'listing-description': (ctx, tone, length, audience) =>
+    `You are an expert copywriter. Write a compelling product, service, or property description.
+Tone: ${tone || 'Professional'}. Length: ${length || 'medium'}. Audience: ${audience || 'qualified prospects'}.
+Details: ${ctx}
+Rules: Lead with the most compelling feature or benefit. Paint a clear value picture. Include specific details - never be vague. End with urgency or a clear next step. Adapt style to the industry and offering described.`,
+
+  'proposal': (ctx, tone, length, audience) =>
+    `You are an expert business writer crafting a client proposal for an executive or business owner. Write a professional, persuasive proposal.
+Tone: ${tone || 'Professional'}. Length: ${length || 'medium'}. Audience: ${audience || 'prospective client'}.
+Context: ${ctx}
+Rules: Open with the client's specific situation and pain points. Show deep understanding of their goals. Outline unique value clearly. Include a specific next step. Make it personal and tailored, not templated. Adapt to the industry and service described.`,
+
+  'newsletter': (ctx, tone, length, audience) =>
+    `You are an expert writing a professional email newsletter for a business owner or executive. Write an engaging, value-packed newsletter.
+Tone: ${tone || 'Warm'}. Length: ${length || 'medium'}. Audience: ${audience || 'clients, prospects, and professional network'}.
+Topic/context: ${ctx}
+Rules: Start with a personal or timely note. Lead with insight and value, not just information. Keep it readable with short paragraphs. End with one clear takeaway or call to action. Sound like a trusted advisor, not a marketer.`,
+
+  'follow-up': (ctx, tone, length, audience) =>
+    `You are a top business professional writing a follow-up message. Write a natural, non-pushy follow-up.
+Tone: ${tone || 'Warm'}. Length: short. Audience: ${audience || 'prospect, client, or professional contact'}.
+Context about the relationship or last interaction: ${ctx}
+Rules: Reference the specific previous interaction. Add genuine value - share something useful, not just "checking in." Include one clear next step. Sound human and authentic, not scripted or salesy.`,
+
+  'thank-you': (ctx, tone, length, audience) =>
+    `You are a business professional writing a heartfelt thank-you message. Write a genuine, memorable thank-you.
+Tone: ${tone || 'Warm'}. Length: short. Audience: ${audience || 'client, partner, or colleague'}.
+Context: ${ctx}
+Rules: Be specific about what you are grateful for. Reference something personal about the interaction or relationship. Make it feel sincere and personal, not automated. Optional - hint at staying in touch or next steps.`,
+
+  'bio': (ctx, tone, length, audience) =>
+    `You are a professional brand writer crafting an executive or business owner bio. Write a compelling, authentic professional bio.
+Tone: ${tone || 'Professional'}. Length: ${length || 'medium'}. Audience: ${audience || 'potential clients and professional connections'}.
+Background and details: ${ctx}
+Rules: Start with who you serve and the value you deliver, not years of experience. Lead with results or a compelling statement. Include personality to make them memorable. End with a personal touch. Write in third person unless the context specifies first person. Adapt to the industry and role described.`,
+
+  'case-study': (ctx, tone, length, audience) =>
+    `You are an expert business writer crafting a compelling case study or success story. Write a persuasive, results-focused case study.
+Tone: ${tone || 'Professional'}. Length: ${length || 'medium'}. Audience: ${audience || 'potential clients'}.
+Context about the client, problem, solution, and results: ${ctx}
+Rules: Lead with the result or transformation. Structure as situation, challenge, solution, outcome. Use specific numbers and details where provided. End with a clear takeaway or call to action. Make it feel like a story, not a report.`,
+
+  'email-sequence': (ctx, tone, length, audience) =>
+    `You are an expert email marketing strategist writing a multi-touch email sequence. Write a ${length || '3'}-email nurture sequence.
+Tone: ${tone || 'Warm'}. Audience: ${audience || 'prospects or new contacts'}.
+Context about the goal and audience: ${ctx}
+Rules: Email 1 - deliver value, no sell. Email 2 - build trust with insight or story. Email 3 - clear call to action. Each email should stand alone but flow as a sequence. Keep each email concise and scannable. Subject lines that get opened.`,
+};
+
+app.post('/api/write/:type', async (req, res) => {
+  try {
+    const { type } = req.params;
+    const { context, tone, length, audience } = req.body;
+    console.log('Writing Hub: generating', type);
+    if (!WRITING_PROMPTS[type]) {
+      return res.status(400).json({ success: false, error: 'Unknown content type: ' + type });
+    }
+    if (!context || !context.trim()) {
+      return res.status(400).json({ success: false, error: 'Context is required' });
+    }
+    const prompt = WRITING_PROMPTS[type](context.trim(), tone, length, audience);
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1200,
+      system: 'You are the Essential EA Writing Hub - an expert content generator for real estate agents, financial advisors, and executives. Write polished, human content that converts. Never use placeholder text. Never explain what you are doing - just write the content.',
+      messages: [{ role: 'user', content: prompt }]
+    });
+    const generatedContent = response.content[0].text.trim();
+    console.log('Writing Hub: generated', type, 'length:', generatedContent.length);
+    res.json({ success: true, content: generatedContent, type });
+  } catch(e) {
+    console.error('Writing Hub error:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // Global error handler
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err.message);
