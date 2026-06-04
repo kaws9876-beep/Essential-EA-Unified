@@ -7,12 +7,10 @@ const MAX_ATTEMPTS = 3;
 
 function getConfig() {
   const secret = process.env.STORM_EQUITY_WEBHOOK_SECRET;
-  const appId = process.env.AISTORM_APP_ID;
   if (!secret) throw new Error('aistorm: STORM_EQUITY_WEBHOOK_SECRET is not set');
-  if (!appId) throw new Error('aistorm: AISTORM_APP_ID is not set');
-  const baseUrl = process.env.AISTORM_BASE_URL || 'https://app.base44.com/api/apps';
+  const baseUrl = process.env.AISTORM_BASE_URL || 'https://aistorm-intelligence-development.base44.app';
   console.log('aistorm: config loaded — secret loaded: true');
-  return { secret, appId, baseUrl };
+  return { secret, baseUrl };
 }
 
 function validatePayload(payload) {
@@ -51,8 +49,8 @@ async function sleep(ms) {
 export async function createSignal(payload) {
   validatePayload(payload);
 
-  const { secret, appId, baseUrl } = getConfig();
-  const url = `${baseUrl}/${appId}/functions/createSignal`;
+  const { secret, baseUrl } = getConfig();
+  const url = `${baseUrl}/functions/createSignal`;
   const idempotencyKey = randomUUID();
 
   const headers = {

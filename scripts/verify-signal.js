@@ -1,6 +1,6 @@
 // One-time live verification for the aiStorm createSignal integration.
-// Run on the server (e.g. Railway shell) AFTER AISTORM_APP_ID and
-// STORM_EQUITY_WEBHOOK_SECRET are set:   node scripts/verify-signal.js
+// Run on the server (e.g. Railway shell) AFTER STORM_EQUITY_WEBHOOK_SECRET is set:
+//   node scripts/verify-signal.js
 //
 // This is a throwaway check — safe to delete once you see a real signal_id.
 import { createSignal } from '../services/aistorm/createSignal.js';

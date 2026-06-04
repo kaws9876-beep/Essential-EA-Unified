@@ -17,14 +17,12 @@ const VALID_PAYLOAD = {
 
 function setEnv(overrides = {}) {
   process.env.STORM_EQUITY_WEBHOOK_SECRET = 'dummy-secret-not-real';
-  process.env.AISTORM_APP_ID = 'test-app-id';
-  process.env.AISTORM_BASE_URL = 'https://mock.local/api/apps';
+  process.env.AISTORM_BASE_URL = 'https://mock.local';
   Object.assign(process.env, overrides);
 }
 
 function clearEnv() {
   delete process.env.STORM_EQUITY_WEBHOOK_SECRET;
-  delete process.env.AISTORM_APP_ID;
   delete process.env.AISTORM_BASE_URL;
 }
 
@@ -51,16 +49,6 @@ describe('createSignal', () => {
     await assert.rejects(
       () => createSignal(VALID_PAYLOAD),
       /STORM_EQUITY_WEBHOOK_SECRET is not set/
-    );
-  });
-
-  it('Test 1b: throws when AISTORM_APP_ID is missing', async () => {
-    clearEnv();
-    process.env.STORM_EQUITY_WEBHOOK_SECRET = 'dummy-secret-not-real';
-    const createSignal = await load();
-    await assert.rejects(
-      () => createSignal(VALID_PAYLOAD),
-      /AISTORM_APP_ID is not set/
     );
   });
 
