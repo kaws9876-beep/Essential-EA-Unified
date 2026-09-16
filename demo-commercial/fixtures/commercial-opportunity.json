@@ -59,6 +59,13 @@
     "evidenceRefs": ["ev-executive-email", "ev-finance-condition", "ev-calendar-window", "ev-operations-request", "ev-relationship-history"],
     "decisionRefs": ["dec-commercial-response", "dec-payment-terms", "dec-facilities-resolution"]
   },
+  "reasoning": [
+    "The sponsor email delay alone was not enough.",
+    "The stalled CRM stage alone was not enough.",
+    "The unresolved financial condition alone was not enough.",
+    "The approaching deadline alone was not enough.",
+    "Together, they create a material executive decision."
+  ],
   "decision": {
     "id": "dec-commercial-response",
     "title": "Authorize coordinated executive response",
