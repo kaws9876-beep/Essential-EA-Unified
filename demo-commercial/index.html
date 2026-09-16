@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Essential EA + AI Storm OS Commercial Demo</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="demo-banner" role="status" aria-live="polite">Demo Mode — Synthetic Data</div>
+
+  <header class="site-header" aria-label="Commercial demo header">
+    <a class="wordmark" href="#top" aria-label="Essential EA and AI Storm OS commercial demo">
+      <span>Essential EA + AI Storm OS</span>
+      <strong>Decision &amp; Execution Intelligence</strong>
+    </a>
+    <div class="safety-pills" aria-label="Demo safety status">
+      <span>No live systems connected</span>
+      <span>All actions are simulated</span>
+    </div>
+  </header>
+
+  <main id="top" class="demo-shell">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow">Commercial Intelligence Demo</p>
+        <h1 id="hero-title">What deserves attention now?</h1>
+        <p class="core-statement">
+          Essential EA reasons across fragmented systems to determine what deserves attention,
+          why it matters, who owns it, and what should happen next.
+        </p>
+        <div class="hero-actions" aria-label="Demo controls">
+          <button class="primary-action" id="review-opportunity" type="button">Review Critical Opportunity</button>
+          <button class="secondary-action" id="reset-demo" type="button">Reset Demo</button>
+        </div>
+      </div>
+
+      <article class="opportunity-card" aria-labelledby="opportunity-title">
+        <p class="card-kicker" id="opportunity-org">Northstar Commercial Partners</p>
+        <h2 id="opportunity-title">Regional Portfolio Expansion</h2>
+        <dl class="opportunity-facts">
+          <div><dt>Value at risk</dt><dd id="opportunity-value">$1.8M</dd></div>
+          <div><dt>Urgency</dt><dd id="opportunity-urgency">Critical</dd></div>
+          <div><dt>State</dt><dd id="opportunity-state">Decision required</dd></div>
+          <div><dt>Deadline</dt><dd id="opportunity-deadline">Decision required within 48 hours</dd></div>
+        </dl>
+      </article>
+    </section>
+
+    <section class="metrics" aria-label="Commercial demo summary metrics">
+      <article><strong id="metric-signals">7</strong><span>active signals</span></article>
+      <article><strong id="metric-evidence">7</strong><span>evidence sources</span></article>
+      <article><strong id="metric-approvals">2</strong><span>required approvals</span></article>
+      <article><strong id="metric-actions">4</strong><span>planned actions</span></article>
+      <article><strong id="metric-value">$1.8M</strong><span>value at risk</span></article>
+    </section>
+
+    <section class="lifecycle-section" aria-labelledby="lifecycle-title">
+      <div class="section-heading">
+        <p class="eyebrow">Governed lifecycle</p>
+        <h2 id="lifecycle-title">Signal → Context &amp; Evidence → Recommendation → Decision → Authority → Approval → Execution → Verification → Outcome → Memory</h2>
+      </div>
+      <ol class="lifecycle-rail" id="lifecycle-rail" aria-label="Decision and execution lifecycle stages"></ol>
+    </section>
+
+    <section class="overview-panel" id="opportunity-overview" aria-labelledby="overview-title" tabindex="-1" hidden>
+      <div class="section-heading">
+        <p class="eyebrow">Opportunity overview</p>
+        <h2 id="overview-title">Why this matters now</h2>
+      </div>
+      <div class="overview-grid">
+        <article><h3>Executive summary</h3><p id="executive-summary"></p></article>
+        <article><h3>Recommendation</h3><p id="recommendation-summary"></p></article>
+        <article><h3>Authority</h3><ul id="authority-list"></ul></article>
+        <article><h3>Future simulated actions</h3><ul id="planned-actions"></ul></article>
+      </div>
+      <p class="simulation-note">Every future execution step in this demo is simulated and cannot write to external systems.</p>
+    </section>
+  </main>
+
+  <script type="application/json" id="demo-fixture">
+{
+  "demoMetadata": { "id": "demo-commercial-northstar-001", "mode": "Demo Mode - Synthetic Data", "fictional": true, "category": "Decision & Execution Intelligence" },
+  "organization": { "id": "org-northstar-commercial-partners", "name": "Northstar Commercial Partners", "fictional": true },
+  "opportunity": {
+    "id": "opp-regional-portfolio-expansion",
+    "name": "Regional Portfolio Expansion",
+    "financialValue": { "label": "$1.8M", "amount": 1800000 },
+    "currentState": "Decision required",
+    "urgency": "Critical",
+    "deadlineLabel": "Decision required within 48 hours",
+    "executiveSummary": "A high-value commercial opportunity is at risk because critical evidence is fragmented across communications, finance, scheduling, CRM, and operations. No single system shows the complete decision context."
+  },
+  "signals": [{}, {}, {}, {}, {}, {}, {}],
+  "evidence": [{}, {}, {}, {}, {}, {}, {}],
+  "recommendation": { "summary": "Prepare an executive response, confirm commercial terms, assign the unresolved facilities requirement, schedule the executive decision call, and route the concession request to the authorized approvers." },
+  "roles": [
+    { "id": "role-account-lead", "name": "Maya Chen", "title": "Account Lead", "fictional": true },
+    { "id": "role-vp-commercial", "name": "Daniel Brooks", "title": "VP, Commercial", "fictional": true },
+    { "id": "role-finance-director", "name": "Elena Ruiz", "title": "Finance Director", "fictional": true },
+    { "id": "role-operations-lead", "name": "Jordan Ellis", "title": "Operations Lead", "fictional": true },
+    { "id": "role-executive-sponsor", "name": "Priya Shah", "title": "Executive Sponsor", "fictional": true }
+  ],
+  "authorityRules": [
+    { "id": "auth-account-lead-coordination", "roleId": "role-account-lead", "rule": "Account Lead owns coordination." },
+    { "id": "auth-vp-commercial-concession", "roleId": "role-vp-commercial", "rule": "VP, Commercial may approve the commercial concession." },
+    { "id": "auth-finance-payment-terms", "roleId": "role-finance-director", "rule": "Finance Director must approve modified payment terms." },
+    { "id": "auth-operations-facilities", "roleId": "role-operations-lead", "rule": "Operations Lead owns facilities-resolution execution." },
+    { "id": "auth-sponsor-response", "roleId": "role-executive-sponsor", "rule": "Executive Sponsor receives the consolidated response." }
+  ],
+  "approvalRequirements": [{}, {}],
+  "plannedActions": [
+    { "id": "act-draft-executive-response", "title": "Draft executive response", "ownerId": "role-account-lead", "simulatedOnly": true },
+    { "id": "act-confirm-commercial-terms", "title": "Confirm commercial terms", "ownerId": "role-vp-commercial", "simulatedOnly": true },
+    { "id": "act-assign-facilities-owner", "title": "Assign facilities requirement", "ownerId": "role-operations-lead", "simulatedOnly": true },
+    { "id": "act-schedule-decision-call", "title": "Schedule executive decision call", "ownerId": "role-account-lead", "simulatedOnly": true }
+  ],
+  "lifecycleStages": [
+    { "id": "stage-signal", "label": "Signal", "status": "active" },
+    { "id": "stage-context-evidence", "label": "Context & Evidence", "status": "future-stage" },
+    { "id": "stage-recommendation", "label": "Recommendation", "status": "future-stage" },
+    { "id": "stage-decision", "label": "Decision", "status": "future-stage" },
+    { "id": "stage-authority", "label": "Authority", "status": "future-stage" },
+    { "id": "stage-approval", "label": "Approval", "status": "future-stage" },
+    { "id": "stage-execution", "label": "Execution", "status": "future-stage" },
+    { "id": "stage-verification", "label": "Verification", "status": "future-stage" },
+    { "id": "stage-outcome", "label": "Outcome", "status": "future-stage" },
+    { "id": "stage-memory", "label": "Memory", "status": "future-stage" }
+  ]
+}
+  </script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
