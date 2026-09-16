@@ -139,13 +139,20 @@ test('interactive local state covers search, drawer, tabs, authority, reasoning,
     'selectedEvidenceId',
     'selectedTab',
     'selectedRoleId',
+    'selectedGraphNodeId',
+    'selectedActionId',
+    'selectedOutcomeId',
+    'feedSource',
+    'feedUrgency',
+    'feedStatus',
     'drawerOpen',
     'searchOpen',
     'searchQuery',
     'notificationOpen',
     'operatorOpen',
     'reasoningOpen',
-    'navOpen'
+    'navOpen',
+    'doorsOpen'
   ]) {
     assert.match(app, new RegExp(stateKey));
   }
@@ -155,6 +162,10 @@ test('interactive local state covers search, drawer, tabs, authority, reasoning,
     'openSignal',
     'renderDrawer',
     'renderTabs',
+    'renderGraph',
+    'renderFeedControls',
+    'renderActionPath',
+    'renderOutcomes',
     'selectRole',
     'resetDemo',
     'closeOverlays'
@@ -187,6 +198,56 @@ test('visible controls have deterministic handlers', () => {
   for (const delegatedSelector of ['data-nav', 'data-signal', 'data-evidence', 'data-tab', 'data-role', 'data-result']) {
     assert.match(app, new RegExp(delegatedSelector));
   }
+  for (const delegatedSelector of ['data-graph-node', 'data-action', 'data-outcome', 'data-feed-filter']) {
+    assert.match(app, new RegExp(delegatedSelector));
+  }
+});
+
+test('C1.2 hardening preserves industry-agnostic positioning', () => {
+  const combined = requiredFiles.map(readDemoFile).join('\n');
+  for (const required of [
+    'Northstar Commercial Partners',
+    'Regional Portfolio Expansion',
+    '$1.8M',
+    'Organizational Judgment Infrastructure',
+    'Decision &amp; Execution Intelligence'
+  ]) {
+    assert.match(combined, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
+
+  for (const forbidden of [
+    /real[- ]estate/i,
+    /property listing/i,
+    /brokerage/i,
+    /\bagents?\b/i,
+    /homeowners?/i,
+    /seller campaign/i
+  ]) {
+    assert.doesNotMatch(combined, forbidden);
+  }
+});
+
+test('opening doors, graph, feed, action, outcome, and memory experiences are represented', () => {
+  const app = readDemoFile('app.js');
+  const css = readDemoFile('styles.css');
+  for (const marker of [
+    'door-stage',
+    'Opening Doors analytical layer',
+    'graphNodes',
+    'Interconnected intelligence graph',
+    'active-path',
+    'feedSource',
+    'feedUrgency',
+    'feedStatus',
+    'Strategic action path',
+    'Simulated Action Detail',
+    'Outcome and memory preview',
+    'Organizational memory preview'
+  ]) {
+    assert.match(`${app}\n${css}`, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
+  assert.match(css, /prefers-reduced-motion/);
+  assert.match(css, /\.door-stage\.open/);
 });
 
 test('adapter methods are simulated and deny external persistence', () => {

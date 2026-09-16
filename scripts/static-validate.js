@@ -69,7 +69,14 @@ for (const required of [
   'renderDrawer',
   'renderTabs',
   'resetDemo',
-  "event.key === 'Escape'"
+  "event.key === 'Escape'",
+  'doorsOpen',
+  'graphNodes',
+  'renderGraph',
+  'renderFeedControls',
+  'renderActionPath',
+  'renderOutcomes',
+  'Organizational Judgment Infrastructure'
 ]) {
   if (!demoApp.includes(required)) throw new Error(`demo app missing expected behavior marker: ${required}`);
 }
