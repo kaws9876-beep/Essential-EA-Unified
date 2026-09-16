@@ -10,6 +10,7 @@ import { Pinecone } from '@pinecone-database/pinecone';
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
 import postgres from 'postgres';
+import { publicHealthHandler } from './lib/health.js';
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 async function getBookContext(query) {
+  if(!openaiClient) { console.log('RAG: OpenAI key not configured'); return ''; }
   if(!pineconeIndex) { console.log('RAG: no pinecone index'); return ''; }
   try {
     const embRes = await openaiClient.embeddings.create({
@@ -53,7 +55,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openaiClient = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 let pineconeIndex = null;
 
 const RAILWAY = 'https://essential-ea-app-production.up.railway.app';
@@ -196,8 +198,15 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cors());
 
-// Attach req.auth for all requests (does not block unauthenticated requests)
-app.use(ClerkExpressWithAuth());
+// Public liveness probes must not touch auth, DB, customer data, or integrations.
+app.get('/health', publicHealthHandler);
+app.get('/api/health', publicHealthHandler);
+
+// Attach req.auth only when Clerk is configured. Without a secret, keep local
+// liveness and development checks available without invoking Clerk internals.
+if (process.env.CLERK_SECRET_KEY) {
+  app.use(ClerkExpressWithAuth());
+}
 
 // Auth enforcement - currently in soft mode (logs but does not block)
 // Full enforcement enabled after Clerk frontend SDK is integrated

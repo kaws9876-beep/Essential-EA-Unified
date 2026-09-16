@@ -7,8 +7,11 @@
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
-    "build": "echo 'Build complete'",
-    "test": "echo 'Tests pass'"
+    "build": "node scripts/static-validate.js",
+    "check:syntax": "node scripts/syntax-check.js",
+    "check:demo-safety": "node scripts/demo-safety-check.js",
+    "test": "node --test",
+    "validate": "npm run check:syntax && npm test && npm run build && npm run check:demo-safety"
   },
   "dependencies": {
     "@clerk/clerk-sdk-node": "^4.13.23",
