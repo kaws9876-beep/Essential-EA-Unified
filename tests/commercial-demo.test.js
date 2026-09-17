@@ -20,6 +20,7 @@ import {
   submitForApproval
 } from '../demo-commercial/decisionWorkflow.js';
 import { GUIDED_CHAPTERS, advanceChapter, createGuidedState, previousChapter } from '../demo-commercial/guidedExperience.js';
+import { WORKSPACE_DESTINATIONS, createWorkspaceState, renderWorkspaceExperience } from '../demo-commercial/workspaceExperience.js';
 
 const root = process.cwd();
 const demoDir = path.join(root, 'demo-commercial');
@@ -27,10 +28,13 @@ const requiredFiles = [
   'index.html',
   'app.js',
   'styles.css',
+  'workspace.css',
+  'assets/signal-convergence.png',
   'fixtures/commercial-opportunity.json',
   'adapters/demoExecutionAdapter.js',
   'decisionWorkflow.js',
   'guidedExperience.js',
+  'workspaceExperience.js',
   'README.md'
 ];
 
@@ -45,14 +49,47 @@ test('guided experience defaults to five deterministic chapters with bounded nav
   assert.equal(state.chapter, 4);
   previousChapter(state);
   assert.equal(state.chapter, 3);
-  assert.deepEqual(createGuidedState(), { mode: 'guided', chapter: 0, approvalStep: 'review', planOpen: false, doorsTransitioning: false });
+  assert.deepEqual(createGuidedState(), { mode: 'guided', chapter: 0, approvalStep: 'review', planOpen: false, pathConfirmed: false, selectedSignalIndex: null, doorsTransitioning: false });
+});
+
+test('operational workspace has four destinations and contextual evidence', () => {
+  assert.deepEqual(WORKSPACE_DESTINATIONS, ['Command', 'Signals', 'Decisions', 'Memory']);
+  const workspace = createWorkspaceState();
+  const decision = createInitialDecisionState();
+  const scenario = {
+    opportunity: { value: '$1.8M' }, recommendation: { confidence: 91 },
+    signals: [{ id: 'sig-sponsor-email-unanswered', sourceLabel: 'Executive communication', title: 'Sponsor response overdue', whyNow: 'Sponsor window closing.', confidence: 94, urgency: 'Critical', evidenceRefs: ['ev-executive-email'] }],
+    evidence: [{ id: 'ev-executive-email', sourceLabel: 'Executive communication', title: 'Sponsor asks for response', summary: 'Synthetic message.' }]
+  };
+  const command = renderWorkspaceExperience(scenario, workspace, decision);
+  assert.match(command, /Review decision/);
+  assert.match(command, /Sponsor asks for response/);
+  workspace.area = 'Signals';
+  const signals = renderWorkspaceExperience(scenario, workspace, decision);
+  assert.match(signals, /data-work-signal="sig-sponsor-email-unanswered"/);
+  workspace.railTab = 'Authority';
+  const authority = renderWorkspaceExperience(scenario, workspace, decision);
+  assert.match(authority, /Value threshold authority/);
+  workspace.area = 'Decisions';
+  const decisions = renderWorkspaceExperience(scenario, workspace, decision);
+  assert.match(decisions, /Submit for approval/);
+  assert.doesNotMatch(command, /real estate|brokerage|property listing/i);
+});
+
+test('workspace styling keeps the guided opening dark and operational surface cream', () => {
+  const css = readDemoFile('workspace.css');
+  assert.match(css, /--work-cream:#f5f1ea/);
+  assert.match(css, /--work-midnight:#091625/);
+  assert.match(css, /guided-experience\[data-chapter="1"\]/);
+  assert.match(css, /prefers-reduced-motion:reduce/);
+  assert.doesNotMatch(css, /background:\s*#c9a24a/i);
 });
 
 test('guided presentation exposes one primary action per chapter and keeps exploration optional', () => {
   const app = readDemoFile('app.js');
   const html = readDemoFile('index.html');
   assert.match(html, /id="guided-experience"/);
-  for (const action of ['Reveal why', 'See what Storm found', 'Enter the Decision Room', 'Submit for approval', 'Approve decision', 'View governed plan']) {
+  for (const action of ['Reveal why', 'See the judgment', 'Enter the Decision Room', 'Submit for approval', 'Approve decision', 'View governed plan']) {
     assert.ok(app.includes(action), `${action} is missing`);
   }
   assert.match(app, /guidedState\.mode = 'explore'/);
@@ -352,7 +389,7 @@ test('visible controls have deterministic handlers', () => {
 });
 
 test('C1.2 hardening preserves industry-agnostic positioning', () => {
-  const combined = requiredFiles.map(readDemoFile).join('\n');
+  const combined = requiredFiles.filter((file) => !file.endsWith('.png')).map(readDemoFile).join('\n');
   for (const required of [
     'Northstar Commercial Partners',
     'Regional Portfolio Expansion',
@@ -420,7 +457,7 @@ test('unknown demo operations fail closed', () => {
 });
 
 test('demo code contains no external network calls, production URLs, or integration imports', () => {
-  const combined = requiredFiles.map(readDemoFile).join('\n');
+  const combined = requiredFiles.filter((file) => !file.endsWith('.png')).map(readDemoFile).join('\n');
   const forbiddenPatterns = [
     /essential-ea-app-production/i,
     /railway\.app/i,

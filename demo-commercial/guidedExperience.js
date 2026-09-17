@@ -7,7 +7,7 @@ export const GUIDED_CHAPTERS = Object.freeze([
 ]);
 
 export function createGuidedState() {
-  return { mode: 'guided', chapter: 0, approvalStep: 'review', planOpen: false, doorsTransitioning: false };
+  return { mode: 'guided', chapter: 0, approvalStep: 'review', planOpen: false, pathConfirmed: false, selectedSignalIndex: null, doorsTransitioning: false };
 }
 
 export function advanceChapter(state) {

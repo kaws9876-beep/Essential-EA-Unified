@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 const root = process.cwd();
-const includeDirs = ['.', 'lib', 'scripts', 'services', 'tests'];
+const includeDirs = ['.', 'demo-commercial', 'lib', 'scripts', 'services', 'tests'];
 const skipDirs = new Set(['.git', 'node_modules', '.vercel', '.data']);
 const files = [];
 

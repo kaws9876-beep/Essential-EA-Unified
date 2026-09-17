@@ -8,6 +8,7 @@ import {
   submitForApproval
 } from './decisionWorkflow.js';
 import { GUIDED_CHAPTERS, advanceChapter, createGuidedState, previousChapter } from './guidedExperience.js';
+import { createWorkspaceState, renderWorkspaceExperience } from './workspaceExperience.js';
 
 const demo = {
   organization: { id: 'org-northstar-commercial-partners', name: 'Northstar Commercial Partners', fictional: true },
@@ -131,6 +132,8 @@ const initialState = {
 let state = { ...initialState };
 let decisionState = createInitialDecisionState();
 let guidedState = createGuidedState();
+let workspaceState = createWorkspaceState();
+let lastWorkspaceTrigger = null;
 const $ = (id) => document.getElementById(id);
 
 function role(id) { return demo.roles.find((item) => item.id === id); }
@@ -621,38 +624,37 @@ function renderGuidedChapter() {
   const path = selectedPath();
   if (chapter === 0) return `<div class="guided-opening">
     <p class="guided-kicker">A consequential signal has surfaced</p>
-    <h1>$1.8M <em>at risk</em></h1>
-    <p class="guided-lead">Six disconnected signals have converged. A decision is required within 48 hours.</p>
+    <h1>$1.8M <em>at risk.</em></h1>
+    <p class="guided-lead">Six disconnected signals have converged.<br>A decision is required within 48 hours.</p>
     ${guidedPrimary('Reveal why', 'next')}
     <button class="guided-text-link" type="button" data-guided-action="explore">Skip to workspace</button>
-    <div class="guided-opening-signal" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><i></i></div>
+    <p class="guided-brand-line">What matters cannot be dropped.</p>
   </div>`;
   if (chapter === 1) return `<div class="guided-signal-scene">
-    <div class="guided-intro"><p class="guided-kicker">Six sources. One consequence.</p><h1>The signals <em>converge.</em></h1><p>No single system shows the whole decision.</p></div>
+    <div class="guided-intro"><p class="guided-kicker">Six sources. One consequence.</p><h1>The warning was already <em>inside the business.</em></h1><p>Crystal Ball connected six partial truths before the opportunity disappeared.</p></div>
     <div class="guided-orbit" aria-hidden="true"><span class="guided-orbit-ring"></span><strong>$1.8M</strong><small>Opportunity at risk</small></div>
-    <div class="guided-signal-list" aria-label="Ranked consequential signals">${guidedSignals.map(([source, title, confidence, urgency, consequence], index) => `<div class="guided-signal-row" style="--signal-index:${index}"><span class="guided-signal-source">${source}</span><strong>${title}</strong><span class="guided-signal-meta">${confidence} · ${urgency}</span><p>${consequence}</p></div>`).join('')}</div>
-    ${guidedPrimary('See what Storm found', 'next')}
+    <div class="guided-signal-list" aria-label="Ranked consequential signals">${guidedSignals.map(([source, title, confidence, urgency, consequence], index) => `<button type="button" class="guided-signal-row ${guidedState.selectedSignalIndex === index ? 'selected' : ''}" data-guided-signal="${index}" style="--signal-index:${index}" aria-pressed="${guidedState.selectedSignalIndex === index}"><span class="guided-signal-source">${source}</span><strong>${title}</strong><span class="guided-signal-meta">${confidence} · ${urgency}</span><p>${consequence}</p></button>`).join('')}${guidedState.selectedSignalIndex !== null ? `<div class="guided-signal-detail"><span>Evidence / ${guidedSignals[guidedState.selectedSignalIndex][0]}</span><strong>${guidedSignals[guidedState.selectedSignalIndex][1]}</strong><p>${guidedSignals[guidedState.selectedSignalIndex][4]}</p><small>Synthetic source · ${guidedSignals[guidedState.selectedSignalIndex][2]} confidence</small></div>` : ''}</div>
+    ${guidedPrimary('See the judgment', 'next')}
   </div>`;
   if (chapter === 2) return `<div class="guided-judgment">
-    <p class="guided-kicker">Judgment from the full context</p><h1>Why this matters <em>now.</em></h1>
-    <div class="guided-causal"><p><span>01 / What changed</span>The sponsor response slowed as the opportunity stalled.</p><p><span>02 / Why now</span>Finance and ownership remain open with 48 hours to decide.</p><p><span>03 / What is at risk</span>$1.8M in modeled opportunity value.</p><p><span>04 / If no decision is made</span>The sponsor window may close without a coordinated response.</p></div>
-    <div class="guided-recommendation"><span>Recommended path</span><strong>Coordinate an executive response with named ownership and required approvals.</strong><small>Human decision required · 91% synthetic confidence</small></div>
+    <p class="guided-kicker">Judgment from the full context</p><h1>This is not another alert.<br><em>It is a decision.</em></h1>
+    <div class="guided-judgment-layout"><div><div class="guided-causal"><p><span>01 / What changed</span>The sponsor response slowed as the opportunity stalled.</p><p><span>02 / Why now</span>Finance and ownership remain open with 48 hours to decide.</p><p><span>03 / What is at risk</span>$1.8M in modeled opportunity value.</p><p><span>04 / If no decision is made</span>The sponsor window may close without a coordinated response.</p></div><div class="guided-recommendation"><span>Recommended path</span><strong>Coordinate an executive response with named ownership and required approvals.</strong><small>Human decision required</small></div></div><aside class="guided-intelligence-trace" aria-label="Intelligence trace"><span>Intelligence trace</span><h2>Six signals.<br>One decision.</h2><dl><div><dt>Evidence</dt><dd>Executive communication, finance condition, deadline</dd></div><div><dt>Confidence</dt><dd>91% synthetic</dd></div><div><dt>Owner</dt><dd>Commercial Operations Lead</dd></div><div><dt>Deadline</dt><dd>48 hours</dd></div></dl><small>Signal → evidence → recommendation → decision</small></aside></div>
     ${guidedPrimary('Enter the Decision Room', 'doors')}
   </div>`;
   if (chapter === 3) return `<div class="guided-decision">
     <p class="guided-kicker">Decision and authority</p><h1>A path forward, <em>under human control.</em></h1>
     <div class="guided-paths" role="group" aria-label="Strategic paths">${decisionFixture.paths.map((item) => `<button type="button" class="guided-path ${decisionState.selectedPathId === item.id ? 'selected' : ''}" data-guided-path="${item.id}" aria-pressed="${decisionState.selectedPathId === item.id}"><span>${item.recommendation ? 'Recommended' : 'Alternative'}</span><strong>${item.label}</strong><small>${item.keyTradeoff}</small></button>`).join('')}</div>
-    <div class="guided-path-facts"><div><span>Expected value protected</span><strong>${path.expectedValueProtected}</strong></div><div><span>Risk</span><strong>${path.riskLevel}</strong></div><div><span>Time to action</span><strong>${path.timeToAction}</strong></div><div><span>Tradeoff</span><strong>${path.keyTradeoff}</strong></div></div>
+    <div class="guided-path-facts"><div><span>Expected value protected</span><strong>${path.expectedValueProtected}</strong></div><div><span>Risk</span><strong>${path.riskLevel}</strong></div><div><span>Time to action</span><strong>${path.timeToAction}</strong></div><div><span>Required owner</span><strong>${path.requiredOwner}</strong></div><div><span>Approval</span><strong>${path.approvalBurden}</strong></div><div><span>Tradeoff</span><strong>${path.keyTradeoff}</strong></div></div>
     <div class="guided-authority"><p><span>Decision owner</span><strong>Commercial Operations Lead</strong></p><p><span>Authority holder</span><strong>Executive Sponsor</strong></p><p><span>Approval rule</span><strong>$1.8M value threshold; Finance review required for payment terms.</strong></p><p class="guided-why">Approval is required because the value and unresolved finance condition exceed the operator's authority.</p></div>
     ${decisionState.lastError ? `<p class="guided-error" role="alert">${decisionState.lastError}</p>` : ''}
-    ${guidedPrimary('Submit for approval', 'submit')}
+    ${guidedPrimary(guidedState.pathConfirmed ? 'Submit for approval' : 'Select this path', guidedState.pathConfirmed ? 'submit' : 'confirm-path')}
   </div>`;
   const status = decisionState.decisionObject.status;
   const ready = status === 'EXECUTION_READY';
   return `<div class="guided-governed">
     <p class="guided-kicker">Governed decision · simulated authority</p>
-    <h1>${ready ? 'Judgment became <em>accountable action.</em>' : 'Authority must <em>be verified.</em>'}</h1>
-    <p class="guided-lead">${ready ? 'Owner assigned. Authority verified. Decision recorded. Execution ready.' : 'The path is pending approval. Only the designated Executive Sponsor can authorize it.'}</p>
+    <h1>${ready ? 'Judgment protected.<br><em>Action ready.</em>' : 'Authority must <em>be verified.</em>'}</h1>
+    <p class="guided-lead">${ready ? 'Owner assigned. Authority verified. Approval recorded. Strategic path locked. Audit event created. Governed plan execution-ready.' : 'The path is pending approval. Only the designated Executive Sponsor can authorize it.'}</p>
     <div class="guided-approval-state"><span>Selected path</span><strong>${path.label}</strong><span>Status · ${status.replaceAll('_', ' ')}</span></div>
     ${ready ? `<div class="guided-confirmation"><span>✓ Authorized human approval</span><span>✓ Selected path locked</span><span>✓ Audit event recorded</span><span>✓ Plan execution ready</span></div><p class="guided-simulation">Simulation only. Nothing was executed externally.</p>${guidedState.planOpen ? `<div class="guided-plan" tabindex="-1" aria-label="Governed action plan">${decisionFixture.actionPlan.map((item) => `<div><strong>${item.action}</strong><span>${item.assignedOwner} · ${item.verificationRequirement}</span></div>`).join('')}</div>${renderAuditTrail()}` : guidedPrimary('View governed plan', 'plan')}<button class="guided-text-link" type="button" data-guided-action="explore">Explore the intelligence</button>` : `<label class="guided-role-label">Simulated active role<select data-guided-role>${decisionFixture.authorityNodes.map((item) => `<option value="${item.id}" ${decisionState.activeRoleId === item.id ? 'selected' : ''}>${item.label}</option>`).join('')}</select></label>${decisionState.lastError ? `<p class="guided-error" role="alert">${decisionState.lastError}</p>` : ''}${guidedPrimary('Approve decision', 'approve')}<p class="guided-simulation">Try approving as the operator to see the authority safeguard.</p>`}
   </div>`;
@@ -674,8 +676,17 @@ function renderGuided() {
   </div>`;
 }
 
+function renderOperational() {
+  const active = guidedState.mode === 'explore';
+  document.body.classList.toggle('workspace-active', active);
+  const root = $('operational-workspace');
+  root.hidden = !active;
+  if (active) root.innerHTML = renderWorkspaceExperience(demo, workspaceState, decisionState);
+}
+
 function render() {
   renderGuided();
+  renderOperational();
   renderNav();
   renderSignals();
   renderReasoning();
@@ -738,17 +749,92 @@ function resetDemo() {
   state = { ...initialState };
   decisionState = createInitialDecisionState();
   guidedState = createGuidedState();
+  workspaceState = createWorkspaceState();
   render();
   $('guided-main').focus({ preventScroll: true });
   announce('Demo reset to deterministic initial state.');
 }
 
 document.addEventListener('click', (event) => {
+  if (event.target.closest('#operational-workspace')) {
+    const workArea = event.target.closest('[data-work-area]');
+    const workSignal = event.target.closest('[data-work-signal]');
+    const workEvidence = event.target.closest('[data-work-evidence]');
+    const workPath = event.target.closest('[data-work-path]');
+    const workAuthority = event.target.closest('[data-work-authority]');
+    const workAudit = event.target.closest('[data-work-audit]');
+    const workRail = event.target.closest('[data-work-rail]');
+    const workAction = event.target.closest('[data-work-action]');
+    if (workArea) {
+      workspaceState.area = workArea.dataset.workArea;
+      workspaceState.navOpen = false;
+      workspaceState.railTab = workspaceState.area === 'Decisions' ? 'Authority' : workspaceState.area === 'Memory' ? 'Audit' : 'Evidence';
+      renderOperational();
+      document.querySelector(`[data-work-area="${workspaceState.area}"]`)?.focus();
+    } else if (workSignal) {
+      workspaceState.selectedSignalId = workSignal.dataset.workSignal;
+      workspaceState.selectedEvidenceId = demo.signals.find((item) => item.id === workspaceState.selectedSignalId)?.evidenceRefs[0];
+      workspaceState.railTab = 'Evidence';
+      workspaceState.railOpen = true;
+      lastWorkspaceTrigger = `[data-work-signal="${workspaceState.selectedSignalId}"]`;
+      renderOperational();
+      (window.innerWidth <= 900 ? document.querySelector('[data-work-action="close-rail"]') : document.querySelector(lastWorkspaceTrigger))?.focus();
+    } else if (workEvidence) {
+      workspaceState.selectedEvidenceId = workEvidence.dataset.workEvidence;
+      renderOperational();
+      document.querySelector(`[data-work-evidence="${workspaceState.selectedEvidenceId}"]`)?.focus();
+    } else if (workPath) {
+      selectStrategicPath(decisionState, workPath.dataset.workPath);
+      workspaceState.railTab = 'Authority';
+      renderOperational();
+      document.querySelector(`[data-work-path="${workPath.dataset.workPath}"]`)?.focus();
+    } else if (workAuthority) {
+      workspaceState.selectedAuthorityId = workAuthority.dataset.workAuthority;
+      renderOperational();
+      document.querySelector(`[data-work-authority="${workspaceState.selectedAuthorityId}"]`)?.focus();
+    } else if (workAudit) {
+      workspaceState.selectedAuditEventId = workAudit.dataset.workAudit;
+      renderOperational();
+      document.querySelector(`[data-work-audit="${workspaceState.selectedAuditEventId}"]`)?.focus();
+    } else if (workRail) {
+      workspaceState.railTab = workRail.dataset.workRail;
+      renderOperational();
+      document.querySelector(`[data-work-rail="${workspaceState.railTab}"]`)?.focus();
+    } else if (workAction) {
+      const actionName = workAction.dataset.workAction;
+      if (actionName === 'reset') { resetDemo(); return; }
+      if (actionName === 'review') { workspaceState.area = 'Decisions'; workspaceState.railTab = 'Authority'; }
+      if (actionName === 'trace') { workspaceState.railTab = 'Trace'; workspaceState.railOpen = true; lastWorkspaceTrigger = '[data-work-action="trace"]'; }
+      if (actionName === 'menu') workspaceState.navOpen = !workspaceState.navOpen;
+      if (actionName === 'close-rail') workspaceState.railOpen = false;
+      if (actionName === 'submit') submitForApproval(decisionState);
+      if (actionName === 'approve') approveDecision(decisionState);
+      if (actionName === 'return') returnDecision(decisionState, document.querySelector('#work-review-reason')?.value || '');
+      if (actionName === 'reject') rejectDecision(decisionState, document.querySelector('#work-review-reason')?.value || '');
+      if (actionName === 'plan') workspaceState.planOpen = !workspaceState.planOpen;
+      renderOperational();
+      if (actionName === 'close-rail') document.querySelector(lastWorkspaceTrigger || '[data-work-action="trace"]')?.focus();
+      else if (actionName === 'review') $('work-main').focus({ preventScroll: true });
+      else if (actionName === 'submit' || actionName === 'approve' || actionName === 'return' || actionName === 'reject') document.querySelector('.work-decision-controls .work-primary, .work-error')?.focus();
+      else document.querySelector(`[data-work-action="${actionName}"]`)?.focus();
+    }
+    return;
+  }
+
   const guidedPath = event.target.closest('[data-guided-path]');
   if (guidedPath) {
     selectStrategicPath(decisionState, guidedPath.dataset.guidedPath);
+    guidedState.pathConfirmed = true;
     renderGuided();
     document.querySelector(`[data-guided-path="${guidedPath.dataset.guidedPath}"]`)?.focus();
+    return;
+  }
+
+  const guidedSignal = event.target.closest('[data-guided-signal]');
+  if (guidedSignal) {
+    guidedState.selectedSignalIndex = Number(guidedSignal.dataset.guidedSignal);
+    renderGuided();
+    document.querySelector(`[data-guided-signal="${guidedState.selectedSignalIndex}"]`)?.focus();
     return;
   }
 
@@ -757,7 +843,9 @@ document.addEventListener('click', (event) => {
     const actionName = guidedAction.dataset.guidedAction;
     if (actionName === 'explore') {
       guidedState.mode = 'explore';
-      openOpportunity('Signals');
+      workspaceState.area = 'Command';
+      render();
+      $('work-main').focus({ preventScroll: true });
       return;
     }
     if (actionName === 'back') previousChapter(guidedState);
@@ -777,6 +865,10 @@ document.addEventListener('click', (event) => {
     if (actionName === 'submit') {
       const result = submitForApproval(decisionState);
       if (result.ok) advanceChapter(guidedState);
+    }
+    if (actionName === 'confirm-path') {
+      selectStrategicPath(decisionState, decisionState.selectedPathId);
+      guidedState.pathConfirmed = true;
     }
     if (actionName === 'approve') approveDecision(decisionState);
     if (actionName === 'plan') guidedState.planOpen = true;
@@ -889,6 +981,14 @@ document.addEventListener('click', (event) => {
 });
 
 document.addEventListener('change', (event) => {
+  const workRole = event.target.closest('[data-work-role]');
+  if (workRole) {
+    decisionState.activeRoleId = workRole.value;
+    decisionState.lastError = '';
+    renderOperational();
+    document.querySelector('[data-work-role]')?.focus();
+    return;
+  }
   const guidedRole = event.target.closest('[data-guided-role]');
   if (guidedRole) {
     decisionState.activeRoleId = guidedRole.value;
@@ -927,7 +1027,14 @@ $('reset-demo').addEventListener('click', resetDemo);
 $('reasoning-toggle').addEventListener('click', () => { state.reasoningOpen = !state.reasoningOpen; renderReasoning(); announce(state.reasoningOpen ? 'Storm reasoning expanded.' : 'Storm reasoning collapsed.'); });
 $('mobile-menu').addEventListener('click', () => { state.navOpen = !state.navOpen; render(); });
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape') closeOverlays();
+  if (event.key === 'Escape') {
+    if (guidedState.mode === 'explore' && (workspaceState.railOpen || workspaceState.navOpen)) {
+      workspaceState.railOpen = false;
+      workspaceState.navOpen = false;
+      renderOperational();
+      document.querySelector(lastWorkspaceTrigger || '[data-work-action="trace"]')?.focus();
+    } else closeOverlays();
+  }
 });
 
 render();
