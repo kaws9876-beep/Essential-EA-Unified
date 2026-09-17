@@ -1,3 +1,14 @@
+import {
+  approveDecision,
+  createInitialDecisionState,
+  decisionFixture,
+  rejectDecision,
+  returnDecision,
+  selectStrategicPath,
+  submitForApproval
+} from './decisionWorkflow.js';
+import { GUIDED_CHAPTERS, advanceChapter, createGuidedState, previousChapter } from './guidedExperience.js';
+
 const demo = {
   organization: { id: 'org-northstar-commercial-partners', name: 'Northstar Commercial Partners', fictional: true },
   opportunity: {
@@ -118,6 +129,8 @@ const initialState = {
 };
 
 let state = { ...initialState };
+let decisionState = createInitialDecisionState();
+let guidedState = createGuidedState();
 const $ = (id) => document.getElementById(id);
 
 function role(id) { return demo.roles.find((item) => item.id === id); }
@@ -128,7 +141,12 @@ function graphNode(id) { return graphNodes.find((item) => item.id === id); }
 function announce(message) { $('sr-status').textContent = message; }
 
 function renderNav() {
-  $('workspace-nav').innerHTML = demo.nav.map(([id, label, icon]) => `
+  const exploreNav = [
+    ['command', 'Intelligence', '◈'],
+    ['decisions', 'Decision Room', '◆'],
+    ['outcomes', 'Outcomes & Memory', '✓']
+  ];
+  $('workspace-nav').innerHTML = exploreNav.map(([id, label, icon]) => `
     <button class="nav-item ${state.activeWorkspace === id ? 'active' : ''}" data-nav="${id}" type="button" aria-current="${state.activeWorkspace === id ? 'page' : 'false'}">
       <span class="nav-icon">${icon}</span><span>${label}</span>
     </button>
@@ -279,6 +297,226 @@ function renderOutcomes() {
     </section>`;
 }
 
+function selectedPath() {
+  return decisionFixture.paths.find((item) => item.id === decisionState.selectedPathId) || decisionFixture.paths[0];
+}
+
+function selectedAuthorityNode() {
+  return decisionFixture.authorityNodes.find((item) => item.id === decisionState.selectedAuthorityNodeId) || decisionFixture.authorityNodes[0];
+}
+
+function selectedAuthorityRule() {
+  return decisionFixture.authorityRules.find((item) => item.id === decisionState.selectedAuthorityRuleId) || decisionFixture.authorityRules[0];
+}
+
+function selectedAuditEvent() {
+  return decisionState.decisionObject.auditEvents.find((item) => item.id === decisionState.selectedAuditEventId) || decisionState.decisionObject.auditEvents.at(-1);
+}
+
+function renderStrategicPaths() {
+  const path = selectedPath();
+  return `
+    <section class="decision-section strategic-paths" aria-label="Strategic path comparison">
+      <div class="section-heading">
+        <p class="eyebrow">Strategic Paths</p>
+        <h3>Human selection controls the path forward.</h3>
+      </div>
+      <div class="path-grid">
+        ${decisionFixture.paths.map((item) => `
+          <button class="path-card ${decisionState.selectedPathId === item.id ? 'active' : ''}" type="button" data-path="${item.id}" ${decisionState.decisionObject.status === 'EXECUTION_READY' ? 'aria-disabled="true"' : ''}>
+            <span>${item.recommendation ? 'Storm recommended' : 'Alternate path'}</span>
+            <strong>${item.label}</strong>
+            <small>${item.keyTradeoff}</small>
+          </button>
+        `).join('')}
+      </div>
+      <article class="decision-detail">
+        <p class="eyebrow">Selected Path</p>
+        <h3>${path.label}</h3>
+        <dl>
+          <div><dt>Expected value protected</dt><dd>${path.expectedValueProtected}</dd></div>
+          <div><dt>Risk level</dt><dd>${path.riskLevel}</dd></div>
+          <div><dt>Time to action</dt><dd>${path.timeToAction}</dd></div>
+          <div><dt>Required owner</dt><dd>${path.requiredOwner}</dd></div>
+          <div><dt>Approval burden</dt><dd>${path.approvalBurden}</dd></div>
+          <div><dt>Verification</dt><dd>${path.verificationRequirement}</dd></div>
+        </dl>
+      </article>
+    </section>`;
+}
+
+function renderDecisionObject() {
+  const object = decisionState.decisionObject;
+  return `
+    <section class="decision-section decision-object" aria-label="Structured Decision Object">
+      <div class="section-heading">
+        <p class="eyebrow">Decision Object</p>
+        <h3>${object.title}</h3>
+      </div>
+      <dl class="object-schema">
+        ${[
+          ['Status', object.status],
+          ['Decision type', object.decisionType],
+          ['Value at risk', object.valueAtRisk],
+          ['Deadline', object.decisionDeadline],
+          ['Owner', object.owner],
+          ['Authority required', object.authorityRequired],
+          ['Version', String(object.version)]
+        ].map(([term, value]) => `<div><dt>${term}</dt><dd>${value}</dd></div>`).join('')}
+      </dl>
+      <p>${object.summary}</p>
+      <p><strong>Rationale:</strong> ${object.rationale}</p>
+    </section>`;
+}
+
+function renderAuthorityGraph() {
+  const node = selectedAuthorityNode();
+  const rule = selectedAuthorityRule();
+  return `
+    <section class="decision-section authority-graph" aria-label="Authority Graph">
+      <div class="section-heading">
+        <p class="eyebrow">Authority Graph</p>
+        <h3>Ownership, authority, approval, consultation, and informed parties.</h3>
+      </div>
+      <div class="authority-room-grid">
+        <div class="authority-nodes">
+          ${decisionFixture.authorityNodes.map((item) => `
+            <button class="authority-room-node ${decisionState.selectedAuthorityNodeId === item.id ? 'active' : ''}" type="button" data-authority-node="${item.id}">
+              <span>${item.kind}</span>
+              <strong>${item.label}</strong>
+              <small>${item.person}</small>
+            </button>
+          `).join('')}
+        </div>
+        <article class="decision-detail">
+          <p class="eyebrow">${node.kind}</p>
+          <h3>${node.label}</h3>
+          <p>${node.responsibility}</p>
+          <p><strong>Delay consequence:</strong> ${node.consequence}</p>
+          <div class="rule-list">
+            ${decisionFixture.authorityRules.map((item) => `
+              <button class="${decisionState.selectedAuthorityRuleId === item.id ? 'active' : ''}" type="button" data-authority-rule="${item.id}">
+                ${item.label}
+              </button>
+            `).join('')}
+          </div>
+          <p><strong>${rule.label}:</strong> ${rule.trigger}</p>
+          <p><strong>If delayed:</strong> ${rule.delayedConsequence}</p>
+        </article>
+      </div>
+    </section>`;
+}
+
+function renderApprovalWorkflow() {
+  const status = decisionState.decisionObject.status;
+  return `
+    <section class="decision-section approval-workflow" aria-label="Simulated approval workflow">
+      <div class="section-heading">
+        <p class="eyebrow">Approval Workflow</p>
+        <h3>Simulated authority review. No external action occurs.</h3>
+      </div>
+      <div class="state-rail">
+        ${['DRAFT', 'READY_FOR_REVIEW', 'PENDING_APPROVAL', 'APPROVED', 'EXECUTION_READY'].map((item) => `<span class="${status === item ? 'active' : ''}">${item}</span>`).join('')}
+      </div>
+      <div class="approval-controls">
+        <label>Active role
+          <select id="role-switcher" data-role-switch>
+            ${decisionFixture.authorityNodes.map((item) => `<option value="${item.id}" ${decisionState.activeRoleId === item.id ? 'selected' : ''}>${item.label}</option>`).join('')}
+          </select>
+        </label>
+        <button class="primary-action" type="button" data-approval-action="submit">Submit for approval</button>
+        <button class="secondary-action" type="button" data-approval-action="approve">Approve</button>
+        <label>Return reason
+          <input id="return-reason" value="${decisionState.returnReason}" placeholder="Required if returned">
+        </label>
+        <button class="secondary-action" type="button" data-approval-action="return">Return</button>
+        <label>Reject reason
+          <input id="reject-reason" value="${decisionState.rejectReason}" placeholder="Required if rejected">
+        </label>
+        <button class="secondary-action" type="button" data-approval-action="reject">Reject</button>
+      </div>
+      ${decisionState.lastError ? `<p class="workflow-error" role="alert">${decisionState.lastError}</p>` : ''}
+      ${decisionState.returnReason ? `<p class="workflow-note">Returned reason: ${decisionState.returnReason}</p>` : ''}
+      ${decisionState.rejectReason ? `<p class="workflow-note">Rejected reason: ${decisionState.rejectReason}</p>` : ''}
+    </section>`;
+}
+
+function renderGovernedActionPlan() {
+  const plan = decisionFixture.actionPlan.find((item) => item.id === decisionState.selectedPlanId) || decisionFixture.actionPlan[0];
+  return `
+    <section class="decision-section action-plan" aria-label="Execution-ready governed action plan">
+      <div class="section-heading">
+        <p class="eyebrow">Governed Action Plan</p>
+        <h3>${decisionState.decisionObject.status === 'EXECUTION_READY' ? 'Execution-ready, simulation only.' : 'Preview locked until approval.'}</h3>
+      </div>
+      <div class="plan-grid">
+        ${decisionFixture.actionPlan.map((item) => `
+          <button class="${decisionState.selectedPlanId === item.id ? 'active' : ''}" type="button" data-plan="${item.id}">
+            <span>${item.readinessState}</span>
+            <strong>${item.action}</strong>
+          </button>
+        `).join('')}
+      </div>
+      <article class="decision-detail">
+        <h3>${plan.action}</h3>
+        <dl>
+          <div><dt>Assigned owner</dt><dd>${plan.assignedOwner}</dd></div>
+          <div><dt>Authority</dt><dd>${plan.authority}</dd></div>
+          <div><dt>Dependency</dt><dd>${plan.dependency}</dd></div>
+          <div><dt>Due time</dt><dd>${plan.dueTime}</dd></div>
+          <div><dt>Verification</dt><dd>${plan.verificationRequirement}</dd></div>
+          <div><dt>Expected outcome</dt><dd>${plan.expectedOutcome}</dd></div>
+          <div><dt>Readiness</dt><dd>${plan.readinessState}</dd></div>
+        </dl>
+      </article>
+    </section>`;
+}
+
+function renderAuditTrail() {
+  const selected = selectedAuditEvent();
+  return `
+    <section class="decision-section audit-trail" aria-label="Decision audit trail">
+      <div class="section-heading">
+        <p class="eyebrow">Decision History</p>
+        <h3>How organizational judgment moved.</h3>
+      </div>
+      <div class="audit-grid">
+        <div class="audit-list">
+          ${decisionState.decisionObject.auditEvents.length ? decisionState.decisionObject.auditEvents.map((item) => `
+            <button class="${decisionState.selectedAuditEventId === item.id ? 'active' : ''}" type="button" data-audit-event="${item.id}">
+              <span>${item.timestamp}</span>
+              <strong>${item.event}</strong>
+            </button>
+          `).join('') : '<p>No audit events yet. Select a path or submit for approval.</p>'}
+        </div>
+        <article class="decision-detail">
+          ${selected ? `
+            <p class="eyebrow">${selected.actorRole}</p>
+            <h3>${selected.event}</h3>
+            <dl>
+              <div><dt>Previous state</dt><dd>${selected.previousState}</dd></div>
+              <div><dt>New state</dt><dd>${selected.newState}</dd></div>
+              <div><dt>Rationale</dt><dd>${selected.rationale}</dd></div>
+              <div><dt>Evidence used</dt><dd>${selected.evidenceUsed.join(', ')}</dd></div>
+              <div><dt>Authority rule</dt><dd>${selected.authorityRuleApplied}</dd></div>
+            </dl>` : '<p>Select or create an audit event to inspect the decision history.</p>'}
+        </article>
+      </div>
+    </section>`;
+}
+
+function renderDecisionRoom() {
+  return `
+    <div class="decision-room">
+      ${renderStrategicPaths()}
+      ${renderDecisionObject()}
+      ${renderAuthorityGraph()}
+      ${renderApprovalWorkflow()}
+      ${renderGovernedActionPlan()}
+      ${renderAuditTrail()}
+    </div>`;
+}
+
 function renderTabs() {
   $('opportunity-tabs').innerHTML = demo.tabs.map((tab) => `
     <button class="tab ${state.selectedTab === tab ? 'active' : ''}" role="tab" type="button" data-tab="${tab}" aria-selected="${state.selectedTab === tab}">
@@ -296,7 +534,7 @@ function renderTabs() {
         <article><h3>${selectedEvidence.title}</h3><p>${selectedEvidence.summary}</p><small>Synthetic evidence · no external system queried.</small>${renderGraph()}</article>
       </div>`,
     Recommendation: `<p>${demo.recommendation.summary}</p><div class="governed-meta"><span>Confidence ${demo.recommendation.confidence}%</span><span>Human decision required</span><span>All action simulated</span></div>${renderActionPath()}`,
-    'Decision Path': `<div class="door-stage ${state.doorsOpen ? 'open' : ''}" aria-label="Opening Doors analytical layer"><span></span><span></span><strong>Fragmented signals become governed judgment</strong></div>${renderGraph()}${renderActionPath()}`,
+    'Decision Path': `<div class="door-stage ${state.doorsOpen ? 'open' : ''}" aria-label="Opening Doors analytical layer"><span></span><span></span><strong>Fragmented signals become governed judgment</strong></div>${renderDecisionRoom()}`,
     Outcomes: renderOutcomes(),
     Memory: `<article class="memory-card"><p class="eyebrow">Organizational Judgment Infrastructure</p><h3>${demo.memory.title}</h3><p>${demo.memory.summary}</p>${renderOutcomes()}</article>`
   };
@@ -365,7 +603,79 @@ function renderWorkspace() {
   if (!['command', 'opportunity'].includes(state.activeWorkspace)) previewWorkspace(state.activeWorkspace);
 }
 
+const guidedSignals = [
+  ['Executive communication', 'Sponsor response is overdue', '94%', 'Critical', 'Momentum is slipping while the sponsor waits.'],
+  ['CRM', 'Opportunity has stalled', '90%', 'High', 'The stage has not advanced as the decision window narrows.'],
+  ['Finance', 'Payment condition remains open', '88%', 'Critical', 'Terms require a human finance review.'],
+  ['Calendar', 'Decision window closes in 48 hours', '96%', 'Critical', 'Executive review must happen now.'],
+  ['Operations', 'A requirement has no owner', '86%', 'High', 'The response cannot be complete without ownership.'],
+  ['Relationship intelligence', 'A competitor has surfaced', '82%', 'High', 'Delay raises the cost of fragmented coordination.']
+];
+
+function guidedPrimary(label, action) {
+  return `<button class="guided-primary" type="button" data-guided-action="${action}">${label}<span aria-hidden="true">→</span></button>`;
+}
+
+function renderGuidedChapter() {
+  const chapter = guidedState.chapter;
+  const path = selectedPath();
+  if (chapter === 0) return `<div class="guided-opening">
+    <p class="guided-kicker">A consequential signal has surfaced</p>
+    <h1>$1.8M <em>at risk</em></h1>
+    <p class="guided-lead">Six disconnected signals have converged. A decision is required within 48 hours.</p>
+    ${guidedPrimary('Reveal why', 'next')}
+    <button class="guided-text-link" type="button" data-guided-action="explore">Skip to workspace</button>
+    <div class="guided-opening-signal" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><i></i></div>
+  </div>`;
+  if (chapter === 1) return `<div class="guided-signal-scene">
+    <div class="guided-intro"><p class="guided-kicker">Six sources. One consequence.</p><h1>The signals <em>converge.</em></h1><p>No single system shows the whole decision.</p></div>
+    <div class="guided-orbit" aria-hidden="true"><span class="guided-orbit-ring"></span><strong>$1.8M</strong><small>Opportunity at risk</small></div>
+    <div class="guided-signal-list" aria-label="Ranked consequential signals">${guidedSignals.map(([source, title, confidence, urgency, consequence], index) => `<div class="guided-signal-row" style="--signal-index:${index}"><span class="guided-signal-source">${source}</span><strong>${title}</strong><span class="guided-signal-meta">${confidence} · ${urgency}</span><p>${consequence}</p></div>`).join('')}</div>
+    ${guidedPrimary('See what Storm found', 'next')}
+  </div>`;
+  if (chapter === 2) return `<div class="guided-judgment">
+    <p class="guided-kicker">Judgment from the full context</p><h1>Why this matters <em>now.</em></h1>
+    <div class="guided-causal"><p><span>01 / What changed</span>The sponsor response slowed as the opportunity stalled.</p><p><span>02 / Why now</span>Finance and ownership remain open with 48 hours to decide.</p><p><span>03 / What is at risk</span>$1.8M in modeled opportunity value.</p><p><span>04 / If no decision is made</span>The sponsor window may close without a coordinated response.</p></div>
+    <div class="guided-recommendation"><span>Recommended path</span><strong>Coordinate an executive response with named ownership and required approvals.</strong><small>Human decision required · 91% synthetic confidence</small></div>
+    ${guidedPrimary('Enter the Decision Room', 'doors')}
+  </div>`;
+  if (chapter === 3) return `<div class="guided-decision">
+    <p class="guided-kicker">Decision and authority</p><h1>A path forward, <em>under human control.</em></h1>
+    <div class="guided-paths" role="group" aria-label="Strategic paths">${decisionFixture.paths.map((item) => `<button type="button" class="guided-path ${decisionState.selectedPathId === item.id ? 'selected' : ''}" data-guided-path="${item.id}" aria-pressed="${decisionState.selectedPathId === item.id}"><span>${item.recommendation ? 'Recommended' : 'Alternative'}</span><strong>${item.label}</strong><small>${item.keyTradeoff}</small></button>`).join('')}</div>
+    <div class="guided-path-facts"><div><span>Expected value protected</span><strong>${path.expectedValueProtected}</strong></div><div><span>Risk</span><strong>${path.riskLevel}</strong></div><div><span>Time to action</span><strong>${path.timeToAction}</strong></div><div><span>Tradeoff</span><strong>${path.keyTradeoff}</strong></div></div>
+    <div class="guided-authority"><p><span>Decision owner</span><strong>Commercial Operations Lead</strong></p><p><span>Authority holder</span><strong>Executive Sponsor</strong></p><p><span>Approval rule</span><strong>$1.8M value threshold; Finance review required for payment terms.</strong></p><p class="guided-why">Approval is required because the value and unresolved finance condition exceed the operator's authority.</p></div>
+    ${decisionState.lastError ? `<p class="guided-error" role="alert">${decisionState.lastError}</p>` : ''}
+    ${guidedPrimary('Submit for approval', 'submit')}
+  </div>`;
+  const status = decisionState.decisionObject.status;
+  const ready = status === 'EXECUTION_READY';
+  return `<div class="guided-governed">
+    <p class="guided-kicker">Governed decision · simulated authority</p>
+    <h1>${ready ? 'Judgment became <em>accountable action.</em>' : 'Authority must <em>be verified.</em>'}</h1>
+    <p class="guided-lead">${ready ? 'Owner assigned. Authority verified. Decision recorded. Execution ready.' : 'The path is pending approval. Only the designated Executive Sponsor can authorize it.'}</p>
+    <div class="guided-approval-state"><span>Selected path</span><strong>${path.label}</strong><span>Status · ${status.replaceAll('_', ' ')}</span></div>
+    ${ready ? `<div class="guided-confirmation"><span>✓ Authorized human approval</span><span>✓ Selected path locked</span><span>✓ Audit event recorded</span><span>✓ Plan execution ready</span></div><p class="guided-simulation">Simulation only. Nothing was executed externally.</p>${guidedState.planOpen ? `<div class="guided-plan" tabindex="-1" aria-label="Governed action plan">${decisionFixture.actionPlan.map((item) => `<div><strong>${item.action}</strong><span>${item.assignedOwner} · ${item.verificationRequirement}</span></div>`).join('')}</div>${renderAuditTrail()}` : guidedPrimary('View governed plan', 'plan')}<button class="guided-text-link" type="button" data-guided-action="explore">Explore the intelligence</button>` : `<label class="guided-role-label">Simulated active role<select data-guided-role>${decisionFixture.authorityNodes.map((item) => `<option value="${item.id}" ${decisionState.activeRoleId === item.id ? 'selected' : ''}>${item.label}</option>`).join('')}</select></label>${decisionState.lastError ? `<p class="guided-error" role="alert">${decisionState.lastError}</p>` : ''}${guidedPrimary('Approve decision', 'approve')}<p class="guided-simulation">Try approving as the operator to see the authority safeguard.</p>`}
+  </div>`;
+}
+
+function renderGuided() {
+  const guided = guidedState.mode === 'guided';
+  document.body.classList.toggle('guided-active', guided);
+  const root = $('guided-experience');
+  root.hidden = !guided;
+  if (!guided) return;
+  root.dataset.chapter = String(guidedState.chapter + 1);
+  root.classList.toggle('decision-light', guidedState.chapter >= 3);
+  root.innerHTML = `<div class="guided-frame ${guidedState.doorsTransitioning ? 'doors-transitioning' : ''}">
+    <header class="guided-header"><div class="guided-brand"><strong>ESSENTIAL EA</strong><span>AI STORM OS</span></div><div class="guided-progress"><span>Chapter ${guidedState.chapter + 1} of ${GUIDED_CHAPTERS.length}</span><div class="guided-progress-track"><i style="width:${(guidedState.chapter + 1) * 20}%"></i></div></div><button type="button" class="guided-exit" data-guided-action="explore">Exit guided mode</button></header>
+    <main class="guided-main" id="guided-main" tabindex="-1">${renderGuidedChapter()}</main>
+    <footer class="guided-footer"><button type="button" data-guided-action="back" ${guidedState.chapter === 0 ? 'hidden' : ''}>← Back</button><span>Synthetic scenario · No external systems connected</span></footer>
+    ${guidedState.doorsTransitioning ? '<div class="guided-doors" aria-hidden="true"><span></span><span></span></div>' : ''}
+  </div>`;
+}
+
 function render() {
+  renderGuided();
   renderNav();
   renderSignals();
   renderReasoning();
@@ -426,16 +736,63 @@ function closeOverlays() {
 
 function resetDemo() {
   state = { ...initialState };
+  decisionState = createInitialDecisionState();
+  guidedState = createGuidedState();
   render();
-  $('opportunity-object').focus();
+  $('guided-main').focus({ preventScroll: true });
   announce('Demo reset to deterministic initial state.');
 }
 
 document.addEventListener('click', (event) => {
+  const guidedPath = event.target.closest('[data-guided-path]');
+  if (guidedPath) {
+    selectStrategicPath(decisionState, guidedPath.dataset.guidedPath);
+    renderGuided();
+    document.querySelector(`[data-guided-path="${guidedPath.dataset.guidedPath}"]`)?.focus();
+    return;
+  }
+
+  const guidedAction = event.target.closest('[data-guided-action]');
+  if (guidedAction) {
+    const actionName = guidedAction.dataset.guidedAction;
+    if (actionName === 'explore') {
+      guidedState.mode = 'explore';
+      openOpportunity('Signals');
+      return;
+    }
+    if (actionName === 'back') previousChapter(guidedState);
+    if (actionName === 'next') advanceChapter(guidedState);
+    if (actionName === 'doors') {
+      guidedState.doorsTransitioning = true;
+      advanceChapter(guidedState);
+      renderGuided();
+      window.scrollTo(0, 0);
+      window.setTimeout(() => {
+        guidedState.doorsTransitioning = false;
+        renderGuided();
+        $('guided-main').focus({ preventScroll: true });
+      }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 760);
+      return;
+    }
+    if (actionName === 'submit') {
+      const result = submitForApproval(decisionState);
+      if (result.ok) advanceChapter(guidedState);
+    }
+    if (actionName === 'approve') approveDecision(decisionState);
+    if (actionName === 'plan') guidedState.planOpen = true;
+    renderGuided();
+    if (actionName === 'plan') document.querySelector('.guided-plan')?.focus();
+    else { window.scrollTo(0, 0); $('guided-main').focus({ preventScroll: true }); }
+    announce(decisionState.lastError || `${GUIDED_CHAPTERS[guidedState.chapter]} chapter.`);
+    return;
+  }
+
   const nav = event.target.closest('[data-nav]');
   if (nav) {
     const id = nav.dataset.nav;
-    state.activeWorkspace = id === 'command' ? 'command' : id;
+    if (id === 'decisions') { openOpportunity('Decision Path'); return; }
+    if (id === 'outcomes') { openOpportunity('Outcomes'); return; }
+    state.activeWorkspace = 'command';
     state.drawerOpen = false;
     state.navOpen = false;
     render();
@@ -481,6 +838,50 @@ document.addEventListener('click', (event) => {
     renderTabs();
   }
 
+  const pathButton = event.target.closest('[data-path]');
+  if (pathButton) {
+    selectStrategicPath(decisionState, pathButton.dataset.path);
+    renderTabs();
+    announce(decisionState.lastError || 'Strategic path selected.');
+  }
+
+  const authorityNode = event.target.closest('[data-authority-node]');
+  if (authorityNode) {
+    decisionState.selectedAuthorityNodeId = authorityNode.dataset.authorityNode;
+    const node = decisionFixture.authorityNodes.find((item) => item.id === decisionState.selectedAuthorityNodeId);
+    decisionState.selectedAuthorityRuleId = node?.ruleIds[0] || decisionState.selectedAuthorityRuleId;
+    renderTabs();
+  }
+
+  const authorityRule = event.target.closest('[data-authority-rule]');
+  if (authorityRule) {
+    decisionState.selectedAuthorityRuleId = authorityRule.dataset.authorityRule;
+    renderTabs();
+  }
+
+  const planButton = event.target.closest('[data-plan]');
+  if (planButton) {
+    decisionState.selectedPlanId = planButton.dataset.plan;
+    renderTabs();
+  }
+
+  const auditButton = event.target.closest('[data-audit-event]');
+  if (auditButton) {
+    decisionState.selectedAuditEventId = auditButton.dataset.auditEvent;
+    renderTabs();
+  }
+
+  const approvalButton = event.target.closest('[data-approval-action]');
+  if (approvalButton) {
+    const actionName = approvalButton.dataset.approvalAction;
+    if (actionName === 'submit') submitForApproval(decisionState);
+    if (actionName === 'approve') approveDecision(decisionState);
+    if (actionName === 'return') returnDecision(decisionState, document.querySelector('#return-reason')?.value || '');
+    if (actionName === 'reject') rejectDecision(decisionState, document.querySelector('#reject-reason')?.value || '');
+    renderTabs();
+    announce(decisionState.lastError || `Decision ${decisionState.decisionObject.status.toLowerCase().replaceAll('_', ' ')}.`);
+  }
+
   const resultButton = event.target.closest('[data-result]');
   if (resultButton && window.__searchResults) {
     window.__searchResults[Number(resultButton.dataset.result)]?.action();
@@ -488,13 +889,28 @@ document.addEventListener('click', (event) => {
 });
 
 document.addEventListener('change', (event) => {
+  const guidedRole = event.target.closest('[data-guided-role]');
+  if (guidedRole) {
+    decisionState.activeRoleId = guidedRole.value;
+    decisionState.lastError = '';
+    renderGuided();
+    document.querySelector('[data-guided-role]')?.focus();
+    return;
+  }
   const filter = event.target.closest('[data-feed-filter]');
-  if (!filter) return;
-  if (filter.dataset.feedFilter === 'source') state.feedSource = filter.value;
-  if (filter.dataset.feedFilter === 'urgency') state.feedUrgency = filter.value;
-  if (filter.dataset.feedFilter === 'status') state.feedStatus = filter.value;
-  renderSignals();
-  renderTabs();
+  if (filter) {
+    if (filter.dataset.feedFilter === 'source') state.feedSource = filter.value;
+    if (filter.dataset.feedFilter === 'urgency') state.feedUrgency = filter.value;
+    if (filter.dataset.feedFilter === 'status') state.feedStatus = filter.value;
+    renderSignals();
+    renderTabs();
+  }
+
+  const roleSwitcher = event.target.closest('[data-role-switch]');
+  if (roleSwitcher) {
+    decisionState.activeRoleId = roleSwitcher.value;
+    renderTabs();
+  }
 });
 
 $('opportunity-object').addEventListener('click', () => openOpportunity('Overview'));

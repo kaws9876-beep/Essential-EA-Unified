@@ -10,6 +10,8 @@ const requiredFiles = [
   'demo-commercial/styles.css',
   'demo-commercial/fixtures/commercial-opportunity.json',
   'demo-commercial/adapters/demoExecutionAdapter.js',
+  'demo-commercial/decisionWorkflow.js',
+  'demo-commercial/guidedExperience.js',
   'demo-commercial/README.md'
 ];
 
@@ -76,9 +78,34 @@ for (const required of [
   'renderFeedControls',
   'renderActionPath',
   'renderOutcomes',
-  'Organizational Judgment Infrastructure'
+  'Organizational Judgment Infrastructure',
+  'renderDecisionRoom',
+  'Strategic path comparison',
+  'Structured Decision Object',
+  'Simulated approval workflow',
+  'Execution-ready governed action plan',
+  'Decision audit trail'
 ]) {
   if (!demoApp.includes(required)) throw new Error(`demo app missing expected behavior marker: ${required}`);
+}
+
+const decisionWorkflow = fs.readFileSync('demo-commercial/decisionWorkflow.js', 'utf8');
+for (const required of [
+  'DECISION_STATES',
+  'DRAFT',
+  'READY_FOR_REVIEW',
+  'PENDING_APPROVAL',
+  'APPROVED',
+  'EXECUTION_READY',
+  'RETURNED',
+  'REJECTED',
+  'decisionObject',
+  'approveDecision',
+  'returnDecision',
+  'rejectDecision',
+  'Simulation only - not executed externally'
+]) {
+  if (!decisionWorkflow.includes(required)) throw new Error(`decision workflow missing expected marker: ${required}`);
 }
 
 const vercel = JSON.parse(fs.readFileSync('vercel.json', 'utf8'));

@@ -27,6 +27,8 @@ const demoFiles = [
   'demo-commercial/styles.css',
   'demo-commercial/fixtures/commercial-opportunity.json',
   'demo-commercial/adapters/demoExecutionAdapter.js',
+  'demo-commercial/decisionWorkflow.js',
+  'demo-commercial/guidedExperience.js',
   'demo-commercial/README.md',
   'tests/commercial-demo.test.js'
 ];

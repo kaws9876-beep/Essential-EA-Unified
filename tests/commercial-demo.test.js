@@ -10,6 +10,16 @@ import {
   simulateScheduleDecisionCall,
   simulateUpdateOpportunityStage
 } from '../demo-commercial/adapters/demoExecutionAdapter.js';
+import {
+  approveDecision,
+  createInitialDecisionState,
+  decisionFixture,
+  rejectDecision,
+  returnDecision,
+  selectStrategicPath,
+  submitForApproval
+} from '../demo-commercial/decisionWorkflow.js';
+import { GUIDED_CHAPTERS, advanceChapter, createGuidedState, previousChapter } from '../demo-commercial/guidedExperience.js';
 
 const root = process.cwd();
 const demoDir = path.join(root, 'demo-commercial');
@@ -19,8 +29,37 @@ const requiredFiles = [
   'styles.css',
   'fixtures/commercial-opportunity.json',
   'adapters/demoExecutionAdapter.js',
+  'decisionWorkflow.js',
+  'guidedExperience.js',
   'README.md'
 ];
+
+test('guided experience defaults to five deterministic chapters with bounded navigation', () => {
+  const state = createGuidedState();
+  assert.equal(state.mode, 'guided');
+  assert.equal(state.chapter, 0);
+  assert.deepEqual(GUIDED_CHAPTERS, ['The stakes', 'Signal convergence', 'Judgment', 'Decision and authority', 'Governed decision']);
+  previousChapter(state);
+  assert.equal(state.chapter, 0);
+  for (let index = 0; index < 8; index += 1) advanceChapter(state);
+  assert.equal(state.chapter, 4);
+  previousChapter(state);
+  assert.equal(state.chapter, 3);
+  assert.deepEqual(createGuidedState(), { mode: 'guided', chapter: 0, approvalStep: 'review', planOpen: false, doorsTransitioning: false });
+});
+
+test('guided presentation exposes one primary action per chapter and keeps exploration optional', () => {
+  const app = readDemoFile('app.js');
+  const html = readDemoFile('index.html');
+  assert.match(html, /id="guided-experience"/);
+  for (const action of ['Reveal why', 'See what Storm found', 'Enter the Decision Room', 'Submit for approval', 'Approve decision', 'View governed plan']) {
+    assert.ok(app.includes(action), `${action} is missing`);
+  }
+  assert.match(app, /guidedState\.mode = 'explore'/);
+  assert.match(app, /guidedState\.doorsTransitioning = true/);
+  assert.match(app, /approveDecision\(decisionState\)/);
+  assert.match(app, /Nothing was executed externally/);
+});
 
 function readDemoFile(file) {
   return fs.readFileSync(path.join(demoDir, file), 'utf8');
@@ -174,6 +213,115 @@ test('interactive local state covers search, drawer, tabs, authority, reasoning,
   }
   assert.match(app, /event\.key === 'Escape'/);
   assert.match(app, /state = \{ \.\.\.initialState \}/);
+});
+
+test('C2 Decision Object schema and fixture relationships are stable', () => {
+  const object = decisionFixture.decisionObject;
+  for (const key of [
+    'id',
+    'tenantId',
+    'title',
+    'summary',
+    'status',
+    'opportunityId',
+    'signalIds',
+    'evidenceIds',
+    'recommendationId',
+    'selectedPathId',
+    'decisionType',
+    'decisionRequired',
+    'decisionDeadline',
+    'urgency',
+    'valueAtRisk',
+    'owner',
+    'ownerRole',
+    'authorityRequired',
+    'authorityRuleIds',
+    'approvalRequirementIds',
+    'rationale',
+    'alternativesConsidered',
+    'constraints',
+    'assumptions',
+    'expectedOutcome',
+    'verificationRequirements',
+    'createdAt',
+    'updatedAt',
+    'version',
+    'auditEvents'
+  ]) {
+    assert.ok(Object.hasOwn(object, key), `Decision Object missing ${key}`);
+  }
+
+  assert.equal(object.opportunityId, 'opp-regional-portfolio-expansion');
+  assert.equal(object.signalIds.length, 7);
+  assert.equal(object.evidenceIds.length, 7);
+  assert.equal(decisionFixture.paths.length, 3);
+  assert.equal(decisionFixture.authorityNodes.length, 6);
+  assert.equal(decisionFixture.approvalRequirements.length, 2);
+  assert.ok(decisionFixture.actionPlan.every((item) => item.readinessState === 'Simulation only - not executed externally'));
+});
+
+test('C2 strategic path selection and approval state machine are deterministic', () => {
+  const state = createInitialDecisionState();
+  assert.equal(state.decisionObject.status, 'DRAFT');
+
+  assert.equal(selectStrategicPath(state, 'path-conservative-containment').ok, true);
+  assert.equal(state.selectedPathId, 'path-conservative-containment');
+  assert.equal(state.decisionObject.status, 'READY_FOR_REVIEW');
+  assert.equal(state.decisionObject.auditEvents.length, 1);
+
+  assert.equal(submitForApproval(state).ok, true);
+  assert.equal(state.decisionObject.status, 'PENDING_APPROVAL');
+
+  const unauthorized = approveDecision(state);
+  assert.equal(unauthorized.ok, false);
+  assert.match(unauthorized.reason, /Executive Sponsor/);
+
+  state.activeRoleId = 'role-executive-sponsor';
+  assert.equal(approveDecision(state).ok, true);
+  assert.equal(state.decisionObject.status, 'EXECUTION_READY');
+  assert.equal(selectStrategicPath(state, 'path-observe-and-defer').ok, false);
+  assert.equal(state.selectedPathId, 'path-conservative-containment');
+  assert.ok(state.decisionObject.auditEvents.some((event) => event.event === 'Execution-ready plan generated'));
+});
+
+test('C2 return and reject transitions require rationale and create audit events', () => {
+  const returned = createInitialDecisionState();
+  selectStrategicPath(returned, 'path-recommended-governed-intervention');
+  submitForApproval(returned);
+  assert.equal(returnDecision(returned, '').ok, false);
+  assert.equal(returnDecision(returned, 'Need finance context before approval.').ok, true);
+  assert.equal(returned.decisionObject.status, 'RETURNED');
+  assert.equal(returned.returnReason, 'Need finance context before approval.');
+
+  const rejected = createInitialDecisionState();
+  selectStrategicPath(rejected, 'path-observe-and-defer');
+  submitForApproval(rejected);
+  assert.equal(rejectDecision(rejected, '').ok, false);
+  assert.equal(rejectDecision(rejected, 'Deferral leaves too much unresolved risk.').ok, true);
+  assert.equal(rejected.decisionObject.status, 'REJECTED');
+  assert.ok(rejected.decisionObject.auditEvents.some((event) => event.event === 'Decision rejected'));
+});
+
+test('C2 UI exposes Decision Room, Authority Graph, approval controls, action plan, and audit trail', () => {
+  const app = readDemoFile('app.js');
+  const css = readDemoFile('styles.css');
+  for (const marker of [
+    'renderDecisionRoom',
+    'Strategic path comparison',
+    'Structured Decision Object',
+    'Authority Graph',
+    'Simulated approval workflow',
+    'Execution-ready governed action plan',
+    'Decision audit trail',
+    'data-approval-action',
+    'data-role-switch',
+    'data-authority-node',
+    'data-authority-rule',
+    'data-audit-event'
+  ]) {
+    assert.match(`${app}\n${css}`, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
 });
 
 test('visible controls have deterministic handlers', () => {
