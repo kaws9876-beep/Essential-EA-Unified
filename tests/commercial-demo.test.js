@@ -21,6 +21,12 @@ import {
 } from '../demo-commercial/decisionWorkflow.js';
 import { GUIDED_CHAPTERS, advanceChapter, createGuidedState, previousChapter } from '../demo-commercial/guidedExperience.js';
 import { WORKSPACE_DESTINATIONS, createWorkspaceState, renderWorkspaceExperience } from '../demo-commercial/workspaceExperience.js';
+import {
+  SIMULATION_NOTICE, beginExecution, createExecutionState, demonstrateBlockedAction,
+  finalizeOutcome, previewActionPlan, resetExecutionState, runLifecycleOperation,
+  runNextAction, transitionAction, verifyAction, verifyAllAndFinalize
+} from '../demo-commercial/executionLifecycle.js';
+import { renderGuidedLifecycle, renderMemoryRecord, renderWorkspaceLifecycle } from '../demo-commercial/lifecycleExperience.js';
 
 const root = process.cwd();
 const demoDir = path.join(root, 'demo-commercial');
@@ -35,6 +41,8 @@ const requiredFiles = [
   'decisionWorkflow.js',
   'guidedExperience.js',
   'workspaceExperience.js',
+  'executionLifecycle.js',
+  'lifecycleExperience.js',
   'README.md'
 ];
 
@@ -89,13 +97,143 @@ test('guided presentation exposes one primary action per chapter and keeps explo
   const app = readDemoFile('app.js');
   const html = readDemoFile('index.html');
   assert.match(html, /id="guided-experience"/);
-  for (const action of ['Reveal why', 'See what Storm found', 'Enter the Decision Room', 'Select a path', 'Continue with this path', 'Approve decision', 'View governed plan']) {
+  for (const action of ['Reveal why', 'See what Storm found', 'Enter the Decision Room', 'Select a path', 'Continue with this path', 'Approve decision']) {
     assert.ok(app.includes(action), `${action} is missing`);
+  }
+  const lifecycleView = readDemoFile('lifecycleExperience.js');
+  for (const action of ['Begin simulated execution', 'Run next simulated action', 'Verify returned evidence', 'Explore the record']) {
+    assert.ok(lifecycleView.includes(action), `${action} is missing`);
   }
   assert.match(app, /guidedState\.mode = 'explore'/);
   assert.match(app, /guidedState\.doorsTransitioning = true/);
   assert.match(app, /approveDecision\(decisionState\)/);
-  assert.match(app, /Nothing was executed externally/);
+  assert.match(lifecycleView, /SIMULATION_NOTICE/);
+});
+
+function approvedDecision(pathId = 'path-recommended-governed-intervention') {
+  const decision = createInitialDecisionState();
+  selectStrategicPath(decision, pathId);
+  submitForApproval(decision);
+  decision.activeRoleId = 'role-executive-sponsor';
+  assert.equal(approveDecision(decision).ok, true);
+  return decision;
+}
+
+test('execution is denied until authorized approval and path-specific plan is locked', () => {
+  const lifecycle = createExecutionState();
+  const decision = createInitialDecisionState();
+  assert.equal(beginExecution(lifecycle, decision).ok, false);
+  assert.equal(lifecycle.actions.length, 0);
+  const approved = approvedDecision();
+  assert.equal(previewActionPlan(approved).length, 5);
+  assert.equal(beginExecution(lifecycle, approved).ok, true);
+  assert.equal(lifecycle.actions.length, 5);
+  assert.equal(lifecycle.actions[0].status, 'PLANNED');
+  assert.ok(lifecycle.actions.every((item) => item.decisionId === approved.decisionObject.id && item.simulationOnly && item.expectedEvidence && item.verificationCriteria && item.authorityRuleId && item.dueAt));
+  assert.equal(selectStrategicPath(approved, 'path-observe-and-defer').ok, false);
+  assert.equal(beginExecution(createExecutionState(), approvedDecision('path-conservative-containment')).ok, true);
+  assert.equal(previewActionPlan(approvedDecision('path-observe-and-defer')).length, 1);
+});
+
+test('dependencies, valid transitions, and unknown operations fail closed', () => {
+  const lifecycle = createExecutionState();
+  beginExecution(lifecycle, approvedDecision());
+  assert.equal(transitionAction(lifecycle, 'action-meeting', 'QUEUED').ok, false);
+  assert.equal(transitionAction(lifecycle, 'action-response', 'VERIFIED').ok, false);
+  assert.equal(runLifecycleOperation(lifecycle, 'fetchLiveSystem').ok, false);
+  assert.equal(runNextAction(lifecycle).ok, true);
+  assert.equal(lifecycle.actions[0].status, 'AWAITING_VERIFICATION');
+  assert.equal(runNextAction(lifecycle).ok, true);
+  assert.equal(lifecycle.actions[1].status, 'AWAITING_VERIFICATION');
+  assert.ok(lifecycle.auditEvents.some((item) => item.previousState === 'PLANNED' && item.newState === 'QUEUED'));
+  assert.ok(lifecycle.auditEvents.some((item) => item.newState === 'IN_PROGRESS'));
+  assert.ok(lifecycle.auditEvents.some((item) => item.newState === 'AWAITING_VERIFICATION'));
+  assert.equal(runNextAction(lifecycle).notice, SIMULATION_NOTICE);
+});
+
+test('blocked and failed actions cannot become successful or produce outcomes', () => {
+  const blocked = createExecutionState();
+  beginExecution(blocked, approvedDecision());
+  assert.equal(demonstrateBlockedAction(blocked).ok, true);
+  assert.equal(blocked.actions[0].status, 'BLOCKED');
+  assert.equal(blocked.phase, 'BLOCKED');
+  assert.equal(verifyAction(blocked, blocked.actions[0].id).ok, false);
+  assert.equal(finalizeOutcome(blocked, approvedDecision()).ok, false);
+  const failed = createExecutionState();
+  beginExecution(failed, approvedDecision());
+  transitionAction(failed, failed.actions[0].id, 'QUEUED');
+  transitionAction(failed, failed.actions[0].id, 'IN_PROGRESS');
+  assert.equal(transitionAction(failed, failed.actions[0].id, 'FAILED', 'Execution Coordinator', 'Synthetic failure.').ok, true);
+  assert.equal(failed.actions[0].status, 'FAILED');
+  assert.equal(runNextAction(failed).ok, false);
+});
+
+test('evidence and a separate verifier are required; failed criteria halt the lifecycle', () => {
+  const decision = approvedDecision();
+  const lifecycle = createExecutionState();
+  beginExecution(lifecycle, decision);
+  assert.equal(verifyAction(lifecycle, 'action-response').ok, false);
+  const result = runNextAction(lifecycle);
+  assert.equal(result.artifact.provenance, SIMULATION_NOTICE);
+  assert.equal(result.artifact.verificationRelevance, lifecycle.actions[0].verificationCriteria);
+  assert.equal(verifyAction(lifecycle, 'action-response', lifecycle.actions[0].ownerRole).ok, false);
+  assert.equal(verifyAction(lifecycle, 'action-response', 'Independent Assurance Reviewer', ['missing']).ok, false);
+  assert.equal(verifyAction(lifecycle, 'action-response').ok, true);
+  assert.equal(lifecycle.verifications[0].status, 'VERIFIED');
+  const mismatch = createExecutionState();
+  beginExecution(mismatch, decision);
+  runNextAction(mismatch);
+  mismatch.artifacts[0].verificationRelevance = 'Different criterion';
+  assert.equal(verifyAction(mismatch, 'action-response').ok, false);
+  assert.equal(mismatch.verifications[0].status, 'FAILED');
+  assert.equal(mismatch.actions[0].status, 'VERIFICATION_FAILED');
+  assert.equal(mismatch.outcome, null);
+});
+
+test('outcome and memory require complete independent verification', () => {
+  const decision = approvedDecision();
+  const lifecycle = createExecutionState();
+  beginExecution(lifecycle, decision);
+  assert.equal(finalizeOutcome(lifecycle, decision).ok, false);
+  while (lifecycle.phase === 'EXECUTING') runNextAction(lifecycle);
+  assert.equal(lifecycle.artifacts.length, 5);
+  assert.equal(lifecycle.phase, 'AWAITING_VERIFICATION');
+  assert.equal(finalizeOutcome(lifecycle, decision).ok, false);
+  assert.equal(lifecycle.memory, null);
+  assert.equal(verifyAllAndFinalize(lifecycle, decision).ok, true);
+  assert.equal(lifecycle.phase, 'VERIFIED');
+  assert.equal(lifecycle.outcome.actionsVerified, 5);
+  assert.equal(lifecycle.outcome.verificationCoverage, '100%');
+  assert.match(lifecycle.outcome.customerOrBusinessEffect, /not booked or recognized revenue/);
+  assert.equal(lifecycle.memory.outcomeId, lifecycle.outcome.id);
+  assert.equal(lifecycle.memory.verificationEvidence.length, 5);
+  assert.ok(lifecycle.memory.auditLinkage.length > 5);
+  assert.ok(lifecycle.auditEvents.every((item) => item.timestamp && item.actorRole && item.previousState && item.newState && item.reason && item.relatedObject && item.provenance === SIMULATION_NOTICE));
+});
+
+test('guided and workspace lifecycle show one safe next action and retained judgment', () => {
+  const decision = approvedDecision();
+  const lifecycle = createExecutionState();
+  assert.match(renderGuidedLifecycle(lifecycle, decision, false), /Begin simulated execution/);
+  assert.match(renderWorkspaceLifecycle(lifecycle, decision, createWorkspaceState()), /Begin simulated execution/);
+  beginExecution(lifecycle, decision);
+  assert.match(renderGuidedLifecycle(lifecycle, decision, false), /Run next simulated action/);
+  while (lifecycle.phase === 'EXECUTING') runNextAction(lifecycle);
+  assert.match(renderGuidedLifecycle(lifecycle, decision, false), /Verify returned evidence/);
+  verifyAllAndFinalize(lifecycle, decision);
+  assert.match(renderGuidedLifecycle(lifecycle, decision, false), /Judgment protected\. Work completed\. Outcome verified\. Lesson retained\./);
+  assert.match(renderMemoryRecord(lifecycle, createWorkspaceState()), /Use this judgment next time/);
+  const reuse = createWorkspaceState(); reuse.memoryReuseOpen = true;
+  assert.match(renderMemoryRecord(lifecycle, reuse), /No prior approval carries forward/);
+});
+
+test('reset records the action then restores deterministic initial state', () => {
+  const lifecycle = createExecutionState();
+  beginExecution(lifecycle, approvedDecision());
+  runNextAction(lifecycle);
+  const fresh = resetExecutionState(lifecycle);
+  assert.equal(lifecycle.auditEvents.at(-1).kind, 'reset');
+  assert.deepEqual(fresh, createExecutionState());
 });
 
 test('all six guided signals settle visibly, including reduced-motion mode', () => {

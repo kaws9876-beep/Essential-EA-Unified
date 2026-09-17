@@ -17,9 +17,13 @@ This directory contains an isolated, static, synthetic Commercial demo shell.
 
 The synthetic scenario is Northstar Commercial Partners pursuing the Regional Portfolio Expansion opportunity. A fictional $1.8M value-at-risk engagement requires governed attention because signals are fragmented across communications, finance, scheduling, relationship systems, operations, and relationship history.
 
-## C1 Scope
+## C3 Synthetic Lifecycle
 
-C1 establishes the shell, deterministic fixture state, lifecycle rail, initial opportunity overview, reset behavior, and deny-by-default simulated execution adapter. Later sprints can make the lifecycle stages interactive while preserving this safety contract.
+After human approval, the selected path produces an in-memory governed plan. A presenter initiates simulation, advances each action, receives labeled synthetic artifacts, and invokes a separate independent verification step. Only fully verified actions create a modeled outcome and retained memory record. The optional blocked-dependency path fails closed. Reset discards the scenario state deterministically. No operation contacts or changes an external system; modeled value is not recognized revenue.
+
+## C1 Foundation
+
+C1 established the shell, deterministic fixture state, lifecycle rail, initial opportunity overview, reset behavior, and deny-by-default simulated execution adapter. C3 extends only the isolated demonstration while preserving this safety contract.
 
 ## Local Static Preview
 

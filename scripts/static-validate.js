@@ -10,6 +10,8 @@ const requiredFiles = [
   'demo-commercial/styles.css',
   'demo-commercial/workspace.css',
   'demo-commercial/workspaceExperience.js',
+  'demo-commercial/executionLifecycle.js',
+  'demo-commercial/lifecycleExperience.js',
   'demo-commercial/assets/signal-convergence.png',
   'demo-commercial/fixtures/commercial-opportunity.json',
   'demo-commercial/adapters/demoExecutionAdapter.js',

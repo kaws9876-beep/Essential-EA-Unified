@@ -9,6 +9,8 @@ import {
 } from './decisionWorkflow.js';
 import { GUIDED_CHAPTERS, advanceChapter, createGuidedState, previousChapter } from './guidedExperience.js';
 import { createWorkspaceState, renderWorkspaceExperience } from './workspaceExperience.js';
+import { beginExecution, createExecutionState, demonstrateBlockedAction, resetExecutionState, runNextAction, verifyAllAndFinalize } from './executionLifecycle.js';
+import { renderGuidedLifecycle } from './lifecycleExperience.js';
 
 const demo = {
   organization: { id: 'org-northstar-commercial-partners', name: 'Northstar Commercial Partners', fictional: true },
@@ -133,6 +135,7 @@ let state = { ...initialState };
 let decisionState = createInitialDecisionState();
 let guidedState = createGuidedState();
 let workspaceState = createWorkspaceState();
+let lifecycleState = createExecutionState();
 let lastWorkspaceTrigger = null;
 const $ = (id) => document.getElementById(id);
 
@@ -651,12 +654,13 @@ function renderGuidedChapter() {
   </div>`;
   const status = decisionState.decisionObject.status;
   const ready = status === 'EXECUTION_READY';
+  if (ready) return renderGuidedLifecycle(lifecycleState, decisionState, guidedState.planOpen);
   return `<div class="guided-governed">
     <p class="guided-kicker">Governed decision · simulated authority</p>
     <h1>${ready ? 'Judgment protected.<br><em>Action ready.</em>' : 'Authority must <em>be verified.</em>'}</h1>
     <p class="guided-lead">${ready ? 'Owner assigned. Authority verified. Approval recorded. Strategic path locked. Audit event created. Governed plan execution-ready.' : 'The path is pending approval. Only the designated Executive Sponsor can authorize it.'}</p>
     <div class="guided-approval-state"><span>Selected path</span><strong>${path.label}</strong><span>Status · ${status.replaceAll('_', ' ')}</span></div>
-    ${ready ? `<div class="guided-confirmation"><span>✓ Authorized human approval</span><span>✓ Selected path locked</span><span>✓ Audit event recorded</span><span>✓ Plan execution ready</span></div><p class="guided-simulation">Simulation only. Nothing was executed externally.</p>${guidedState.planOpen ? `<div class="guided-plan" tabindex="-1" aria-label="Governed action plan">${decisionFixture.actionPlan.map((item) => `<div><strong>${item.action}</strong><span>${item.assignedOwner} · ${item.verificationRequirement}</span></div>`).join('')}</div>${renderAuditTrail()}` : guidedPrimary('View governed plan', 'plan')}<button class="guided-text-link" type="button" data-guided-action="explore">Explore the intelligence</button>` : `<label class="guided-role-label">Simulated active role<select data-guided-role>${decisionFixture.authorityNodes.map((item) => `<option value="${item.id}" ${decisionState.activeRoleId === item.id ? 'selected' : ''}>${item.label}</option>`).join('')}</select></label>${decisionState.lastError ? `<p class="guided-error" role="alert">${decisionState.lastError}</p>` : ''}${guidedPrimary('Approve decision', 'approve')}<p class="guided-simulation">Try approving as the operator to see the authority safeguard.</p>`}
+    <label class="guided-role-label">Simulated active role<select data-guided-role>${decisionFixture.authorityNodes.map((item) => `<option value="${item.id}" ${decisionState.activeRoleId === item.id ? 'selected' : ''}>${item.label}</option>`).join('')}</select></label>${decisionState.lastError ? `<p class="guided-error" role="alert">${decisionState.lastError}</p>` : ''}${guidedPrimary('Approve decision', 'approve')}<p class="guided-simulation">Try approving as the operator to see the authority safeguard.</p>
   </div>`;
 }
 
@@ -681,7 +685,7 @@ function renderOperational() {
   document.body.classList.toggle('workspace-active', active);
   const root = $('operational-workspace');
   root.hidden = !active;
-  if (active) root.innerHTML = renderWorkspaceExperience(demo, workspaceState, decisionState);
+  if (active) root.innerHTML = renderWorkspaceExperience(demo, workspaceState, decisionState, lifecycleState);
 }
 
 function render() {
@@ -746,6 +750,7 @@ function closeOverlays() {
 }
 
 function resetDemo() {
+  lifecycleState = resetExecutionState(lifecycleState);
   state = { ...initialState };
   decisionState = createInitialDecisionState();
   guidedState = createGuidedState();
@@ -765,6 +770,8 @@ document.addEventListener('click', (event) => {
     const workAudit = event.target.closest('[data-work-audit]');
     const workRail = event.target.closest('[data-work-rail]');
     const workAction = event.target.closest('[data-work-action]');
+    const workLifecycle = event.target.closest('[data-work-lifecycle]');
+    const lifeAction = event.target.closest('[data-life-action]');
     if (workArea) {
       workspaceState.area = workArea.dataset.workArea;
       workspaceState.navOpen = false;
@@ -800,6 +807,23 @@ document.addEventListener('click', (event) => {
       workspaceState.railTab = workRail.dataset.workRail;
       renderOperational();
       document.querySelector(`[data-work-rail="${workspaceState.railTab}"]`)?.focus();
+    } else if (lifeAction) {
+      lifecycleState.selectedActionId = lifeAction.dataset.lifeAction;
+      workspaceState.railTab = 'Evidence';
+      workspaceState.railOpen = true;
+      lastWorkspaceTrigger = `[data-life-action="${lifeAction.dataset.lifeAction}"]`;
+      renderOperational();
+      (window.innerWidth <= 900 ? document.querySelector('[data-work-action="close-rail"]') : document.querySelector(lastWorkspaceTrigger))?.focus();
+    } else if (workLifecycle) {
+      const operation = workLifecycle.dataset.workLifecycle;
+      if (operation === 'begin') beginExecution(lifecycleState, decisionState);
+      if (operation === 'run') runNextAction(lifecycleState);
+      if (operation === 'verify') verifyAllAndFinalize(lifecycleState, decisionState);
+      if (operation === 'block') demonstrateBlockedAction(lifecycleState);
+      if (operation === 'reuse') workspaceState.memoryReuseOpen = !workspaceState.memoryReuseOpen;
+      renderOperational();
+      document.querySelector(`[data-work-lifecycle="${operation}"]`)?.focus();
+      announce(lifecycleState.lastError || `${lifecycleState.phase.replaceAll('_', ' ')}. ${lifecycleState.actions.filter((item) => item.status === 'VERIFIED').length} actions verified.`);
     } else if (workAction) {
       const actionName = workAction.dataset.workAction;
       if (actionName === 'reset') { resetDemo(); return; }
@@ -827,6 +851,29 @@ document.addEventListener('click', (event) => {
     guidedState.pathConfirmed = true;
     renderGuided();
     document.querySelector(`[data-guided-path="${guidedPath.dataset.guidedPath}"]`)?.focus();
+    return;
+  }
+
+  const guidedLifecycle = event.target.closest('[data-guided-lifecycle]');
+  if (guidedLifecycle) {
+    const operation = guidedLifecycle.dataset.guidedLifecycle;
+    if (operation === 'reset') { resetDemo(); return; }
+    if (operation === 'explore') {
+      guidedState.mode = 'explore';
+      workspaceState.area = 'Memory';
+      workspaceState.railTab = 'Audit';
+      render();
+      $('work-main').focus({ preventScroll: true });
+      return;
+    }
+    if (operation === 'plan') guidedState.planOpen = !guidedState.planOpen;
+    if (operation === 'begin') beginExecution(lifecycleState, decisionState);
+    if (operation === 'run') runNextAction(lifecycleState);
+    if (operation === 'verify') verifyAllAndFinalize(lifecycleState, decisionState);
+    if (operation === 'block') demonstrateBlockedAction(lifecycleState);
+    renderGuided();
+    document.querySelector(`[data-guided-lifecycle="${operation}"]`)?.focus();
+    announce(lifecycleState.lastError || `${lifecycleState.phase.replaceAll('_', ' ')}. ${lifecycleState.actions.filter((item) => item.completedAt).length} actions modeled.`);
     return;
   }
 

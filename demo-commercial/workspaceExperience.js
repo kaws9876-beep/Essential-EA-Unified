@@ -1,4 +1,6 @@
 import { decisionFixture } from './decisionWorkflow.js';
+import { createExecutionState } from './executionLifecycle.js';
+import { renderLifecycleRail, renderMemoryRecord, renderWorkspaceLifecycle } from './lifecycleExperience.js';
 
 export const WORKSPACE_DESTINATIONS = Object.freeze(['Command', 'Signals', 'Decisions', 'Memory']);
 
@@ -12,7 +14,8 @@ export function createWorkspaceState() {
     railTab: 'Evidence',
     railOpen: false,
     navOpen: false,
-    planOpen: false
+    planOpen: false,
+    memoryReuseOpen: false
   };
 }
 
@@ -20,12 +23,13 @@ function statusLabel(status) {
   return status.replaceAll('_', ' ');
 }
 
-function metricStrip(demo, decisionState) {
+function metricStrip(demo, decisionState, lifecycle) {
+  const lifecycleActive = lifecycle.phase !== 'IDLE';
   return `<div class="work-metrics" aria-label="Executive decision measures">
     <div><span>Value at risk</span><strong>${demo.opportunity.value}</strong></div>
     <div><span>Decision deadline</span><strong>48 hours</strong></div>
     <div><span>Signal confidence</span><strong>${demo.recommendation.confidence}%</strong></div>
-    <div><span>Decision state</span><strong>${statusLabel(decisionState.decisionObject.status)}</strong></div>
+    <div><span>${lifecycleActive ? 'Lifecycle state' : 'Decision state'}</span><strong>${statusLabel(lifecycleActive ? lifecycle.phase : decisionState.decisionObject.status)}</strong></div>
   </div>`;
 }
 
@@ -56,7 +60,7 @@ function signalsView(demo, workspace) {
   </section>`;
 }
 
-function decisionsView(decisionState, workspace) {
+function decisionsView(decisionState, workspace, lifecycle) {
   const object = decisionState.decisionObject;
   const path = decisionFixture.paths.find((item) => item.id === decisionState.selectedPathId);
   const ready = object.status === 'EXECUTION_READY';
@@ -68,14 +72,15 @@ function decisionsView(decisionState, workspace) {
     <div class="work-path-list" role="group" aria-label="Compare strategic paths">${decisionFixture.paths.map((item) => `<button type="button" class="work-path-row ${decisionState.selectedPathId === item.id ? 'selected' : ''}" data-work-path="${item.id}" aria-pressed="${decisionState.selectedPathId === item.id}" ${ready ? 'disabled' : ''}><span>${item.recommendation ? 'Recommended' : 'Alternative'}</span><strong>${item.label}</strong><small>${item.expectedValueProtected} · ${item.timeToAction}</small></button>`).join('')}</div>
     <div class="work-selected-path"><span>Selected path / ${path.riskLevel}</span><strong>${path.keyTradeoff}</strong><p>Approval: ${path.approvalBurden}. Verification required: ${path.verificationRequirement}</p></div>
     <div class="work-decision-controls">
-      ${ready ? `<span class="work-safe-state">Path locked · Audit recorded · Simulation only</span><button class="work-primary" type="button" data-work-action="plan">${workspace.planOpen ? 'Hide governed plan' : 'View governed plan'} →</button>` : object.status === 'PENDING_APPROVAL' ? `<label>Simulated authority role<select data-work-role>${decisionFixture.authorityNodes.map((node) => `<option value="${node.id}" ${decisionState.activeRoleId === node.id ? 'selected' : ''}>${node.label}</option>`).join('')}</select></label><button class="work-primary" type="button" data-work-action="approve">Approve decision →</button><div class="work-secondary-actions"><input id="work-review-reason" aria-label="Return or rejection reason" placeholder="Reason required to return or reject"><button type="button" data-work-action="return">Return</button><button type="button" data-work-action="reject">Reject</button></div>` : `<span class="work-safe-state">Human approval required before any later execution</span><button class="work-primary" type="button" data-work-action="submit">Submit for approval →</button>`}
+      ${ready ? '<span class="work-safe-state">Path locked · Audit recorded · Simulation only</span>' : object.status === 'PENDING_APPROVAL' ? `<label>Simulated authority role<select data-work-role>${decisionFixture.authorityNodes.map((node) => `<option value="${node.id}" ${decisionState.activeRoleId === node.id ? 'selected' : ''}>${node.label}</option>`).join('')}</select></label><button class="work-primary" type="button" data-work-action="approve">Approve decision →</button><div class="work-secondary-actions"><input id="work-review-reason" aria-label="Return or rejection reason" placeholder="Reason required to return or reject"><button type="button" data-work-action="return">Return</button><button type="button" data-work-action="reject">Reject</button></div>` : `<span class="work-safe-state">Human approval required before any later execution</span><button class="work-primary" type="button" data-work-action="submit">Submit for approval →</button>`}
     </div>
     ${decisionState.lastError ? `<p class="work-error" role="alert">${decisionState.lastError}</p>` : ''}
-    ${workspace.planOpen && ready ? `<div class="work-plan" aria-label="Execution-ready governed plan">${decisionFixture.actionPlan.map((item) => `<div><strong>${item.action}</strong><span>${item.assignedOwner}</span><small>${item.verificationRequirement} · Not executed externally</small></div>`).join('')}</div>` : ''}
+    ${renderWorkspaceLifecycle(lifecycle, decisionState, workspace)}
   </section>`;
 }
 
-function memoryView(decisionState) {
+function memoryView(decisionState, lifecycle, workspace) {
+  if (lifecycle.memory) return renderMemoryRecord(lifecycle, workspace);
   const events = decisionState.decisionObject.auditEvents;
   return `<section class="work-memory" aria-label="Organizational memory preview">
     <div class="work-section-label"><span>04 / Memory</span><span>Preview · simulated decision only</span></div>
@@ -99,22 +104,22 @@ function authorityRail(workspace) {
   return `<div class="work-rail-content"><p class="work-rail-label">Ownership and authority</p><h3>${node.label}</h3><p>${node.responsibility}</p><div class="work-authority-people">${decisionFixture.authorityNodes.slice(0, 3).map((item) => `<button class="${workspace.selectedAuthorityId === item.id ? 'selected' : ''}" type="button" data-work-authority="${item.id}"><span>${item.kind}</span><strong>${item.label}</strong></button>`).join('')}</div><div class="work-evidence-detail"><span>Policy rule</span><strong>${rule?.label || 'Authority review'}</strong><p>${rule?.trigger || ''}</p><small>${rule?.delayedConsequence || ''}</small></div></div>`;
 }
 
-function auditRail(workspace, decisionState) {
-  const events = decisionState.decisionObject.auditEvents;
+function auditRail(workspace, decisionState, lifecycle) {
+  const events = [...decisionState.decisionObject.auditEvents, ...lifecycle.auditEvents];
   const selected = events.find((item) => item.id === workspace.selectedAuditEventId) || events.at(-1);
-  return `<div class="work-rail-content"><p class="work-rail-label">Decision history</p><h3>${events.length} recorded events</h3><p>Every simulated state transition is retained with a reason and authority context.</p><div class="work-audit-events">${events.length ? events.map((item) => `<button class="${selected?.id === item.id ? 'selected' : ''}" type="button" data-work-audit="${item.id}"><span>${item.timestamp.slice(11, 16)} UTC</span><strong>${item.event}</strong></button>`).join('') : '<p>No decision event recorded yet.</p>'}</div>${selected ? `<div class="work-evidence-detail"><span>${selected.previousState} → ${selected.newState}</span><strong>${selected.event}</strong><p>${selected.rationale}</p><small>Actor: ${selected.actorRole} · Rule: ${selected.authorityRuleApplied}</small></div>` : ''}</div>`;
+  return `<div class="work-rail-content"><p class="work-rail-label">Decision history</p><h3>${events.length} recorded events</h3><p>Every simulated transition retains its reason, actor, object, and provenance.</p><div class="work-audit-events">${events.length ? events.map((item) => `<button class="${selected?.id === item.id ? 'selected' : ''}" type="button" data-work-audit="${item.id}"><span>${item.timestamp.slice(11, 16)} UTC</span><strong>${item.event || item.kind}</strong></button>`).join('') : '<p>No decision event recorded yet.</p>'}</div>${selected ? `<div class="work-evidence-detail"><span>${selected.previousState} → ${selected.newState}</span><strong>${selected.event || selected.kind}</strong><p>${selected.rationale || selected.reason}</p><small>Actor: ${selected.actorRole} · Object: ${selected.relatedObject || decisionState.decisionObject.id} · ${selected.provenance || 'Synthetic decision history'}</small></div>` : ''}</div>`;
 }
 
 function traceRail() {
   return `<div class="work-rail-content"><p class="work-rail-label">Focused intelligence trace</p><h3>From signal to governed plan.</h3><ol class="work-trace-list"><li>Signal <small>Six partial business facts</small></li><li>Evidence <small>Seven synthetic source records</small></li><li>Recommendation <small>Coordinated executive response</small></li><li>Decision <small>Human path selection</small></li><li>Owner <small>Commercial Operations Lead</small></li><li>Authority <small>Executive Sponsor + Finance review</small></li><li>Approval <small>Simulated, role guarded</small></li><li>Governed plan <small>Execution-ready only</small></li></ol></div>`;
 }
 
-export function renderWorkspaceExperience(demo, workspace, decisionState) {
-  const rail = workspace.railTab === 'Evidence' ? evidenceRail(demo, workspace) : workspace.railTab === 'Authority' ? authorityRail(workspace) : workspace.railTab === 'Audit' ? auditRail(workspace, decisionState) : traceRail();
-  const view = workspace.area === 'Signals' ? signalsView(demo, workspace) : workspace.area === 'Decisions' ? decisionsView(decisionState, workspace) : workspace.area === 'Memory' ? memoryView(decisionState) : commandView(demo, decisionState);
+export function renderWorkspaceExperience(demo, workspace, decisionState, lifecycle = createExecutionState()) {
+  const rail = workspace.railTab === 'Evidence' ? workspace.area === 'Decisions' && lifecycle.selectedActionId && lifecycle.phase !== 'IDLE' ? renderLifecycleRail(lifecycle, lifecycle.selectedActionId) : evidenceRail(demo, workspace) : workspace.railTab === 'Authority' ? authorityRail(workspace) : workspace.railTab === 'Audit' ? auditRail(workspace, decisionState, lifecycle) : traceRail();
+  const view = workspace.area === 'Signals' ? signalsView(demo, workspace) : workspace.area === 'Decisions' ? decisionsView(decisionState, workspace, lifecycle) : workspace.area === 'Memory' ? memoryView(decisionState, lifecycle, workspace) : commandView(demo, decisionState);
   return `<div class="work-shell">
     <aside class="work-sidebar ${workspace.navOpen ? 'open' : ''}" aria-label="Intelligence workspace navigation"><div class="work-brand"><strong>ESSENTIAL EA</strong><span>AI STORM OS</span></div><div class="work-sidebar-label">Workspace</div><nav>${WORKSPACE_DESTINATIONS.map((area, index) => `<button type="button" data-work-area="${area}" class="${workspace.area === area ? 'active' : ''}" aria-current="${workspace.area === area ? 'page' : 'false'}"><span>0${index + 1}</span>${area}</button>`).join('')}</nav><div class="work-sidebar-foot"><span>Northstar Commercial Partners</span><small>Synthetic demonstration</small></div></aside>
-    <div class="work-center"><header class="work-topbar"><button class="work-mobile-menu" type="button" data-work-action="menu" aria-label="Open workspace navigation">☰</button><div><span>Commercial intelligence</span><strong>${workspace.area}</strong></div><div class="work-top-actions"><button type="button" data-work-action="trace">Inspect trace ↗</button><button type="button" data-work-action="reset">Reset</button></div></header>${metricStrip(demo, decisionState)}<main class="work-main" id="work-main" tabindex="-1">${view}</main></div>
+    <div class="work-center"><header class="work-topbar"><button class="work-mobile-menu" type="button" data-work-action="menu" aria-label="Open workspace navigation">☰</button><div><span>Commercial intelligence</span><strong>${workspace.area}</strong></div><div class="work-top-actions"><button type="button" data-work-action="trace">Inspect trace ↗</button><button type="button" data-work-action="reset">Reset</button></div></header>${metricStrip(demo, decisionState, lifecycle)}<main class="work-main" id="work-main" tabindex="-1">${view}</main></div>
     <aside class="work-rail ${workspace.railOpen ? 'open' : ''}" aria-label="Contextual intelligence panel"><div class="work-rail-top"><span>Context / ${workspace.area}</span><button type="button" data-work-action="close-rail" aria-label="Close contextual intelligence">×</button></div><div class="work-rail-tabs" role="tablist" aria-label="Context views">${['Evidence', 'Authority', 'Audit', 'Trace'].map((tab) => `<button type="button" role="tab" data-work-rail="${tab}" aria-selected="${workspace.railTab === tab}" class="${workspace.railTab === tab ? 'active' : ''}">${tab}</button>`).join('')}</div>${rail}</aside>
     ${workspace.railOpen ? '<button class="work-rail-scrim" type="button" data-work-action="close-rail" aria-label="Close contextual panel"></button>' : ''}
   </div>`;
