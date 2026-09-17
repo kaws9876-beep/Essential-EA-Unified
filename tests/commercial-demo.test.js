@@ -89,13 +89,50 @@ test('guided presentation exposes one primary action per chapter and keeps explo
   const app = readDemoFile('app.js');
   const html = readDemoFile('index.html');
   assert.match(html, /id="guided-experience"/);
-  for (const action of ['Reveal why', 'See the judgment', 'Enter the Decision Room', 'Submit for approval', 'Approve decision', 'View governed plan']) {
+  for (const action of ['Reveal why', 'See what Storm found', 'Enter the Decision Room', 'Select a path', 'Continue with this path', 'Approve decision', 'View governed plan']) {
     assert.ok(app.includes(action), `${action} is missing`);
   }
   assert.match(app, /guidedState\.mode = 'explore'/);
   assert.match(app, /guidedState\.doorsTransitioning = true/);
   assert.match(app, /approveDecision\(decisionState\)/);
   assert.match(app, /Nothing was executed externally/);
+});
+
+test('all six guided signals settle visibly, including reduced-motion mode', () => {
+  const app = readDemoFile('app.js');
+  const styles = `${readDemoFile('styles.css')}\n${readDemoFile('workspace.css')}`;
+  const signals = app.match(/const guidedSignals = \[([\s\S]*?)\n\];/)?.[1];
+  assert.ok(signals, 'guided signals must be defined');
+  for (const source of ['Executive communication', 'CRM', 'Finance', 'Calendar', 'Operations', 'Relationship intelligence']) {
+    assert.ok(signals.includes(`['${source}'`), `${source} must be present`);
+  }
+  assert.equal((signals.match(/^  \['/gm) || []).length, 6);
+  assert.match(styles, /@keyframes signal-enter\s*\{[^}]*opacity:\s*0[^}]*\}[^}]*opacity:\s*1/s);
+  assert.match(styles, /prefers-reduced-motion:reduce[\s\S]*?\.guided-signal-row\s*\{[^}]*animation:none !important; opacity:1 !important; transform:none !important;/);
+  assert.match(readDemoFile('workspace.css'), /\.guided-signal-row::before/);
+});
+
+test('guided paths require deliberate full-row selection and expose semantic state', () => {
+  const app = readDemoFile('app.js');
+  assert.match(app, /<button type="button" class="guided-path[^`]*data-guided-path="\$\{item\.id\}" aria-pressed="\$\{selected\}"/);
+  assert.match(app, /guidedState\.pathConfirmed && decisionState\.selectedPathId === item\.id/);
+  assert.match(app, /guidedState\.pathConfirmed = true;/);
+  assert.match(app, /data-guided-action="submit" \$\{guidedState\.pathConfirmed \? '' : 'disabled'\}/);
+  assert.match(app, /Continue with this path/);
+  assert.match(app, /Storm recommendation/);
+  assert.match(app, /Authority holder<\/span><strong>\$\{path\.approvalBurden\}<\/strong>/);
+});
+
+test('execution-ready state and critical workspace values are not ellipsized', () => {
+  const workspace = createWorkspaceState();
+  const decision = createInitialDecisionState();
+  decision.decisionObject.status = 'EXECUTION_READY';
+  const html = renderWorkspaceExperience({ opportunity: { value: '$1.8M' }, recommendation: { confidence: 91 }, signals: [{ id: 'sig-sponsor-email-unanswered', title: 'Sponsor response overdue', whyNow: 'Decision window closing.', sourceLabel: 'Executive communication', confidence: 94, urgency: 'Critical', evidenceRefs: [] }], evidence: [] }, workspace, decision);
+  assert.match(html, /Decision state<\/span><strong>EXECUTION READY<\/strong>/);
+  const css = readDemoFile('workspace.css');
+  assert.match(css, /\.work-metrics strong \{ font-size:17px; overflow-wrap:normal; \}/);
+  assert.match(css, /\.work-signal-main strong,\.work-signal-main em \{ white-space:normal; overflow:visible; text-overflow:clip;/);
+  assert.match(css, /\.work-evidence-detail p \{ color:var\(--work-muted\); \}/);
 });
 
 function readDemoFile(file) {

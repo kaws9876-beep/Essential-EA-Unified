@@ -634,7 +634,7 @@ function renderGuidedChapter() {
     <div class="guided-intro"><p class="guided-kicker">Six sources. One consequence.</p><h1>The warning was already <em>inside the business.</em></h1><p>Crystal Ball connected six partial truths before the opportunity disappeared.</p></div>
     <div class="guided-orbit" aria-hidden="true"><span class="guided-orbit-ring"></span><strong>$1.8M</strong><small>Opportunity at risk</small></div>
     <div class="guided-signal-list" aria-label="Ranked consequential signals">${guidedSignals.map(([source, title, confidence, urgency, consequence], index) => `<button type="button" class="guided-signal-row ${guidedState.selectedSignalIndex === index ? 'selected' : ''}" data-guided-signal="${index}" style="--signal-index:${index}" aria-pressed="${guidedState.selectedSignalIndex === index}"><span class="guided-signal-source">${source}</span><strong>${title}</strong><span class="guided-signal-meta">${confidence} · ${urgency}</span><p>${consequence}</p></button>`).join('')}${guidedState.selectedSignalIndex !== null ? `<div class="guided-signal-detail"><span>Evidence / ${guidedSignals[guidedState.selectedSignalIndex][0]}</span><strong>${guidedSignals[guidedState.selectedSignalIndex][1]}</strong><p>${guidedSignals[guidedState.selectedSignalIndex][4]}</p><small>Synthetic source · ${guidedSignals[guidedState.selectedSignalIndex][2]} confidence</small></div>` : ''}</div>
-    ${guidedPrimary('See the judgment', 'next')}
+    ${guidedPrimary('See what Storm found', 'next')}
   </div>`;
   if (chapter === 2) return `<div class="guided-judgment">
     <p class="guided-kicker">Judgment from the full context</p><h1>This is not another alert.<br><em>It is a decision.</em></h1>
@@ -643,11 +643,11 @@ function renderGuidedChapter() {
   </div>`;
   if (chapter === 3) return `<div class="guided-decision">
     <p class="guided-kicker">Decision and authority</p><h1>A path forward, <em>under human control.</em></h1>
-    <div class="guided-paths" role="group" aria-label="Strategic paths">${decisionFixture.paths.map((item) => `<button type="button" class="guided-path ${decisionState.selectedPathId === item.id ? 'selected' : ''}" data-guided-path="${item.id}" aria-pressed="${decisionState.selectedPathId === item.id}"><span>${item.recommendation ? 'Recommended' : 'Alternative'}</span><strong>${item.label}</strong><small>${item.keyTradeoff}</small></button>`).join('')}</div>
+    <div class="guided-paths" role="group" aria-label="Strategic paths">${decisionFixture.paths.map((item) => { const selected = guidedState.pathConfirmed && decisionState.selectedPathId === item.id; return `<button type="button" class="guided-path ${selected ? 'selected' : ''}" data-guided-path="${item.id}" aria-pressed="${selected}"><span>${item.recommendation ? 'Storm recommendation' : 'Alternative'}${selected ? ' · Selected' : ''}</span><strong>${item.label}</strong><small>${item.keyTradeoff}</small><i aria-hidden="true">${selected ? '✓' : '→'}</i></button>`; }).join('')}</div>
     <div class="guided-path-facts"><div><span>Expected value protected</span><strong>${path.expectedValueProtected}</strong></div><div><span>Risk</span><strong>${path.riskLevel}</strong></div><div><span>Time to action</span><strong>${path.timeToAction}</strong></div><div><span>Required owner</span><strong>${path.requiredOwner}</strong></div><div><span>Approval</span><strong>${path.approvalBurden}</strong></div><div><span>Tradeoff</span><strong>${path.keyTradeoff}</strong></div></div>
-    <div class="guided-authority"><p><span>Decision owner</span><strong>Commercial Operations Lead</strong></p><p><span>Authority holder</span><strong>Executive Sponsor</strong></p><p><span>Approval rule</span><strong>$1.8M value threshold; Finance review required for payment terms.</strong></p><p class="guided-why">Approval is required because the value and unresolved finance condition exceed the operator's authority.</p></div>
+    <div class="guided-authority"><p><span>Decision owner</span><strong>${path.requiredOwner}</strong></p><p><span>Authority holder</span><strong>${path.approvalBurden}</strong></p><p><span>Approval rule</span><strong>$1.8M value threshold; Finance review required for payment terms.</strong></p><p class="guided-why">Approval is required because the value and unresolved finance condition exceed the operator's authority.</p></div>
     ${decisionState.lastError ? `<p class="guided-error" role="alert">${decisionState.lastError}</p>` : ''}
-    ${guidedPrimary(guidedState.pathConfirmed ? 'Submit for approval' : 'Select this path', guidedState.pathConfirmed ? 'submit' : 'confirm-path')}
+    <button class="guided-primary guided-path-continue" type="button" data-guided-action="submit" ${guidedState.pathConfirmed ? '' : 'disabled'}>${guidedState.pathConfirmed ? 'Continue with this path' : 'Select a path'}<span aria-hidden="true">→</span></button>
   </div>`;
   const status = decisionState.decisionObject.status;
   const ready = status === 'EXECUTION_READY';
@@ -865,10 +865,6 @@ document.addEventListener('click', (event) => {
     if (actionName === 'submit') {
       const result = submitForApproval(decisionState);
       if (result.ok) advanceChapter(guidedState);
-    }
-    if (actionName === 'confirm-path') {
-      selectStrategicPath(decisionState, decisionState.selectedPathId);
-      guidedState.pathConfirmed = true;
     }
     if (actionName === 'approve') approveDecision(decisionState);
     if (actionName === 'plan') guidedState.planOpen = true;
