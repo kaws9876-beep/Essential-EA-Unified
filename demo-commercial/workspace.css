@@ -185,6 +185,9 @@ body.workspace-active > .popover { display:none !important; }
 .work-rail-content dd { overflow-wrap:anywhere; }
 .guided-brand span { opacity:.78; }
 .guided-exit { opacity:.82; border-bottom:1px solid currentColor; padding:8px 0; }
+body.guided-active { scrollbar-width:thin; scrollbar-color:rgba(185,164,124,.45) transparent; }
+body.guided-active::-webkit-scrollbar { width:7px; }
+body.guided-active::-webkit-scrollbar-thumb { background:rgba(185,164,124,.45); }
 .guided-exit:focus-visible,.guided-path:focus-visible,.guided-signal-row:focus-visible { outline:2px solid #a58a58; outline-offset:3px; }
 .guided-signal-scene { padding-bottom:32px; }
 .guided-signal-scene .guided-intro p:last-child { color:#d8d3ca; }
