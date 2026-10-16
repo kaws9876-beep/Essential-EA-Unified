@@ -34,7 +34,13 @@ const demoFiles = [
   'demo-commercial/decisionWorkflow.js',
   'demo-commercial/guidedExperience.js',
   'demo-commercial/README.md',
-  'tests/commercial-demo.test.js'
+  'tests/commercial-demo.test.js',
+  'demo-native/index.html',
+  'demo-native/styles.css',
+  'demo-native/scenario.js',
+  'demo-native/app.js',
+  'demo-native/README.md',
+  'tests/native-demo.test.js'
 ];
 
 for (const file of demoFiles) {

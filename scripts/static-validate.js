@@ -17,7 +17,12 @@ const requiredFiles = [
   'demo-commercial/adapters/demoExecutionAdapter.js',
   'demo-commercial/decisionWorkflow.js',
   'demo-commercial/guidedExperience.js',
-  'demo-commercial/README.md'
+  'demo-commercial/README.md',
+  'demo-native/index.html',
+  'demo-native/styles.css',
+  'demo-native/scenario.js',
+  'demo-native/app.js',
+  'demo-native/README.md'
 ];
 
 for (const file of requiredFiles) {
@@ -111,6 +116,19 @@ for (const required of [
   'Simulation only - not executed externally'
 ]) {
   if (!decisionWorkflow.includes(required)) throw new Error(`decision workflow missing expected marker: ${required}`);
+}
+
+const nativeHtml = fs.readFileSync('demo-native/index.html', 'utf8');
+const nativeApp = fs.readFileSync('demo-native/app.js', 'utf8');
+const nativeScenario = fs.readFileSync('demo-native/scenario.js', 'utf8');
+for (const required of ['DEMO MODE — SYNTHETIC DATA', 'no external systems connected', 'demo-root']) {
+  if (!nativeHtml.includes(required)) throw new Error(`native demo index missing marker: ${required}`);
+}
+for (const required of ['Inspect with Storm', 'Approve recovery + prevention plan', "state.phase = 'executing'", "state.phase = 'outcome'", 'Replay the 60-second proof']) {
+  if (!nativeApp.includes(required)) throw new Error(`native demo app missing marker: ${required}`);
+}
+for (const required of ['5 / 5 complete', 'activity-based closure rule', 'Next-cycle false closure blocked']) {
+  if (!nativeScenario.includes(required)) throw new Error(`native demo scenario missing marker: ${required}`);
 }
 
 const vercel = JSON.parse(fs.readFileSync('vercel.json', 'utf8'));
