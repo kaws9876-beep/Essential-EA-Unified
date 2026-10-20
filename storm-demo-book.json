@@ -1,0 +1,239 @@
+{
+  "disclaimer": "FICTIONAL DEMO DATA. All client names, people, figures, and events are invented for demonstration. None of this is Allied Solutions data or data from any real financial institution.",
+  "team": [
+    {
+      "name": "Janet Liu",
+      "role": "Regional Vice President",
+      "department": "Sales Leadership"
+    },
+    {
+      "name": "Dana Whitfield",
+      "role": "National Account Manager",
+      "department": "Strategic Accounts"
+    },
+    {
+      "name": "Marcus Reyes",
+      "role": "Account Executive",
+      "department": "Field Sales"
+    },
+    {
+      "name": "Priya Shah",
+      "role": "Account Executive",
+      "department": "Field Sales"
+    },
+    {
+      "name": "Tom Gallagher",
+      "role": "Account Executive",
+      "department": "Field Sales"
+    },
+    {
+      "name": "Leah Brooks",
+      "role": "Service Center Lead",
+      "department": "Client Service"
+    },
+    {
+      "name": "Andre Coleman",
+      "role": "Product Manager, CPI and GAP",
+      "department": "Product"
+    },
+    {
+      "name": "Rob Okafor",
+      "role": "Catastrophe Claims Team Lead",
+      "department": "Claims"
+    },
+    {
+      "name": "Kelsey Moran",
+      "role": "Product Marketing Manager",
+      "department": "Marketing"
+    },
+    {
+      "name": "Morgan Hale",
+      "role": "Director, Sales Enablement and Operations",
+      "department": "Sales Enablement and Operations"
+    },
+    {
+      "name": "Renee Walsh",
+      "role": "Sales Enablement Manager",
+      "department": "Sales Enablement and Operations"
+    },
+    {
+      "name": "Sam Ortiz",
+      "role": "Sales Operations Analyst",
+      "department": "Sales Enablement and Operations"
+    },
+    {
+      "name": "Ben Castillo",
+      "role": "Data Exchange Solutions Consultant",
+      "department": "Implementation"
+    },
+    {
+      "name": "Alicia Grant",
+      "role": "EVP, Strategy and Client Experience",
+      "department": "Executive Leadership"
+    },
+    {
+      "name": "Curtis Lane",
+      "role": "General Manager, Northline Recovery (affiliate business)",
+      "department": "Northline Recovery"
+    },
+    {
+      "name": "Mia Torres",
+      "role": "Client Programs Lead, Brightwater Marketing (affiliate business)",
+      "department": "Brightwater Marketing"
+    },
+    {
+      "name": "Harper Nguyen",
+      "role": "Implementation Project Manager, Data Exchange",
+      "department": "Implementation"
+    }
+  ],
+  "routing_rules": [
+    "Strategic tier clients are owned by the National Account Manager for all client-facing outreach.",
+    "Borrower complaints are owned by Client Service; Product is consulted when a complaint involves a product or notice error; the assigned rep is informed.",
+    "Any client-facing item unresolved after 7 days escalates to the Regional Vice President.",
+    "If an owner is out of office during a deadline, reassign to the designated regional backup, pending leadership approval.",
+    "Only one team contacts a client about a given topic in the same week; the client owner coordinates.",
+    "All client-facing communications are drafted for human approval before sending.",
+    "Changes to client ownership in the CRM require Sales Operations approval before they are saved.",
+    "Sales content past its review date for more than 14 days escalates to the content owner's manager.",
+    "Any client mention of a core conversion or system change routes to the Data Exchange Solutions Consultant within one business day."
+  ],
+  "clients": [
+    {
+      "client": "Bluebonnet Ridge FCU",
+      "tier": "Strategic",
+      "owner": "Dana Whitfield",
+      "primary_contact": "Helen Marsh, CEO",
+      "products": [
+        "CPI",
+        "GAP",
+        "Mechanical Breakdown Protection"
+      ],
+      "contract_renewal_days": 45
+    },
+    {
+      "client": "Caprock Meridian CU",
+      "tier": "Standard",
+      "owner": "Marcus Reyes",
+      "primary_contact": "Curtis Bell, VP of Lending",
+      "products": [
+        "CPI"
+      ],
+      "contract_renewal_days": 310
+    },
+    {
+      "client": "Silver Mesa FCU",
+      "tier": "Standard",
+      "owner": "Marcus Reyes",
+      "primary_contact": "Nadia Torres, Lending Manager",
+      "products": [
+        "CPI",
+        "GAP"
+      ],
+      "contract_renewal_days": 140
+    },
+    {
+      "client": "Pecan Hollow CU",
+      "tier": "Standard",
+      "owner": "Marcus Reyes",
+      "primary_contact": "Owen Pratt, Lending Manager",
+      "products": [
+        "CPI",
+        "GAP",
+        "Recovery"
+      ],
+      "contract_renewal_days": 220
+    },
+    {
+      "client": "Ironwood Prairie CU",
+      "tier": "Strategic",
+      "owner": "Dana Whitfield",
+      "primary_contact": "Raymond Ochoa, CEO",
+      "products": [
+        "CPI",
+        "GAP",
+        "Mechanical Breakdown Protection",
+        "Deposit Growth"
+      ],
+      "contract_renewal_days": 260
+    },
+    {
+      "client": "Lantern Trail FCU",
+      "tier": "Standard",
+      "owner": "Priya Shah",
+      "primary_contact": "Sasha Lindqvist, Chief Lending Officer",
+      "products": [
+        "CPI",
+        "GAP"
+      ],
+      "contract_renewal_days": 180
+    },
+    {
+      "client": "Copperleaf Community Bank",
+      "tier": "Standard",
+      "owner": "Priya Shah",
+      "primary_contact": "Gwen Talbot, SVP of Lending",
+      "products": [
+        "CPI"
+      ],
+      "contract_renewal_days": 95
+    },
+    {
+      "client": "Juniper Bend CU",
+      "tier": "Standard",
+      "owner": "Tom Gallagher",
+      "primary_contact": "Position vacant (former VP of Lending departed); interim contact: Brian Kessler, CFO",
+      "products": [
+        "CPI",
+        "GAP"
+      ],
+      "contract_renewal_days": 20
+    },
+    {
+      "client": "Tallgrass Harbor FCU",
+      "tier": "Standard",
+      "owner": "Tom Gallagher",
+      "primary_contact": "Monique Ford, Lending Operations Manager",
+      "products": [
+        "CPI"
+      ],
+      "contract_renewal_days": 290
+    },
+    {
+      "client": "Redbird Crossing CU",
+      "tier": "Standard",
+      "owner": "Marcus Reyes",
+      "primary_contact": "Wade Hollis, President",
+      "products": [
+        "CPI"
+      ],
+      "contract_renewal_days": 200
+    },
+    {
+      "client": "Stonewater Members CU",
+      "tier": "Standard",
+      "owner": "Marcus Reyes",
+      "primary_contact": "Erin Castillo, VP of Lending",
+      "products": [
+        "CPI",
+        "GAP"
+      ],
+      "contract_renewal_days": 165
+    },
+    {
+      "client": "Kestrel Point Bank",
+      "tier": "Standard",
+      "owner": "Priya Shah",
+      "primary_contact": "Samuel Greer, Chief Credit Officer",
+      "products": [
+        "CPI",
+        "GAP"
+      ],
+      "contract_renewal_days": 240
+    }
+  ],
+  "known_context": [
+    "Andre Coleman's review found the Lantern Trail FCU GAP claims increase is concentrated in loans from two dealer partners.",
+    "Ben Castillo (Data Exchange) receives any client mention of a core conversion within one business day."
+  ]
+}

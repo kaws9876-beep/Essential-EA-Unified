@@ -4553,6 +4553,126 @@ process.on('unhandledRejection', (reason) => {
   console.error('Unhandled promise rejection:', reason);
 });
 
+// ============ STORM FIELD NOTE ENDPOINT (Power Platform demo) ============
+// Paste this block into server.js ABOVE the line that starts with: app.listen(PORT
+// Requires: storm-demo-book.json in the same folder as server.js
+// Requires Railway variable: STORM_DEMO_KEY (any long random string; the same value goes in the Power Automate HTTP header)
+// Uses the existing `app` and `anthropic` objects already defined in server.js.
+
+import { readFileSync as stormReadFileSync } from 'fs';
+// (An import declaration is valid anywhere at the top level of an ES module, so this can stay here.)
+
+let STORM_DEMO_BOOK = null;
+try {
+  STORM_DEMO_BOOK = JSON.parse(stormReadFileSync(new URL('./storm-demo-book.json', import.meta.url), 'utf8'));
+} catch (e) {
+  console.error('storm-demo-book.json not loaded:', e.message);
+}
+
+app.post('/api/storm/field-note', async (req, res) => {
+  // This route is protected with its own key, because /api auth is still in soft mode.
+  if (!process.env.STORM_DEMO_KEY || req.get('x-storm-key') !== process.env.STORM_DEMO_KEY) {
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
+  }
+  if (!STORM_DEMO_BOOK) return res.status(500).json({ success: false, error: 'Demo book not loaded' });
+
+  const repName = String(req.body?.repName || '').slice(0, 100);
+  const note = String(req.body?.note || '').slice(0, 4000);
+  if (!repName || !note) return res.status(400).json({ success: false, error: 'repName and note are required' });
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const system = [
+    'You are Storm, the intelligence layer of EA Storm. A field sales rep has just spoken or typed a note after a client meeting.',
+    'Your job: decide what matters, who owns each next step (department and person), the deadline, and the approval tier, then report back in a short spoken-style summary.',
+    'Rules:',
+    '1. Use ONLY the people, clients and rules in the demo book below. Never invent people, clients, prices, figures or outcomes. If something is unknown, say so in the summary.',
+    '2. Approval tiers: "Tier 1 automatic" for logging, internal tasks and internal notifications. "Tier 2 needs approval" for anything a client will see (emails, meeting invites, documents).',
+    '3. Set internal deadlines one business day before any client deadline when possible, so the rep has time to review.',
+    '4. Apply the routing rules exactly (for example, core conversion mentions go to the Data Exchange Solutions Consultant within one business day).',
+    '5. Draft client-facing emails in the rep\'s voice, plain and warm, no pricing figures. Every draft needs approval by the rep.',
+    '6. Keep the human detail the rep shared (for example, a client being nervous) and pass it to the owner.',
+    '7. Dates are ISO format (YYYY-MM-DD). Today is ' + today + '.',
+    '8. The demo book is fictional. Do not mention real companies.',
+    'Respond with JSON only, no markdown, matching exactly:',
+    '{"summary":"string, 3 to 6 short sentences, spoken style, addressed to the rep",',
+    ' "actions":[{"client":"string","team":"string","commitment":"string","owner":"string","dueDate":"YYYY-MM-DD","approvalTier":"Tier 1 automatic|Tier 2 needs approval","status":"Open|Draft awaiting approval","notes":"string"}],',
+    ' "drafts":[{"to":"string","subject":"string","body":"string","approver":"string"}],',
+    ' "notifications":[{"person":"string","message":"string"}]}',
+    '',
+    'DEMO BOOK:',
+    JSON.stringify(STORM_DEMO_BOOK)
+  ].join('\n');
+
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 1500,
+      system,
+      messages: [{ role: 'user', content: 'Rep: ' + repName + '\nNote: ' + note }]
+    });
+    let text = (response.content[0]?.text || '').trim();
+    const s = text.indexOf('{'), e = text.lastIndexOf('}');
+    if (s === -1 || e === -1) throw new Error('No JSON in model response');
+    const result = JSON.parse(text.substring(s, e + 1));
+    result.actions = Array.isArray(result.actions) ? result.actions : [];
+    result.drafts = Array.isArray(result.drafts) ? result.drafts : [];
+    result.notifications = Array.isArray(result.notifications) ? result.notifications : [];
+    // Flattened strings make Power Automate and Power Apps handling simpler.
+    result.draftsText = result.drafts.map(d => 'To: ' + d.to + '\nSubject: ' + d.subject + '\nApprover: ' + d.approver + '\n\n' + d.body).join('\n\n----------\n\n');
+    result.notificationsText = result.notifications.map(n => n.person + ': ' + n.message).join('\n');
+    return res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('Storm field note error:', err.message);
+    return res.status(500).json({ success: false, error: 'Storm could not process the note' });
+  }
+});
+
+// ============ STORM ASK ENDPOINT (Power Platform demo) ============
+// Power Apps sends a question plus the Dataverse rows on screen. Storm answers only from those rows and the demo book.
+app.post('/api/storm/ask', async (req, res) => {
+  if (!process.env.STORM_DEMO_KEY || req.get('x-storm-key') !== process.env.STORM_DEMO_KEY) {
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
+  }
+  if (!STORM_DEMO_BOOK) return res.status(500).json({ success: false, error: 'Demo book not loaded' });
+
+  const question = String(req.body?.question || '').slice(0, 1000);
+  let records = req.body?.records ?? '[]';
+  if (typeof records !== 'string') records = JSON.stringify(records);
+  records = records.slice(0, 60000);
+  if (!question) return res.status(400).json({ success: false, error: 'question is required' });
+
+  const today = new Date().toISOString().slice(0, 10);
+  const system = [
+    'You are Storm, the intelligence layer of EA Storm, answering a leader inside their Microsoft Power Apps environment.',
+    'Answer ONLY from the RECORDS (live rows from Microsoft Dataverse) and the DEMO BOOK. Never invent people, clients, figures or outcomes.',
+    'Lead with a one-sentence headline, then the few items that need attention, each with its owner and why it matters.',
+    'When a record\'s Source is "Reported by team lead", say it is reported, not verified, because that team\'s system is not connected.',
+    'Point out duplicates (two teams contacting the same client in the same week), late items, and items at risk because of a dependency.',
+    'If the question cannot be answered from the records, say exactly what you would need.',
+    'Recommend next steps with a single relationship owner where a client is served by several teams. Anything client-facing needs approval.',
+    'Plain spoken language, under 180 words, no markdown symbols. Today is ' + today + '. The demo book is fictional.',
+    '',
+    'DEMO BOOK:', JSON.stringify(STORM_DEMO_BOOK),
+    '',
+    'RECORDS:', records
+  ].join('\n');
+
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 700,
+      system,
+      messages: [{ role: 'user', content: question }]
+    });
+    const answer = (response.content[0]?.text || '').trim();
+    return res.json({ success: true, answer });
+  } catch (err) {
+    console.error('Storm ask error:', err.message);
+    return res.status(500).json({ success: false, error: 'Storm could not answer' });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', async () => {
   await initDB();
   console.log('\nEssential EA is running on port ' + PORT);
